@@ -1,0 +1,49 @@
+name: Deploy
+description: 배포, 릴리스, 환경 설정, 인프라 반영 작업을 기록합니다.
+title: "[Deploy] "
+labels:
+  - deploy
+body:
+  - type: textarea
+    id: deployment_target
+    attributes:
+      label: 배포 대상
+      description: 어떤 환경이나 산출물을 배포하는지 적어주세요.
+      placeholder: Expo preview build / iOS TestFlight / backend staging
+    validations:
+      required: true
+  - type: textarea
+    id: deployment_change
+    attributes:
+      label: 변경 내용
+      description: 이번 배포에 포함되는 핵심 내용을 적어주세요.
+      placeholder: OCR 결과 오버레이 좌표 보정 및 에러 토스트 개선
+    validations:
+      required: true
+  - type: textarea
+    id: checklist
+    attributes:
+      label: 사전 체크리스트
+      description: 배포 전에 확인해야 할 항목을 적어주세요.
+      placeholder: |
+        - checks.sh PASS
+        - 환경 변수 확인
+        - 배포 노트 준비
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: 롤백 / 대응 계획
+      description: 문제 발생 시 되돌리는 방법이나 대응 기준을 적어주세요.
+      placeholder: 문제 발생 시 이전 채널로 롤백하고 로그를 수집합니다.
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 환경
+      options:
+        - Development
+        - Staging
+        - Production
+    validations:
+      required: true

@@ -1,0 +1,51 @@
+name: Feature
+description: 새로운 기능이나 사용자 가치가 있는 변경을 제안합니다.
+title: "[Feature] "
+labels:
+  - feature
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 요약
+      description: 어떤 기능을 왜 추가하려는지 간단히 적어주세요.
+      placeholder: 사용자가 분석 완료 후 하이라이트 목록을 접을 수 있어야 합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 문제 / 배경
+      description: 지금 무엇이 불편하거나 비어 있는지 적어주세요.
+      placeholder: 현재는 결과가 길어질수록 화면이 복잡해집니다.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 제안하는 변경
+      description: 기대하는 동작이나 범위를 적어주세요.
+      placeholder: 섹션 단위 접기/펼치기와 기본 접힘 상태를 추가합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 조건
+      description: 이 이슈가 끝났다고 볼 기준을 적어주세요.
+      placeholder: |
+        - 하이라이트 목록을 접고 펼칠 수 있다
+        - 앱 재진입 시 기본 상태가 일관된다
+        - 기존 분석 플로우가 깨지지 않는다
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 우선순위
+      options:
+        - Medium
+        - High
+        - Low
+    validations:
+      required: true

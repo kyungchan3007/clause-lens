@@ -1,0 +1,33 @@
+name: Docs
+description: README, 가이드, 에이전트 문서, 운영 문서를 추가하거나 수정합니다.
+title: "[Docs] "
+labels:
+  - docs
+body:
+  - type: textarea
+    id: doc_problem
+    attributes:
+      label: 문서 문제
+      description: 어떤 문서가 부족하거나 틀렸는지 적어주세요.
+      placeholder: 업로드-분석 플로우 설명은 있는데 실패 처리 기준이 빠져 있습니다.
+    validations:
+      required: true
+  - type: textarea
+    id: doc_change
+    attributes:
+      label: 필요한 변경
+      description: 추가/수정이 필요한 내용을 적어주세요.
+      placeholder: 실패 상태, 재시도 전략, 서버 책임 범위를 명시해야 합니다.
+    validations:
+      required: true
+  - type: dropdown
+    id: audience
+    attributes:
+      label: 대상 독자
+      options:
+        - Developers
+        - Agents
+        - Users
+        - Operators
+    validations:
+      required: true

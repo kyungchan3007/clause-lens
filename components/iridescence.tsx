@@ -6,11 +6,12 @@ import {
   Shader,
   Fill,
   useClock,
+  type SkRuntimeEffect,
 } from "@shopify/react-native-skia";
 import { useDerivedValue } from "react-native-reanimated";
 import { useWindowDimensions } from "react-native";
 
-const source = Skia.RuntimeEffect.Make(`
+const compiledShader = Skia.RuntimeEffect.Make(`
 uniform vec3 uResolution;
 uniform float uTime;
 uniform vec3 uColor;
@@ -20,24 +21,29 @@ uniform float uSpeed;
 vec4 main(vec2 fragCoord) {
   // Convert fragCoord to normalized coordinates
   vec2 vUv = fragCoord / uResolution.xy;
-  
+
   float mr = min(uResolution.x, uResolution.y);
-  vec2 uv = (vUv.xy * 2.0 - 1.0) * uResolution.xy / mr;  
+  vec2 uv = (vUv.xy * 2.0 - 1.0) * uResolution.xy / mr;
   float d = -uTime * 0.5 * uSpeed;
   float a = 0.0;
   for (float i = 0.0; i < 8.0; ++i) {
     a += cos(i - d - a * uv.x);
     d += sin(uv.y * i + a);
   }
-  
+
   d += uTime * 0.5 * uSpeed;
-  
+
   vec3 col = vec3(cos(uv * vec2(d, a)) * 0.6 + 0.4, cos(a + d) * 0.5 + 0.5);
   col = cos(col * cos(vec3(d, a, 2.5)) * 0.5 + 0.5) * uColor;
-  
+
   return vec4(col, 1.0);
 }
 `);
+
+if (!compiledShader) {
+  throw new Error("Failed to compile Iridescence shader");
+}
+const source: SkRuntimeEffect = compiledShader;
 
 export default function Iridescence({
   color = [1, 1, 1],
