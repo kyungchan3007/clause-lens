@@ -8,6 +8,12 @@
       "expo-router"
     ],
     "name": "clause-lens",
-    "slug": "clause-lens"
+    "slug": "clause-lens",
+    "ios": {
+      "bundleIdentifier": "com.anonymous.clause-lens"
+    },
+    "android": {
+      "package": "com.anonymous.clauselens"
+    }
   }
 }
