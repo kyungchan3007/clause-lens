@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "scheme": "skia",
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "name": "clause-lens",
+    "slug": "clause-lens",
+    "ios": {
+      "bundleIdentifier": "com.anonymous.clause-lens"
+    },
+    "android": {
+      "package": "com.anonymous.clauselens"
+    }
+  }
+}
