@@ -17,17 +17,22 @@ module.exports = {
         red,
         amber,
         green,
-        // 2층 semantic 별칭 (예: bg-primary, text-primary-fg). 라이트 기준.
-        // 다크모드 전략(dark: variant vs CSS 변수)은 F3에서 확정.
+        // 2층 semantic 별칭 (shadcn 관례). 라이트 기준.
+        // 다크모드 전략(dark: variant vs CSS 변수)은 별도 확정.
         primary: {
           DEFAULT: light.primary,
           pressed: light.primaryPressed,
-          fg: light.primaryFg,
+          foreground: light.primaryFg,
           tint: light.tint,
         },
-        danger: { DEFAULT: light.danger, bg: light.dangerBg },
+        background: light.bg,
+        surface: { DEFAULT: light.surface, alt: light.surfaceAlt },
+        foreground: { DEFAULT: light.text, muted: light.textMuted },
+        border: light.border,
+        danger: { DEFAULT: light.danger, foreground: neutral[0], bg: light.dangerBg },
         warning: { DEFAULT: light.warning, bg: light.warningBg },
         success: { DEFAULT: light.success, bg: light.successBg },
+        focus: light.focus,
       },
       borderRadius: px(radius),
       fontFamily: { sans: fontFamily.sans, mono: fontFamily.mono },

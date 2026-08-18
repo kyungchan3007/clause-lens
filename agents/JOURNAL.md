@@ -14,6 +14,19 @@
 
 ---
 
+## 2026-08-18 · Claude · #TASK-F3 공유 UI 패키지 + NativeWind 배선 완료
+- **무엇**: `packages/ui`(Button 3 variant + lucide `<Icon>` 래퍼) + 앱에 NativeWind 배선(babel·metro·tailwind.config·global.css·nativewind-env). 앱이 tokens/ui를 workspace dep로 소비. 시뮬레이터에서 **NativeWind+토큰+Button 렌더 확인**(Cobalt #2563EB), 기존 Skia 화면도 새 babel에서 정상.
+- **왜**: 도메인이 소비할 디자인 시스템 컴포넌트 계층(마지막 기반).
+- **핵심 함정/해결**:
+  1. Tailwind는 **v3.4 핀**(NativeWind 4.x는 v4 비호환).
+  2. `react-native-svg` **중복**(15.15.4/15.15.5) → `pnpm-workspace.yaml overrides`로 15.15.4 고정(pnpm11은 package.json `pnpm` 필드 무시).
+  3. `import "*.css"` tsc 에러 → `declare module "*.css"` 추가.
+  4. `packages/ui`(.tsx) peer(react/react-native) 미해결 → **type 전용 devDependencies 추가**(앱과 동일 버전).
+  5. **`react-native-css-interop`(nativewind 전이 의존성)가 Metro 미해결** → **앱 직접 dep로 추가**(0.2.6). pnpm hoisted가 peer 변형 2개라 hoist 안 함.
+- **파일**: `packages/ui/**`, `apps/mobile/{babel.config.js,metro.config.js,tailwind.config.js,global.css,nativewind-env.d.ts,app/_layout.tsx,package.json}`, `packages/tokens/tailwind-preset.js`(semantic 색 보완: background/surface/foreground/border), `package.json`·`pnpm-workspace.yaml`(overrides)
+- **게이트**: 앱 typecheck + ui typecheck(앱 경유) + expo-doctor 21/21 + NativeWind 렌더 스크린샷 PASS.
+- **다음/주의**: (1) **NativeWind는 네이티브 리빌드 불필요**(JS/Metro). (2) **lucide `<Icon>`은 `react-native-svg`(네이티브) 필요 → 아직 리빌드 안 함 → 실제 아이콘 렌더는 TASK-F3N**. Button 검증 시 barrel import는 svg 로드하므로 직접 import + `import type`로 회피. (3) 다크모드 적용 전략·커스텀 폰트는 추후. 브랜치 `task/F3-ui`.
+
 ## 2026-08-18 · Claude · #TASK-F2 디자인 토큰 패키지 완료
 - **무엇**: `packages/tokens` 생성. 3층 토큰(primitives→semantic→preset), Cobalt #2563EB 프라이머리, light/dark semantic, 타이포·radius, NativeWind tailwind-preset. 값=CJS(.js), 타입=index.d.ts.
 - **왜**: 디자인 시스템의 단일 토큰 소스. F3(공유 UI)와 앱이 소비.

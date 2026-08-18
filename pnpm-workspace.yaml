@@ -1,6 +1,8 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+overrides:
+  react-native-svg: 15.15.4
 allowBuilds:
   '@shopify/react-native-skia': true
 minimumReleaseAgeExclude:
