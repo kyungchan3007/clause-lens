@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-08-18 · Claude · #TASK-F2 디자인 토큰 패키지 완료
+- **무엇**: `packages/tokens` 생성. 3층 토큰(primitives→semantic→preset), Cobalt #2563EB 프라이머리, light/dark semantic, 타이포·radius, NativeWind tailwind-preset. 값=CJS(.js), 타입=index.d.ts.
+- **왜**: 디자인 시스템의 단일 토큰 소스. F3(공유 UI)와 앱이 소비.
+- **설계**: CJS 채택 이유 = tailwind preset이 JS require 필수 + 빌드 단계 없이 tailwind/앱/Skia 모두 소비. 컴포넌트는 primitive 직접 사용 금지(semantic만).
+- **파일**: `packages/tokens/{primitives,semantic,typography,index,tailwind-preset}.js`, `index.d.ts`, `package.json`(exports: `.`, `./tailwind-preset`), `tsconfig.json`, `README.md`
+- **게이트**: 토큰 값 node 검증(cobalt600=#2563EB 등) + preset 유효 + tokens tsconfig 타입 클린 + 앱 게이트 ALL PASS(무변경).
+- **다음/주의**: 앱이 아직 tokens를 dep로 선언 안 함 → 앱에서 import는 F3에서(`workspace:*` dep + tailwind.config presets 배선). 다크모드 적용 전략(`dark:` variant vs CSS 변수)·커스텀 폰트 로딩도 F3.
+
 ## 2026-08-18 · Claude · #TASK-F1N 네이티브 리빌드 검증 완료 (iOS)
 - **무엇**: 모노레포 이동 후 iOS 네이티브 빌드·실행 end-to-end 검증. `pod install`(UTF-8 로케일 필요) → 100 pods, xcodebuild 성공(0 errors, 2119 warnings=jsi umbrella 정상 노이즈) → 시뮬레이터(iPhone 17 Pro) 실행 → Metro 번들(1263 모듈) → **Skia 셰이더 렌더링 확인**.
 - **왜**: 파일 이동이 네이티브 빌드/경로 해석을 깨지 않았는지 실증(F1의 분리 검증).

@@ -17,7 +17,7 @@
 | --- | --- | --- | --- | --- | --- |
 | TASK-F1 | 모노레포 재구성 (Turborepo) | Expo 앱 → `apps/mobile`, Turborepo+pnpm workspace, `packages/config`, **Metro 모노레포 설정**(watchFolders·서버코드 제외), `apps/api`·`apps/worker`·`packages/contracts`는 자리만 | Claude | **done** | – |
 | TASK-F1N | 네이티브 리빌드 검증 (분리) | 이동 후 `apps/mobile`에서 `pod install`(iOS)·Gradle 경로 확인 + 시뮬레이터 실제 실행. 깨지면 `expo prebuild --clean` | Claude | **done** (iOS) | TASK-F1 |
-| TASK-F2 | 디자인 토큰 패키지 | `packages/tokens` — 3층 토큰(Cobalt #2563EB) + NativeWind preset + 폰트 | – | todo | TASK-F1 |
+| TASK-F2 | 디자인 토큰 패키지 | `packages/tokens` — 3층 토큰(Cobalt #2563EB) + NativeWind preset + 폰트 | Claude | **done** | TASK-F1 |
 | TASK-F3 | 공유 UI 패키지 | `packages/ui` — NativeWind + react-native-reusables 셋업, lucide `<Icon>` 래퍼, 기본 컴포넌트(Button 등) | – | todo | TASK-F2 |
 
 > `apps/api`(NestJS)·`apps/worker`·`packages/contracts`(zod 계약)는 서버 착수 시 채운다. F1은 **구조·자리만** 잡고 mobile만 실제 이동.

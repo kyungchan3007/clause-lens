@@ -63,6 +63,8 @@ importers:
 
   packages/config: {}
 
+  packages/tokens: {}
+
 packages:
 
   '@adobe/css-tools@4.5.0':
