@@ -64,3 +64,40 @@ const scaleY = displayedHeight / imageHeight;
 ## 기술 스택 (프론트)
 
 Expo SDK 57 · React Native 0.86.2 · Expo Router · React Native Skia 2.6.2 · (예정) TanStack Query · Zustand. **버전 고정 문서 필수**: https://docs.expo.dev/versions/v57.0.0/
+
+## 디자인 시스템 & 모노레포 (결정)
+
+**결정**: 요즘 현업 신규 Expo 앱의 최다·최저마찰 스택으로 간다.
+
+- **스타일링**: **NativeWind** (Tailwind-RN). 토큰은 `tailwind.config`에서 관리, 다크모드 지원. (엔진 후보 중 Tamagui=무거움, Restyle/unistyles=타입이지만 reusables 비호환 → 마찰 최소인 NativeWind 채택)
+- **컴포넌트**: **react-native-reusables** (RN판 shadcn). 라이브러리에 숨기지 않고 **코드를 repo에 소유**. NativeWind 위에서 동작. 헤드리스+`variant`/props로 도메인별 사용.
+- **아이콘**: **lucide-react-native** (+ `react-native-svg`). 공유 `<Icon name size color>` 래퍼로 감싸 토큰 참조.
+
+**토큰 3층 원칙** (컴포넌트는 primitive를 직접 쓰지 않는다):
+```
+primitive  blue-600 = #2563EB      (원시 팔레트)
+  ↓
+semantic   primary  = blue-600     (역할 — 컴포넌트는 이걸 쓴다)
+  ↓
+component  button-bg = primary     (선택)
+```
+브랜드 프라이머리 = **Cobalt `#2563EB`**. 리브랜딩/다크모드는 semantic만 교체.
+
+**모노레포 구조**: pnpm workspace + **Turborepo**. 근거 = **백엔드+프론트가 계약(타입/스키마)을 공유** 하나. (오케스트레이터로 Nx도 후보였으나, 배포 단위 3개+패키지 소수 규모엔 과함 → Turborepo가 이 규모의 현업 표준.)
+```
+apps/
+  mobile/     Expo 앱  ← 유일한 제품(프론트) 앱
+  api/        NestJS
+  worker/     OCR Worker
+packages/
+  contracts/  API 계약 = zod 스키마 (서버 검증 + 앱 타입, 단일 소스). 순수 TS·런타임 중립
+  tokens/     3층 디자인 토큰 + tailwind preset (모바일 전용)
+  ui/         공유 디자인 시스템 — reusables 컴포넌트 + Icon 래퍼 (모바일 전용)
+  config/     공유 tsconfig / eslint (+ 경계 규칙)
+```
+- **"앱"은 제품 기준 하나(mobile).** `api`·`worker`는 배포 단위이지 별도 제품이 아니다(모노레포 용어의 "app"일 뿐).
+- UI/UX는 앱이 아니라 `packages/ui`로 **승격**해서 도메인이 props로 소비한다.
+- **계약 공유 규율**: `contracts`는 순수 zod/타입만(Node·RN 의존성 0). RN이 서버 코드를 import 못 하도록 `eslint-plugin-boundaries`로 경계 강제.
+- **Metro 모노레포 설정**(watchFolders·nodeModulesPaths·서버 코드 번들 제외)은 Expo 모노레포 대표 함정 → 기반 태스크에 포함.
+
+> 미채택 & 보류: Tamagui(무거움) · Nx(이 규모엔 과함) · Style Dictionary/Figma 토큰 자동화(멀티플랫폼 트리거 오면) · 계약 방식 zod vs OpenAPI 코드젠(서버 착수 시 확정). 근거는 [JOURNAL](../JOURNAL.md).

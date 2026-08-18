@@ -14,6 +14,30 @@
 
 ---
 
+## 2026-08-18 · Claude · #TASK-F1 모노레포 재구성 완료
+- **무엇**: Expo 앱을 `apps/mobile`로 이동, pnpm workspace+Turborepo 모노레포 착지. `packages/config`(공유 tsconfig base) 생성, `apps/{api,worker}`·`packages/{contracts,tokens,ui}`는 자리(.gitkeep)만. `.npmrc node-linker=hoisted`, `apps/mobile/metro.config.js`(watchFolders+nodeModulesPaths), 루트 `package.json`(turbo 스크립트)·`turbo.json` 추가. `checks.sh`를 `--filter @clause-lens/mobile` 타겟으로 갱신.
+- **왜**: 백엔드+프론트 계약 공유 대비 발판(TASK-F2·F3의 선행).
+- **파일**: `apps/mobile/**`(이동), `package.json`(루트 신규), `turbo.json`, `.npmrc`, `pnpm-workspace.yaml`, `packages/config/*`, `apps/mobile/{metro.config.js,tsconfig.json,package.json}`, `agents/harness/evals/checks.sh`
+- **게이트**: ✅ ALL PASS — Typecheck(mobile) + expo-doctor 21/21. 추가로 Metro iOS 번들(1721 모듈, 루트 node_modules 해석) 성공.
+- **다음/주의**: (1) `ios/`·`android/`는 gitignore된 생성물이라 `git mv` 아닌 `mv`로 이동, 미추적. (2) tsconfig 함정: `expo/tsconfig.base`는 `apps/mobile/node_modules`에만 있어 `packages/config`에서 상속 불가 → **app이 expo base를 직접 상속**(배열 extends), config는 범용 옵션만. (3) **네이티브 리빌드(pod/gradle)는 미검증** → TASK-F1N으로 분리(B). 커밋 안 함(사용자 승인 대기). 브랜치 `task/F1-monorepo`.
+
+## 2026-08-18 · Claude · 결정: 모노레포 구조·오케스트레이터 확정
+- **무엇**: 백엔드(NestJS)+Worker가 같은 레포에 들어옴이 확정 → 모노레포 구조·오케스트레이터 확정. `apps/{mobile,api,worker}` + `packages/{contracts,tokens,ui,config}`, 오케스트레이터 = **Turborepo+pnpm**.
+- **왜**: 모노레포 근거는 **백엔드+프론트 계약 공유 하나**(다중 앱 아님 — 제품 앱은 mobile 하나). Nx는 후보였으나 배포 단위 3개+패키지 소수 규모엔 과함 → 이 규모의 현업 표준은 Turborepo. NestJS는 자체 CLI로 Turborepo에서 문제없음. 경계 강제는 contracts 순수 유지 + eslint-plugin-boundaries.
+- **계약**: `packages/contracts` = zod 스키마(서버 검증 + 앱 타입 단일 소스). zod vs OpenAPI 코드젠은 서버 착수 시 확정.
+- **정정**: 앞서 채팅에서 Nx를 "다중 앱" 근거로 권했으나 그건 오류(제품 앱 하나). 사용자가 균열 지적 → Turborepo로 정정(원래 자리).
+- **파일**: `agents/context/architecture.md`(§디자인 시스템 & 모노레포 확장), `agents/orchestration/TASKS.md`(F1~F3 구조 반영)
+- **게이트**: 문서만.
+- **다음/주의**: F1은 구조·자리만 + mobile 실제 이동. api/worker/contracts는 서버 착수 시. "app"은 제품 기준 하나임을 혼동 말 것.
+
+## 2026-08-18 · Claude · 결정: 디자인 시스템 스택 + 모노레포
+- **무엇**: 프론트 디자인 시스템/모노레포 스택 확정. NativeWind + react-native-reusables + lucide-react-native, pnpm+Turborepo 모노레포, 3층 토큰(Cobalt #2563EB).
+- **왜**: 사용자 기준 = "요즘 현업 최다 + 유용". NativeWind가 신규 Expo 앱 사실상 기본값(문서·커뮤니티 최다=마찰 최소), reusables가 그 위에 얹혀 컴포넌트 소유, lucide 모던 아이콘. 이 셋이 서로 붙게 설계됨.
+- **검토한 대안**: Tamagui(무거움→기각), Restyle/unistyles(타입이지만 reusables 비호환, 사용자 타입 선호 있었으나 "현업 최다" 우선순위로 NativeWind 채택). Style Dictionary/Figma 자동화·유니버설=멀티플랫폼 트리거 오면.
+- **파일**: `agents/context/architecture.md`(§디자인 시스템 & 모노레포), `agents/orchestration/TASKS.md`(기반 Phase 0: TASK-F1~F3, TASK-001 depends=TASK-F3)
+- **게이트**: 문서만.
+- **다음/주의**: TASK-001 착수 전 TASK-F1→F2→F3 선행. Metro 모노레포 설정(watchFolders·심볼릭 링크)은 Expo 모노레포 대표 함정이니 TASK-F1에서 반드시 처리. 스타일은 클래스 문자열이지만 토큰 config는 타입 + IntelliSense 자동완성으로 보완.
+
 ## 2026-08-17 22:55 · Codex · #OPS-ISSUE-STYLE-RULES
 - **무엇**: GitHub 이슈 초안 정리 지침에 명사형 종결 문체 규칙과 `커밋메시지(한글)` 동반 출력 규칙을 추가.
 - **왜**: 이슈 초안과 커밋 메시지 문체를 더 일관되게 유지하고, 사용자가 바로 복붙해 쓸 수 있는 형태로 맞추기 위해.

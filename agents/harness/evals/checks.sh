@@ -27,11 +27,11 @@ echo " ClauseLens 완료 게이트"
 echo " root: $ROOT"
 echo "════════════════════════════════════════"
 
-# 1) 타입 체크
-run "Typecheck (tsc --noEmit)" pnpm exec tsc --noEmit
+# 1) 타입 체크 (모바일 앱)
+run "Typecheck (mobile)" pnpm --filter @clause-lens/mobile exec tsc --noEmit
 
-# 2) Expo 환경 점검 (expo-doctor는 별도 패키지 → dlx로 실행)
-run "Expo Doctor" pnpm dlx expo-doctor
+# 2) Expo 환경 점검 (apps/mobile에서 expo-doctor를 dlx로 실행)
+run "Expo Doctor" bash -c 'cd apps/mobile && pnpm dlx expo-doctor'
 
 # ── 새 검사는 위 형식으로 여기에 한 줄씩 추가 ──
 # run "Lint" pnpm exec eslint .
