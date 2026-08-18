@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-08-18 · Claude · #TASK-F1N 네이티브 리빌드 검증 완료 (iOS)
+- **무엇**: 모노레포 이동 후 iOS 네이티브 빌드·실행 end-to-end 검증. `pod install`(UTF-8 로케일 필요) → 100 pods, xcodebuild 성공(0 errors, 2119 warnings=jsi umbrella 정상 노이즈) → 시뮬레이터(iPhone 17 Pro) 실행 → Metro 번들(1263 모듈) → **Skia 셰이더 렌더링 확인**.
+- **왜**: 파일 이동이 네이티브 빌드/경로 해석을 깨지 않았는지 실증(F1의 분리 검증).
+- **파일**: `apps/mobile/ios/Podfile.lock`(pod install 재생성), 문서 상태 갱신.
+- **게이트**: 네이티브 빌드 SUCCEEDED + 앱 실제 실행·렌더 확인.
+- **다음/주의**: (1) `pod install`은 **`LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8`** 필요(비대화형 셸 인코딩 에러 회피). (2) pod·네이티브 컴파일 모두 **호이스팅 루트 `node_modules/.pnpm`에서 정상 해석** — 모노레포 네이티브 리스크 해소. (3) 이 환경은 빌드를 ~10% CPU로 스로틀 → 첫 빌드 wall-clock 매우 김(build-time 664s). (4) **Android(Gradle)는 미검증** — 필요 시 별도. (5) Metro 개발서버 백그라운드 실행 중.
+
 ## 2026-08-18 · Claude · #TASK-F1 모노레포 재구성 완료
 - **무엇**: Expo 앱을 `apps/mobile`로 이동, pnpm workspace+Turborepo 모노레포 착지. `packages/config`(공유 tsconfig base) 생성, `apps/{api,worker}`·`packages/{contracts,tokens,ui}`는 자리(.gitkeep)만. `.npmrc node-linker=hoisted`, `apps/mobile/metro.config.js`(watchFolders+nodeModulesPaths), 루트 `package.json`(turbo 스크립트)·`turbo.json` 추가. `checks.sh`를 `--filter @clause-lens/mobile` 타겟으로 갱신.
 - **왜**: 백엔드+프론트 계약 공유 대비 발판(TASK-F2·F3의 선행).
