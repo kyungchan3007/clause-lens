@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-08-18 · Claude · #TASK-F3N 아이콘 네이티브 리빌드 완료
+- **무엇**: `react-native-svg` 포함 iOS 네이티브 리빌드 → lucide `<Icon>` 실제 렌더 확인. Camera/Image/Trash2/Plus 아이콘이 토큰 색(코발트/빨강/초록)으로 정상 렌더.
+- **왜**: F3에서 미룬 svg 네이티브 검증(Icon 런타임).
+- **파일**: `apps/mobile/ios/Podfile.lock`(RNSVG pod 추가), 문서.
+- **게이트**: pod install(RNSVG 자동링크·codegen) → xcodebuild 성공(build-time 122s, 0 errors) → 시뮬 실행 → Metro 번들(3539 모듈) → 아이콘 렌더 스크린샷.
+- **다음/주의**: (1) `pod install`이 Pods 프로젝트 재생성 → pod 빌드 캐시 무효화로 전체 pod 재컴파일(첫 빌드급). (2) 이 환경은 빌드 시 machine 과부하(load 48)로 wall-clock 매우 김. (3) background 감시자의 `read -t` 지연이 detached 컨텍스트에선 안 먹혀 조기 종료할 수 있음 → 완료는 로그 마커/clang 프로세스로 판정. (4) 이제 앱에서 `import { Icon, Button } from "@clause-lens/ui"` 풀 사용 가능(TASK-001 아이콘 포함 구현 가능).
+
 ## 2026-08-18 · Claude · #TASK-F3 공유 UI 패키지 + NativeWind 배선 완료
 - **무엇**: `packages/ui`(Button 3 variant + lucide `<Icon>` 래퍼) + 앱에 NativeWind 배선(babel·metro·tailwind.config·global.css·nativewind-env). 앱이 tokens/ui를 workspace dep로 소비. 시뮬레이터에서 **NativeWind+토큰+Button 렌더 확인**(Cobalt #2563EB), 기존 Skia 화면도 새 babel에서 정상.
 - **왜**: 도메인이 소비할 디자인 시스템 컴포넌트 계층(마지막 기반).
