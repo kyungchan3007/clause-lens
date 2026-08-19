@@ -209,11 +209,36 @@ async function requestOpenAIReview(prompt) {
   }
 
   const json = await response.json();
-  if (!json.output_text) {
-    throw new Error("OpenAI response did not include output_text.");
+  const outputText = extractResponseText(json);
+  if (!outputText) {
+    throw new Error(`OpenAI response did not include parseable text. Response: ${JSON.stringify(json)}`);
   }
 
-  return JSON.parse(json.output_text);
+  return JSON.parse(outputText);
+}
+
+function extractResponseText(responseJson) {
+  if (typeof responseJson.output_text === "string" && responseJson.output_text.length > 0) {
+    return responseJson.output_text;
+  }
+
+  if (!Array.isArray(responseJson.output)) {
+    return null;
+  }
+
+  const chunks = [];
+
+  for (const item of responseJson.output) {
+    if (!Array.isArray(item.content)) continue;
+
+    for (const contentItem of item.content) {
+      if (typeof contentItem.text === "string" && contentItem.text.length > 0) {
+        chunks.push(contentItem.text);
+      }
+    }
+  }
+
+  return chunks.length > 0 ? chunks.join("\n") : null;
 }
 
 async function main() {
