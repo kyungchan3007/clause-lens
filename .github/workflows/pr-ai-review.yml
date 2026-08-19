@@ -7,7 +7,7 @@ on:
         description: Pull request number to review manually
         required: true
         type: string
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - synchronize
@@ -24,12 +24,14 @@ concurrency:
 
 jobs:
   review:
-    if: ${{ github.event_name != 'pull_request_target' || !github.event.pull_request.draft }}
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Check out base repository
+      - name: Check out workflow source
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

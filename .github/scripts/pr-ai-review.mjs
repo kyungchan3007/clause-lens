@@ -126,12 +126,13 @@ function buildReviewPrompt(pr, files) {
   );
 
   return [
-    "Review this pull request like a strict senior engineer.",
-    "Focus only on actionable bugs, regressions, security issues, broken UX flows, and missing safeguards.",
-    "Do not comment on style, naming, or preferences.",
-    "Only reference lines that are changed in the patch.",
-    "Return at most 6 findings.",
-    "If there are no actionable findings, return an empty findings array.",
+    "이 Pull Request를 엄격한 시니어 엔지니어처럼 리뷰하라.",
+    "버그, 회귀, 보안 문제, 깨진 UX 흐름, 누락된 가드만 다뤄라.",
+    "스타일, 네이밍, 취향 차이 코멘트는 금지.",
+    "반드시 patch 에서 실제로 바뀐 라인만 지적하라.",
+    "findings 는 최대 6개까지만 반환하라.",
+    "액션 가능한 이슈가 없으면 findings 를 빈 배열로 반환하라.",
+    "title 과 body 는 모두 한국어로 작성하라.",
     "",
     `PR TITLE: ${pr.title}`,
     `PR BODY:\n${pr.body ?? "(empty)"}`,
@@ -157,7 +158,7 @@ async function requestOpenAIReview(prompt) {
           content: [
             {
               type: "input_text",
-              text: "You produce concise GitHub pull request review findings. Only report high-signal issues.",
+              text: "당신은 GitHub Pull Request 리뷰어다. 결과는 간결한 한국어로 작성하고, 고신호 이슈만 보고한다.",
             },
           ],
         },
@@ -209,11 +210,36 @@ async function requestOpenAIReview(prompt) {
   }
 
   const json = await response.json();
-  if (!json.output_text) {
-    throw new Error("OpenAI response did not include output_text.");
+  const outputText = extractResponseText(json);
+  if (!outputText) {
+    throw new Error(`OpenAI response did not include parseable text. Response: ${JSON.stringify(json)}`);
   }
 
-  return JSON.parse(json.output_text);
+  return JSON.parse(outputText);
+}
+
+function extractResponseText(responseJson) {
+  if (typeof responseJson.output_text === "string" && responseJson.output_text.length > 0) {
+    return responseJson.output_text;
+  }
+
+  if (!Array.isArray(responseJson.output)) {
+    return null;
+  }
+
+  const chunks = [];
+
+  for (const item of responseJson.output) {
+    if (!Array.isArray(item.content)) continue;
+
+    for (const contentItem of item.content) {
+      if (typeof contentItem.text === "string" && contentItem.text.length > 0) {
+        chunks.push(contentItem.text);
+      }
+    }
+  }
+
+  return chunks.length > 0 ? chunks.join("\n") : null;
 }
 
 async function main() {
@@ -260,13 +286,13 @@ async function main() {
   const summaryLines = [marker, "Automated PR review completed."];
 
   if (inlineComments.length === 0) {
-    summaryLines.push("No actionable findings on changed lines.");
+    summaryLines.push("변경된 라인 기준으로 남길 액션 가능한 이슈가 없었습니다.");
   } else {
-    summaryLines.push(`${inlineComments.length} actionable finding(s) posted inline.`);
+    summaryLines.push(`${inlineComments.length}개의 액션 가능한 리뷰 코멘트를 인라인으로 남겼습니다.`);
   }
 
   if (rejectedFindings.length > 0) {
-    summaryLines.push(`${rejectedFindings.length} finding(s) were dropped because they did not map to changed lines.`);
+    summaryLines.push(`${rejectedFindings.length}개의 finding은 변경된 라인에 매핑되지 않아 제외했습니다.`);
   }
 
   await githubRequest(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`, {
