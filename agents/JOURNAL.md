@@ -14,6 +14,16 @@
 
 ---
 
+## 2026-08-19 · Claude · #TASK-001 캡처 화면 (이미지 촬영·선택 + Draft) 완료
+- **무엇**: FSD `features/capture` 구현. model(draftStore Zustand·useImagePicker·types) + ui(CaptureScreen·EmptyState·PageList·PageItem). 촬영/갤러리→Draft 추가, 목록(썸네일)·순서 라벨·삭제·교체·드래그 재정렬(draggable-flatlist), 분석하기 버튼(동작은 TASK-003). 서버 없음, 로컬 Draft만.
+- **왜**: 첫 사용자 기능(스펙 0001). 앱에 계약서 이미지 들여와 정리하는 진입.
+- **의존성**: zustand, expo-image-picker(~57.0.11), react-native-draggable-flatlist(4), react-native-gesture-handler(2.32, SDK 정렬). `_layout`에 GestureHandlerRootView + SafeAreaProvider.
+- **게이트**: typecheck + expo-doctor 21/21. **네이티브 리빌드 1회**(build-time 200s) 후 시뮬 실동작 검증: 빈 상태→갤러리 picker→사진 선택→2페이지 추가→썸네일 렌더까지 스크린샷 확인.
+- **검증 중 발견·수정한 실버그 2개**:
+  1. **크래시**: `expo-image-picker`가 사진/카메라 접근 시 Info.plist 사용목적(NSPhotoLibraryUsageDescription·NSCameraUsageDescription) 필수 → 없으면 TCC 크래시. `app.json ios.infoPlist`에 추가(소스 오브 트루스). ios/는 gitignore라 app.json이 기준.
+  2. **썸네일 미표시**: NativeWind `h-14 w-11`이 `Image`에 사이즈로 안 먹음 → 명시적 `style={{width,height}}`로 수정.
+- **다음/주의**: (1) 카메라는 시뮬레이터에 없어 갤러리로만 검증(촬영은 실기기). (2) draggable-flatlist가 `InteractionManager deprecated` 경고 유발(라이브러리 내부, 무해). (3) 드래그/삭제/교체는 코드·타입 검증했으나 제스처 자동화 시각검증은 생략. (4) DraftPage는 클라 임시상태(feature/model), 서버 page는 TASK-002에서 entities/page+contract 승격. 브랜치 task/001-image-capture.
+
 ## 2026-08-18 · Claude · 결정: 앱 내부 아키텍처 = FSD
 - **무엇**: `apps/mobile` 코드 조직을 Feature-Sliced Design으로 확정. 신규 문서 `context/frontend-architecture.md` 작성 + architecture.md·context/README·guardrails 반영.
 - **왜**: 웹 FSD 감각을 RN에 전이 + 디바이스 API 격리 + zod 계약(packages/contracts) 연결을 규칙으로 고정.
