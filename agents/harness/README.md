@@ -9,6 +9,7 @@
 | **Loop** | [loop.md](loop.md) | 계획→구현→검증 반복 절차 |
 | **Tool / Environment** | [environment.md](environment.md) | 명령·도구·환경 설정 |
 | **Issue Templates** | [github-issue-templates.md](github-issue-templates.md) | 변경된 코드 기준으로 GitHub 이슈 템플릿 초안 작성 |
+| **PR Review Automation** | [github-pr-review-workflow.md](github-pr-review-workflow.md) | GitHub Actions + OpenAI 기반 PR 자동 리뷰 운영 |
 | **Eval** *(검증축)* | [evals/README.md](evals/README.md) | 완료 판정 게이트 |
 | **Observability** *(검증축)* | [observability.md](observability.md) | 저널·로그로 무슨 일이 있었는지 남김 |
 | **Guardrails** *(검증축)* | [guardrails.md](guardrails.md) | 해도 되는 것 / 절대 안 되는 것 |

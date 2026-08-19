@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-08-19 · Codex · #OPS-PR-REVIEW-WORKFLOW
+- **무엇**: GitHub Actions 기반 PR 자동 리뷰 워크플로 추가. `pull_request_target` 이벤트에서 PR diff를 읽고 OpenAI Responses API로 리뷰한 뒤, actionable finding만 inline PR review comment로 남기는 흐름 구현. 중복 방지용 `head.sha` 마커 추가.
+- **왜**: PR마다 반복되는 1차 코드 리뷰를 자동화하고, 버그·회귀·가드 누락 중심의 고신호 피드백을 빠르게 남기기 위함.
+- **파일**: `.github/workflows/pr-ai-review.yml`, `.github/scripts/pr-ai-review.mjs`, `agents/harness/github-pr-review-workflow.md`, `agents/harness/README.md`
+- **게이트**: `node --check .github/scripts/pr-ai-review.mjs` PASS. `checks.sh`는 네트워크 차단으로 FAIL(`pnpm` 패키지 다운로드 ENOTFOUND, `expo-doctor`의 `exp.host` 조회 실패).
+- **다음/주의**: 저장소 secret `OPENAI_API_KEY` 필요. 선택 variable `OPENAI_MODEL` 지원. 큰 PR은 patch 일부만 검토. changed line에 매핑되지 않는 finding은 드롭.
+
 ## 2026-08-19 · Claude · #TASK-001 캡처 화면 (이미지 촬영·선택 + Draft) 완료
 - **무엇**: FSD `features/capture` 구현. model(draftStore Zustand·useImagePicker·types) + ui(CaptureScreen·EmptyState·PageList·PageItem). 촬영/갤러리→Draft 추가, 목록(썸네일)·순서 라벨·삭제·교체·드래그 재정렬(draggable-flatlist), 분석하기 버튼(동작은 TASK-003). 서버 없음, 로컬 Draft만.
 - **왜**: 첫 사용자 기능(스펙 0001). 앱에 계약서 이미지 들여와 정리하는 진입.
