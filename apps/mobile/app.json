@@ -10,7 +10,11 @@
     "name": "clause-lens",
     "slug": "clause-lens",
     "ios": {
-      "bundleIdentifier": "com.anonymous.clause-lens"
+      "bundleIdentifier": "com.anonymous.clause-lens",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "계약서 이미지를 불러오기 위해 사진 접근이 필요합니다.",
+        "NSCameraUsageDescription": "계약서를 촬영하기 위해 카메라 접근이 필요합니다."
+      }
     },
     "android": {
       "package": "com.anonymous.clauselens"

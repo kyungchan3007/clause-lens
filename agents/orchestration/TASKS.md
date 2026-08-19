@@ -27,7 +27,7 @@
 
 | id | 제목 | 정의 (feature) | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-001 | 이미지 촬영·선택과 페이지 Draft 관리 | [capture-import](../intent/features/capture-import.md) | [0001](../intent/specs/0001-image-capture-and-draft.md) | – | todo | TASK-F3 |
+| TASK-001 | 이미지 촬영·선택과 페이지 Draft 관리 | [capture-import](../intent/features/capture-import.md) | [0001](../intent/specs/0001-image-capture-and-draft.md) | Claude | **done** | TASK-F3 |
 | TASK-002 | S3 Presigned URL 연동·직접 업로드 | [capture-import](../intent/features/capture-import.md) | – | – | todo | TASK-001 |
 | TASK-003 | 분석 요청·jobId 상태 폴링 | [analyze-document](../intent/features/analyze-document.md) | – | – | todo | TASK-002 |
 | TASK-004 | OCR·위험 조항 결과 + Skia 하이라이트 표시 | [view-highlights](../intent/features/view-highlights.md) | – | – | todo | TASK-003 |
