@@ -212,10 +212,10 @@ async function requestOpenAIReview(prompt) {
   const json = await response.json();
   const outputText = extractResponseText(json);
   if (!outputText) {
-    throw new Error(`OpenAI response did not include parseable text. Response: ${JSON.stringify(json)}`);
+    throw new Error("OpenAI response did not include parseable text.");
   }
 
-  return JSON.parse(outputText);
+  return parseReviewJson(outputText);
 }
 
 function extractResponseText(responseJson) {
@@ -240,6 +240,73 @@ function extractResponseText(responseJson) {
   }
 
   return chunks.length > 0 ? chunks.join("\n") : null;
+}
+
+function parseReviewJson(outputText) {
+  try {
+    return JSON.parse(outputText);
+  } catch {
+    const jsonBlock = extractJsonBlock(outputText);
+    if (!jsonBlock) {
+      throw new Error("OpenAI review output was not valid JSON.");
+    }
+
+    try {
+      return JSON.parse(jsonBlock);
+    } catch {
+      throw new Error("OpenAI review output contained text, but the JSON block could not be parsed.");
+    }
+  }
+}
+
+function extractJsonBlock(text) {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i += 1) {
+    const char = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (char === "\"") {
+        inString = false;
+      }
+
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{") {
+      depth += 1;
+      continue;
+    }
+
+    if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
+    }
+  }
+
+  return null;
 }
 
 async function main() {
