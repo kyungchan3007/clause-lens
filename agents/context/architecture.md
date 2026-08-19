@@ -101,3 +101,13 @@ packages/
 - **Metro 모노레포 설정**(watchFolders·nodeModulesPaths·서버 코드 번들 제외)은 Expo 모노레포 대표 함정 → 기반 태스크에 포함.
 
 > 미채택 & 보류: Tamagui(무거움) · Nx(이 규모엔 과함) · Style Dictionary/Figma 토큰 자동화(멀티플랫폼 트리거 오면) · 계약 방식 zod vs OpenAPI 코드젠(서버 착수 시 확정). 근거는 [JOURNAL](../JOURNAL.md).
+
+## 앱 내부 아키텍처 — FSD (결정)
+
+**결정**: `apps/mobile`은 **Feature-Sliced Design**으로 조직한다.
+- **레이어(세로, 위→아래로만 import)**: screens · widgets · features · entities · shared — FSD-lite로 쓰는 것만.
+- **세그먼트(가로, 슬라이스 내부)**: `ui` · `model` · `api` · `lib`. **"api"는 레이어가 아니라 세그먼트.**
+- **디바이스 API 격리**: `expo-*`(카메라·권한) 호출은 훅/서비스로 감싸 UI에서 분리 — HTTP와 나란한 외부 경계.
+- **zod 계약**: `packages/contracts`(서버+앱 단일 소스) → `shared/api`(parse) → `entities/api`. entity 타입 = `z.infer`.
+
+레이어·세그먼트·import 경계·폴더맵·예시 상세: **[frontend-architecture.md](frontend-architecture.md)**.

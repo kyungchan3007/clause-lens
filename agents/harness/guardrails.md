@@ -9,6 +9,7 @@
 - **비밀값 하드코딩 금지.** API 키, Google Vision 크리덴셜, S3 자격증명을 코드/커밋에 넣지 않는다.
 - **민감정보 로그 금지.** 이미지 원문, OCR 전문·계약서 원문, 토큰·사용자 식별정보, Presigned URL을 로그에 남기지 않는다.
 - **npm/yarn 금지.** pnpm만.
+- **FSD import 경계 위반 금지.** import는 상위→하위만(screens→features→entities→shared), 역방향 금지. `entities`는 `features`를 import하지 않는다. → [frontend-architecture.md](../context/frontend-architecture.md)
 - **상대 AI가 `in-progress`로 점유한 태스크의 파일 편집 금지.** → [TASKS.md](../orchestration/TASKS.md)
 - **게이트 미통과 상태로 "완료" 선언 금지.**
 - **되돌리기 어려운 작업은 확인 먼저** — 파일/브랜치 삭제, 외부 전송, 설정·권한 변경, 커밋·푸시.

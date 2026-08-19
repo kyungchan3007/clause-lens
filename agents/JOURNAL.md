@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-08-18 · Claude · 결정: 앱 내부 아키텍처 = FSD
+- **무엇**: `apps/mobile` 코드 조직을 Feature-Sliced Design으로 확정. 신규 문서 `context/frontend-architecture.md` 작성 + architecture.md·context/README·guardrails 반영.
+- **왜**: 웹 FSD 감각을 RN에 전이 + 디바이스 API 격리 + zod 계약(packages/contracts) 연결을 규칙으로 고정.
+- **핵심**: 레이어(screens·widgets·features·entities·shared) × 세그먼트(ui·model·api·lib). "api"는 레이어 아닌 세그먼트. import는 상위→하위만(guardrails에 경계 규칙 추가). zod: contracts→shared/api(parse)→entities/api, entity 타입=z.infer. FSD-lite(쓰는 것만, 과설계 금지).
+- **파일**: `agents/context/frontend-architecture.md`(신규), `agents/context/architecture.md`(§FSD), `agents/context/README.md`(인덱스), `agents/harness/guardrails.md`(경계 규칙)
+- **게이트**: 문서만.
+- **다음/주의**: TASK-001은 `features/capture`(ui·model)로 구현. DraftPage는 클라 임시상태(feature model), 서버 page는 TASK-002에서 entities/page+contract 승격. entities 정의서 = context/domain-map + 도메인 문서.
+
 ## 2026-08-18 · Claude · #TASK-F3N 아이콘 네이티브 리빌드 완료
 - **무엇**: `react-native-svg` 포함 iOS 네이티브 리빌드 → lucide `<Icon>` 실제 렌더 확인. Camera/Image/Trash2/Plus 아이콘이 토큰 색(코발트/빨강/초록)으로 정상 렌더.
 - **왜**: F3에서 미룬 svg 네이티브 검증(Icon 런타임).

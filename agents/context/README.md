@@ -21,6 +21,7 @@ AGENTS.md (항상 로드, 짧게)
 | 문서 | 용도 |
 | --- | --- |
 | [architecture.md](architecture.md) | 시스템 구조·책임 경계·상태 모델 (요약) |
+| [frontend-architecture.md](frontend-architecture.md) | 앱 내부 코드 구조 — FSD 레이어·세그먼트·import 경계·zod 흐름 |
 | [domain-map.md](domain-map.md) | 도메인 경계·상태 소유자 + **6개 도메인 문서의 인덱스** |
 | 도메인 문서 6개 | 도메인별 계약·불변조건. `domain-map.md`에서 링크로 진입 |
 | [glossary.md](glossary.md) | 두 AI가 같은 단어를 같은 뜻으로 쓰기 위한 용어집 |
