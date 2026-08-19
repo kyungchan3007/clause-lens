@@ -35,6 +35,21 @@ bash agents/harness/evals/checks.sh
 
 typecheck + expo-doctor를 묶어 실행. 완료 선언 전 반드시 PASS. → [evals/README.md](evals/README.md)
 
+## UI 작업 도구 — `ui-ux-pro-max` 스킬 (필수)
+
+**UI/UX 작업(화면·컴포넌트·색·타이포·레이아웃·접근성·모션) 시 반드시 이 스킬을 먼저 조회한다.** 검증된 UX 규칙·스타일·팔레트·RN 가이드를 감(感) 대신 근거로 쓴다. 위치: `.claude/skills/ui-ux-pro-max/` (프로젝트에 커밋됨 → 두 AI 공용).
+
+호출은 **절대경로** 필수(상대경로는 Python path 에러):
+```bash
+SEARCH="$(git rev-parse --show-toplevel)/.claude/skills/ui-ux-pro-max/scripts/search.py"
+python3 "$SEARCH" "<질의 2~5단어>" --domain ux          # ux·style·color·typography·icons·chart·gsap
+python3 "$SEARCH" "<질의>" --stack react-native          # RN 0.86 스택 가이드
+python3 "$SEARCH" "<제품 설명>" --design-system          # 새 화면/전체 방향(스타일+팔레트+타이포 한 번에)
+```
+- 질의는 **하나의 지배 의도** + 2~5개 의미 단어. 결과가 비면 **한 번 좁혀 재시도**, 그래도 없으면 "검증된 매치 없음"이라 밝히고 일반 가이드는 fallback으로 표기.
+- 상세·전체 규칙: `.claude/skills/ui-ux-pro-max/SKILL.md`, `references/pro-rules.md`(앱 폴리시·safe area·터치), `references/quick-reference.md`(119 UX 규칙).
+- 이 스킬 조회는 [guardrails](guardrails.md)의 UI 규칙으로 강제된다.
+
 ## 도구별 어댑터 (얇게 유지)
 
 | 도구 | 파일 | 역할 |

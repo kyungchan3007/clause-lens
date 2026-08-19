@@ -10,6 +10,7 @@
 - **민감정보 로그 금지.** 이미지 원문, OCR 전문·계약서 원문, 토큰·사용자 식별정보, Presigned URL을 로그에 남기지 않는다.
 - **npm/yarn 금지.** pnpm만.
 - **FSD import 경계 위반 금지.** import는 상위→하위만(screens→features→entities→shared), 역방향 금지. `entities`는 `features`를 import하지 않는다. → [frontend-architecture.md](../context/frontend-architecture.md)
+- **UI 작업 시 `ui-ux-pro-max` 스킬 조회 없이 화면/컴포넌트 디자인 금지.** 색·타이포·레이아웃·접근성·모션은 감이 아니라 스킬의 검증된 가이드 기준. 호출법 → [environment.md](environment.md#ui-작업-도구--ui-ux-pro-max-스킬-필수)
 - **상대 AI가 `in-progress`로 점유한 태스크의 파일 편집 금지.** → [TASKS.md](../orchestration/TASKS.md)
 - **게이트 미통과 상태로 "완료" 선언 금지.**
 - **되돌리기 어려운 작업은 확인 먼저** — 파일/브랜치 삭제, 외부 전송, 설정·권한 변경, 커밋·푸시.

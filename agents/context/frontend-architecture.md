@@ -2,6 +2,8 @@
 
 > `apps/mobile`(Expo 앱)의 **코드 조직 규칙**. 시스템 주체·계약·상태는 [architecture.md](architecture.md).
 > 백엔드(`apps/api`·`apps/worker`)는 NestJS 모듈 구조를 따르며 FSD 대상 아님.
+>
+> **UI 작업(디자인/컴포넌트) 시작 전 `ui-ux-pro-max` 스킬 조회 필수.** → [environment.md](../harness/environment.md#ui-작업-도구--ui-ux-pro-max-스킬-필수)
 
 ## 원칙: React 감각 그대로 + 디바이스 API 격리
 
