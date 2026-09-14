@@ -24,7 +24,7 @@
 | 계층 | 동사 / 질문 | 위치 |
 | --- | --- | --- |
 | **Intent** | 정의한다 · 무엇을 만드는가 | [features(상시 기능 정의)](agents/intent/features/) · [specs](agents/intent/specs/) · [templates](agents/intent/templates/) |
-| **Context** | 안다 · 무엇이 참인가 | [architecture](agents/context/architecture.md) · [domain-map + 도메인 6](agents/context/domain-map.md) · [glossary](agents/context/glossary.md) |
+| **Context** | 안다 · 무엇이 참인가 | [architecture](agents/context/architecture.md) · [frontend](agents/context/frontend-architecture.md)·[backend](agents/context/backend-architecture.md) 아키텍처 · [domain-map + 도메인 6](agents/context/domain-map.md) · [glossary](agents/context/glossary.md) |
 | **Harness** | 실행한다 · 어떻게 안전하게 돌리나 (기능 불문) | [agents/harness/](agents/harness/README.md) |
 | **Orchestration** | 엮는다 · 여러 에이전트를 어떻게 | [agents/orchestration/](agents/orchestration/README.md) |
 | **Verification**(직교축) | 믿을 수 있는가 | [Eval](agents/harness/evals/README.md) · [Observability](agents/harness/observability.md) · [Guardrails](agents/harness/guardrails.md) |
