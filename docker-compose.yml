@@ -1,0 +1,74 @@
+# ClauseLens 로컬 개발 인프라 — PostgreSQL · Redis · MinIO(S3 호환)
+# 사용:  cp .env.example .env  &&  docker compose up -d
+# 자격증명은 로컬 throwaway. 프로덕션은 Railway 관리형(이 파일과 무관).
+name: clause-lens
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-clauselens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clauselens}
+      POSTGRES_DB: ${POSTGRES_DB:-clauselens}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clauselens} -d ${POSTGRES_DB:-clauselens}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 이미지는 quay.io에서 받는다(MinIO가 Docker Hub 배포를 중단 → minio/mc pull 불가).
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"   # S3 API
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"  # 웹 콘솔
+    volumes:
+      - miniodata:/data
+
+  # MinIO에 버킷을 자동 생성하는 원샷 서비스(성공 후 종료).
+  # minio healthcheck에 의존하지 않고, mc가 붙을 때까지 직접 재시도한다.
+  createbuckets:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-clause-lens}
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do
+        echo 'waiting for minio...'; sleep 2;
+      done &&
+      mc mb --ignore-existing local/$$S3_BUCKET &&
+      mc anonymous set none local/$$S3_BUCKET &&
+      echo 'bucket ready: '$$S3_BUCKET;
+      "
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
