@@ -7,7 +7,7 @@
 
 - **모듈러 모놀리스**: 도메인별 NestJS 모듈로 나눈다. 마이크로서비스로 쪼개지 않는다(MVP 규모에 과함).
 - **실용 3층**: `Controller`(입력·검증) → `Service`(도메인 로직) → `Repository`(영속성). 풀 헥사고날/클린 아키텍처는 **하지 않는다**.
-- **외부 경계만 포트(인터페이스)로 추상화**: 스토리지·큐·OCR. 나머지는 직접 구현. → 교체 자유(MinIO→R2, Vision→다른 OCR)를 코드 무변경으로.
+- **외부 경계만 포트(인터페이스)로 추상화**: 스토리지·큐·OCR. 나머지는 직접 구현. → 교체 자유(스토리지: 로컬 MinIO ↔ 프로덕션 Railway Bucket, R2/S3 / OCR 교체)를 코드 무변경으로.
 
 ## 도메인 모듈 (프론트 domain-map과 같은 언어)
 
@@ -42,7 +42,7 @@ apps/<api|worker>/src/
   ports/      storage.port.ts · queue.port.ts · ocr.port.ts   (인터페이스)
   adapters/   minio-storage.adapter.ts · bullmq-queue.adapter.ts · vision-ocr.adapter.ts
 ```
-- Service는 `StoragePort`·`QueuePort`·`OcrPort`에만 의존. 구현(MinIO/BullMQ/Vision)은 DI로 주입.
+- Service는 `StoragePort`·`QueuePort`·`OcrPort`에만 의존. 구현(스토리지=프로덕션 Railway Bucket·로컬 MinIO / BullMQ / Vision)은 DI로 주입.
 - 인프라 교체 시 어댑터만 교체. → [architecture.md 인프라 ADR](architecture.md#인프라--railway-단일-벤더-결정--adr)
 
 ## API ↔ Worker 관계
