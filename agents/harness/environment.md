@@ -27,13 +27,33 @@ pnpm dlx expo-doctor          # 환경 점검 (별도 패키지)
 pnpm exec tsc --noEmit        # 타입 체크
 ```
 
+## 로컬 백엔드 인프라 (Docker)
+
+백엔드(api·worker) 개발에 필요한 PostgreSQL·Redis·MinIO를 로컬에서 한 번에 띄운다. → [spec 0006](../intent/specs/0006-local-dev-environment.md)
+
+```bash
+cp .env.example .env          # 최초 1회 (실제 .env는 gitignore)
+docker compose up -d          # Postgres·Redis·MinIO 기동 + 버킷 자동 생성
+docker compose ps             # 상태 확인 (healthcheck)
+docker compose logs -f minio  # 로그
+docker compose down           # 중지 (데이터 유지)
+docker compose down -v        # 중지 + 볼륨 삭제(초기화)
+```
+
+- **PostgreSQL** `localhost:5432` · **Redis** `localhost:6379`
+- **MinIO** S3 API `localhost:9000` · 웹 콘솔 `http://localhost:9001` (기본 minioadmin/minioadmin)
+- 버킷 `clause-lens`는 `createbuckets` 서비스가 자동 생성.
+- 포트 충돌 시 `.env`에서 `*_PORT` 변경. 접속 정보는 [.env.example](../../.env.example).
+
+> ⚠️ 프로덕션은 Railway 관리형(Postgres·Redis)+MinIO. 이 compose는 **로컬 전용**.
+
 ## 완료 게이트
 
 ```bash
 bash agents/harness/evals/checks.sh
 ```
 
-typecheck + expo-doctor를 묶어 실행. 완료 선언 전 반드시 PASS. → [evals/README.md](evals/README.md)
+typecheck + expo-doctor + lockfile + 네이티브 단일버전을 묶어 실행. 완료 선언 전 반드시 PASS. → [evals/README.md](evals/README.md)
 
 ## UI 작업 도구 — `ui-ux-pro-max` 스킬 (필수)
 

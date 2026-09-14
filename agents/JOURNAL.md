@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-14 · Claude · #13 로컬 개발 환경 (docker-compose)
+- **무엇**: 루트 `docker-compose.yml`(PostgreSQL 17·Redis 7·MinIO + `createbuckets` 원샷) + `.env.example` + `.gitignore`에 `.env` 추가 + `environment.md` 로컬 인프라 절차. `docker compose up -d` 한 번으로 3종 기동 + 버킷 자동 생성.
+- **왜**: 백엔드(#14) 개발에 DB·큐·스토리지가 로컬에 필요. 프로덕션 MinIO와 동일 S3 API를 로컬 재현.
+- **파일**: `docker-compose.yml`(신규), `.env.example`(신규), `.gitignore`(.env 추가·!.env.example), `agents/harness/environment.md`, `agents/intent/specs/0006-local-dev-environment.md`(신규 spec)
+- **게이트**: ✅ ALL PASS. `docker compose config` 문법·스키마 검증 통과. `.env` gitignore·`.env.example` 추적 확인.
+- **다음/주의(정직)**: 이 환경은 **docker 데몬 미실행**이라 실제 `up`·healthcheck·버킷 생성·콘솔 접속은 **로컬에서 미검증** → 사용자 머신에서 관측 필요. 포트(5432/6379/9000/9001) 충돌 시 `.env`로 변경. 자격증명은 로컬 throwaway(프로덕션은 Railway 관리형).
+
 ## 2026-09-14 · Claude · #26 백엔드 아키텍처 결정 (ADR + 지침서)
 - **무엇**: NestJS 백엔드 내부 아키텍처 확정. 모듈러 모놀리스 + Controller→Service→Repository 3층 + 외부 경계만 포트(Storage/Queue/OCR) + **Prisma**(`packages/db`) + `apps/*`+`packages/*` 레이아웃. zod(API)/Prisma(DB) 계약 층 분리.
 - **왜**: 프론트는 FSD로 정해졌으나 api·worker 조직 기준이 없어 두 AI 일관성 위험. 백엔드 착수(#14)의 전제.
