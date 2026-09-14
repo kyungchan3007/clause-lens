@@ -22,6 +22,15 @@
 - **게이트**: `node --check .github/scripts/pr-ai-review.mjs` PASS. sha 추출·compare 게이팅 로직 목데이터 단위검증 PASS. (실제 리뷰 동작은 이 변경 머지 후 다음 PR push에서 관측 필요.)
 - **다음/주의**: 실제 GitHub 실행 검증은 머지 후 관측으로만 가능(로컬에서 GitHub/OpenAI 호출 불가). 리뷰가 여전히 반복되면 프롬프트의 반복-금지 지시 강도나 priorFindings 전달 범위를 조정.
 
+## 2026-09-14 · Claude · #16 Expo SDK 57 버전 정렬 · 게이트 복구
+- **무엇**: 완료 게이트를 막던 Expo 패키지 버전 드리프트 정리. `apps/mobile` 6개 패키지(expo·expo-constants·expo-image-picker·expo-linking·expo-router, react-native 0.86.2→0.86.3)를 SDK 57 기대치로 정렬하고, `packages/ui`의 `react-native`도 0.86.3으로 함께 올림.
+- **왜**: 베이스라인에서 Expo Doctor가 버전 드리프트로 FAIL → 모든 태스크의 완료 게이트를 막는 공용 블로커였음.
+- **파일**: `apps/mobile/package.json`, `packages/ui/package.json`, `pnpm-lock.yaml`
+- **PR 리뷰 반영(재발 방지 강제화)**: ① `pnpm-workspace.yaml` overrides에 `react-native`·`react-native-worklets`·`react-native-reanimated` 추가 → 워크스페이스 단일 버전 강제(기존 `react-native-svg` override와 동일 위치·패턴). ② `.gitignore`에 `package-lock.json`·`yarn.lock` 추가. ③ `checks.sh` "No npm/yarn lockfiles" 게이트를 `find`(node_modules만 제외, 전체 깊이) 기반으로 추가 → nested lockfile까지 잡음. ④ 워크스페이스 레벨 "Native modules single version" 게이트 추가(`check-native-singletons.mjs`) — apps/mobile expo-doctor에 의존하지 않고 `pnpm list -r` resolved 버전을 직접 검사.
+- **overrides 위치 검증(리뷰 반박)**: pnpm **11**에서 overrides는 `pnpm-workspace.yaml`이 정식 위치(pnpm 10+에서 이동). "package.json에 있어야 무시 안 된다"는 지적은 구버전 기준이라 **틀림**. 증거: (a) `pnpm-lock.yaml` 상단에 override 4개가 실제 기록됨, (b) `packages/ui`가 `react-native: 0.86.2`를 선언해도 **resolved는 0.86.3**(override 승리, `pnpm why`상 0.86.2 참조처 없음), (c) override 제거+버전 어긋냄 시 새 게이트가 `2개 버전`으로 정확히 FAIL. *(주의: pnpm store에는 아무도 참조 안 하는 orphan 엔트리가 `store prune` 전까지 남으므로, 검증은 store 디렉터리 개수가 아니라 `pnpm list` resolved로 해야 함.)*
+- **게이트**: ✅ PASS (Typecheck + Expo Doctor 21/21 + lockfile 가드 + native 단일버전, 모두 PASS)
+- **다음/주의(중요)**: SDK 버전업 시 **overrides + 앱 + `packages/ui`를 함께** 올릴 것. `expo install --fix`는 앱 package.json만 건드림. 새 네이티브 모듈 추가 시 `check-native-singletons.mjs`의 `TARGETS`와 overrides 목록을 함께 갱신.
+
 ## 2026-08-19 · Codex · #OPS-PR-REVIEW-WORKFLOW
 - **무엇**: GitHub Actions 기반 PR 자동 리뷰 워크플로 추가. `pull_request_target` 이벤트에서 PR diff를 읽고 OpenAI Responses API로 리뷰한 뒤, actionable finding만 inline PR review comment로 남기는 흐름 구현. 중복 방지용 `head.sha` 마커 추가.
 - **왜**: PR마다 반복되는 1차 코드 리뷰를 자동화하고, 버그·회귀·가드 누락 중심의 고신호 피드백을 빠르게 남기기 위함.

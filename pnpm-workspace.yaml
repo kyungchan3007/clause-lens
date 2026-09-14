@@ -1,8 +1,13 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+# 네이티브 모듈은 워크스페이스 전체에서 단일 버전이어야 함(중복 시 iOS/Android 빌드 실패).
+# 앱과 packages/ui가 각각 pin하면 어긋나므로 여기서 루트 강제. SDK 버전업 시 이 값도 함께 갱신.
 overrides:
+  react-native: 0.86.3
   react-native-svg: 15.15.4
+  react-native-worklets: 0.10.1
+  react-native-reanimated: 4.5.1
 allowBuilds:
   '@shopify/react-native-skia': true
 minimumReleaseAgeExclude:
