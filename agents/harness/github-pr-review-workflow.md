@@ -13,9 +13,11 @@ GitHub Actions가 Pull Request 이벤트를 받아 OpenAI API로 diff를 검토�
 2. 필요하면 `workflow_dispatch` 로 PR 번호를 넣어 수동 실행
 3. base 저장소 코드만 checkout
 4. GitHub API로 PR 메타데이터와 변경 파일 patch 수집
-5. OpenAI Responses API로 리뷰 요청
-6. actionable finding만 PR inline review comment로 등록
-7. 같은 `head.sha`에 이미 남긴 자동 리뷰가 있으면 중복 실행 생략
+5. **증분 리뷰**: 이전 자동 리뷰 마커에서 마지막으로 리뷰한 커밋 sha를 찾아, `compare/{lastSha}...{head}`로 **그 이후 변경분만** 리뷰 대상으로 삼음. 첫 리뷰이거나 히스토리가 갈라지면(force-push 등) PR 전체로 fallback.
+6. **맥락 전달(반복 억제)**: 이번 구간의 커밋 메시지(변경·검증·근거)와 이전에 남긴 AI 리뷰 코멘트를 프롬프트에 함께 전달해, 이미 논의·해결·기각된 지적을 다시 제기하지 않도록 함.
+7. OpenAI Responses API로 리뷰 요청
+8. actionable finding만 PR inline review comment로 등록 (인라인 유효성은 PR 전체 diff 라인 기준으로 검사)
+9. 같은 `head.sha`에 이미 남긴 자동 리뷰가 있으면 중복 실행 생략. 증분 대상에 새 변경이 없으면 리뷰를 건너뜀.
 
 ## 필요한 GitHub 설정
 
