@@ -144,6 +144,7 @@ function buildReviewPrompt(pr, files, { incremental, rangeCommits = [], priorFin
       : "",
     "아래 '이전 리뷰 지적'에서 이미 제기됐거나, '이번 구간 커밋 메시지'에서 근거를 들어 해결/기각·검증한 사항은 다시 지적하지 마라.",
     "커밋 메시지가 특정 지적을 '의도된 결정' 또는 '사실오류'로 반박했다면 존중하고 반복하지 마라.",
+    "P1(실제 버그·회귀·보안 취약점·데이터 손실)에만 집중하라. 스타일·프로세스·문서 정합성·정책 강제 여부 같은 메타 코멘트나 확신이 약한 지적은 findings 에 넣지 마라.",
     "findings 는 최대 6개까지만 반환하라.",
     "액션 가능한 이슈가 없으면 findings 를 빈 배열로 반환하라.",
     "title 과 body 는 모두 한국어로 작성하라.",
@@ -359,6 +360,21 @@ async function main() {
     files.map((file) => [file.filename, parseChangedLines(file.patch)]),
   );
 
+  // 문서 전용 PR(모든 변경 파일이 .md/.mdx)은 코드 리뷰가 무의미 → OpenAI 호출 없이 스킵.
+  const prPatchable = files.filter((f) => f.patch && f.status !== "removed");
+  const docsOnly = prPatchable.length > 0 && prPatchable.every((f) => /\.mdx?$/i.test(f.filename));
+  if (docsOnly) {
+    await githubRequest(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`, {
+      method: "POST",
+      body: JSON.stringify({
+        event: "COMMENT",
+        body: [marker, "문서 전용 PR(모든 변경이 .md)이라 AI 코드 리뷰를 건너뜁니다."].join("\n\n"),
+      }),
+    });
+    console.log("Docs-only PR. Skipping code review.");
+    return;
+  }
+
   // 리뷰 대상 결정: 직전 리뷰 sha가 있으면 그 이후 증분만(compare API), 아니면 PR 전체.
   let reviewFiles = files;
   let rangeCommits = [];
@@ -415,8 +431,15 @@ async function main() {
 
   const inlineComments = [];
   const rejectedFindings = [];
+  let droppedBySeverity = 0;
 
   for (const finding of result.findings ?? []) {
+    // P1(실제 버그·회귀·보안·데이터 손실)만 인라인. P2/P3 잔소리는 노이즈라 드롭.
+    if (finding.severity !== "P1") {
+      droppedBySeverity += 1;
+      continue;
+    }
+
     const validLines = changedLineMap.get(finding.path);
     if (!validLines || !validLines.has(finding.line)) {
       rejectedFindings.push(finding);
@@ -434,9 +457,13 @@ async function main() {
   const summaryLines = [marker, "Automated PR review completed."];
 
   if (inlineComments.length === 0) {
-    summaryLines.push("변경된 라인 기준으로 남길 액션 가능한 이슈가 없었습니다.");
+    summaryLines.push("남길 P1(버그·회귀·보안) 이슈가 없었습니다.");
   } else {
-    summaryLines.push(`${inlineComments.length}개의 액션 가능한 리뷰 코멘트를 인라인으로 남겼습니다.`);
+    summaryLines.push(`${inlineComments.length}개의 P1 리뷰 코멘트를 인라인으로 남겼습니다.`);
+  }
+
+  if (droppedBySeverity > 0) {
+    summaryLines.push(`${droppedBySeverity}개의 P2/P3 finding은 노이즈 감소를 위해 인라인에서 제외했습니다.`);
   }
 
   if (rejectedFindings.length > 0) {
