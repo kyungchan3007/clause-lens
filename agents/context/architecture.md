@@ -9,14 +9,40 @@
 | 주체 | 책임 | 이 저장소 포함? |
 | --- | --- | --- |
 | **Expo 앱** (프론트) | 촬영·Draft·업로드·상태 표시·Skia 하이라이트 | ✅ 이 repo |
-| **NestJS API** | 인증·구독·문서/revision 기준·SQS 등록·결과 API | ❌ 별도 |
-| **OCR Worker** | SQS 수신·Vision 호출·좌표 정규화·위험 조항 분석·DB 저장 | ❌ 별도 |
+| **NestJS API** | 인증·구독·문서/revision 기준·큐 등록(BullMQ)·결과 API | ❌ 별도 |
+| **OCR Worker** | 큐 수신(BullMQ)·Vision 호출·좌표 정규화·위험 조항 분석·DB 저장 | ❌ 별도 |
 
 **이 저장소는 Expo 앱(프론트)입니다.** API/Worker는 계약(API 형태)으로만 접합니다.
 
+## 인프라 — Railway 단일 벤더 (결정 / ADR)
+
+**결정**: 백엔드(NestJS API·OCR Worker)와 그 의존 서비스를 **전부 Railway 한 곳**에서 운영한다. **AWS를 직접 쓰지 않는다.**
+
+| 컴포넌트 | 채택 | 자리 |
+| --- | --- | --- |
+| API 서버 | NestJS | Railway 서비스 |
+| OCR Worker | Node 워커 | Railway 서비스 |
+| DB | PostgreSQL | Railway 관리형 |
+| **큐** | **Redis + BullMQ** | Railway 관리형 Redis |
+| **오브젝트 스토리지** | **MinIO (S3 호환)** | Railway 자체 호스팅 |
+| 외부 OCR | Google Cloud Vision | 유일한 외부 의존 |
+
+**근거**
+- 초기·MVP 규모에 **단일 벤더 = 운영 표면 최소**. ECS/Fargate·IAM·리전 관리 회피.
+- 큐를 BullMQ로 두면 API·Worker·DB·Queue가 **한 곳**에 모임(SQS는 Railway에 없음). NestJS 생태계에서 BullMQ가 사실상 표준.
+- 스토리지는 **S3 호환 SDK**로 접근 → MinIO/R2/AWS S3 간 **엔드포인트·자격증명만 교체, 코드 0줄** 이전.
+
+**대안 & 미채택**
+- *AWS SQS 유지* → Railway↔AWS 이중 관리(자격증명·리전·네트워크). 초기 복잡도 대비 이점 없음 → 미채택.
+- *Cloudflare R2 / AWS S3* → 관리형 내구성은 우위지만 벤더가 늘어남. **지금은** Railway 내 MinIO로 단일화, 프로덕션 확장 시 재검토(코드 무변경).
+
+**트레이드오프(감수)**: MinIO는 자체 운영이라 내구성·백업을 직접 챙겨야 함(관리형 버킷보다 약함). 학습·MVP 단계에선 수용. → 재검토 트리거: 실서비스 트래픽/데이터 보존 요건 상승 시 R2/S3로 이전.
+
+**불변조건 유지**: "앱은 스토리지에 **직접** 업로드하고, Presigned URL·`imageKey`는 API가 발급"하는 패턴은 그대로다(MinIO도 Presigned URL 지원). 아래 [절대 경계](#절대-경계-에이전트가-자주-어기는-것)의 "S3"는 모두 **S3 호환 스토리지(MinIO)** 를 뜻한다.
+
 ## BFF는 두지 않는다 (재검토 트리거 있음)
 
-**결정**: 앱과 NestJS 사이에 **별도 BFF 계층을 두지 않는다.** NestJS가 이미 BFF 역할(앱 맞춤 응답, 하부 Vision·S3·SQS 은닉)을 한다.
+**결정**: 앱과 NestJS 사이에 **별도 BFF 계층을 두지 않는다.** NestJS가 이미 BFF 역할(앱 맞춤 응답, 하부 Vision·스토리지·큐 은닉)을 한다.
 
 **이유** — 요청 수·비용은 BFF가 아니라 아래 3층 캐싱으로 푼다:
 | 원하는 것 | 자리 |
@@ -37,7 +63,7 @@ YES라도 **계층 추가 전에**: ① NestJS(현 BFF)에 집계/맞춤 엔드�
 ## 절대 경계 (에이전트가 자주 어기는 것)
 
 - 프론트는 **OCR을 실행하지 않고 위험 조항을 판단하지 않는다.** 서버 결과를 표현만.
-- 프론트는 이미지를 S3에 **직접** 업로드하되, URL·imageKey는 API가 발급한다.
+- 프론트는 이미지를 오브젝트 스토리지(MinIO, S3 호환)에 **직접** 업로드하되, Presigned URL·imageKey는 API가 발급한다.
 - **서버가 진실의 기준.** 클라이언트 Draft는 화면 합성용 임시 상태일 뿐.
 
 ## 상태 모델
@@ -63,7 +89,7 @@ const scaleY = displayedHeight / imageHeight;
 
 ## 기술 스택 (프론트)
 
-Expo SDK 57 · React Native 0.86.2 · Expo Router · React Native Skia 2.6.2 · (예정) TanStack Query · Zustand. **버전 고정 문서 필수**: https://docs.expo.dev/versions/v57.0.0/
+Expo SDK 57 · React Native 0.86.3 · Expo Router · React Native Skia 2.6.2 · (예정) TanStack Query · Zustand. **버전 고정 문서 필수**: https://docs.expo.dev/versions/v57.0.0/
 
 ## 디자인 시스템 & 모노레포 (결정)
 

@@ -46,8 +46,8 @@ Skia 내부에는 C++ 기반 그래픽 엔진과 iOS·Android 네이티브 연�
 - 카메라 촬영과 갤러리 이미지 선택
 - 촬영한 페이지의 순서 변경, 삭제, 교체
 - 서버에 저장하기 전 이미지와 편집 내용을 Draft로 관리
-- NestJS에 S3 업로드 URL 요청
-- 발급받은 Presigned URL로 이미지를 S3에 직접 업로드
+- NestJS에 오브젝트 스토리지 업로드 URL 요청
+- 발급받은 Presigned URL로 이미지를 스토리지에 직접 업로드
 - 업로드 진행률과 실패·재시도 UI 처리
 - NestJS에 분석 요청을 보내고 `jobId` 수신
 - 분석이 끝날 때까지 작업 상태 조회
@@ -63,10 +63,10 @@ Skia 내부에는 C++ 기반 그래픽 엔진과 iOS·Android 네이티브 연�
 
 - 사용자 인증과 접근 권한 검증
 - 무료 분석 3회와 구독 상태 검증
-- S3 Presigned URL과 안전한 `imageKey` 발급
+- 오브젝트 스토리지 Presigned URL과 안전한 `imageKey` 발급
 - 문서, 페이지, 이미지, `revision` 관리
 - 업로드 완료 여부 확인
-- OCR 분석 작업을 SQS에 등록
+- OCR 분석 작업을 큐(BullMQ)에 등록
 - `jobId`와 작업 상태 관리
 - 페이지 교체 시 이전 분석 결과 무효화
 - 앱에 최신 문서와 분석 결과 제공
@@ -74,9 +74,9 @@ Skia 내부에는 C++ 기반 그래픽 엔진과 iOS·Android 네이티브 연�
 
 ### 백엔드 — OCR Worker
 
-- SQS에서 OCR 작업 수신
+- 큐(BullMQ)에서 OCR 작업 수신
 - 작업의 문서, 페이지, `revision` 유효성 확인
-- S3에서 분석할 이미지 조회
+- 오브젝트 스토리지에서 분석할 이미지 조회
 - Google Cloud Vision API 호출
 - Vision 응답의 텍스트와 좌표를 앱에서 사용할 형식으로 정규화
 - 자동 연장, 위약금, 해지 제한 등의 위험 조항 분석
@@ -90,7 +90,7 @@ Skia 내부에는 C++ 기반 그래픽 엔진과 iOS·Android 네이티브 연�
 | --- | --- | --- | --- |
 | 사진 촬영·선택 | 담당 | 하지 않음 | 하지 않음 |
 | 이미지 Draft·미리보기 | 담당 | 하지 않음 | 하지 않음 |
-| S3 업로드 | Presigned URL로 직접 업로드 | URL과 imageKey 발급 | 이미지 조회만 수행 |
+| 스토리지 업로드 | Presigned URL로 직접 업로드 | URL과 imageKey 발급 | 이미지 조회만 수행 |
 | 문서·페이지 관리 | 화면 조작 | 최종 데이터 저장 | 하지 않음 |
 | OCR 실행 | 하지 않음 | 작업 등록만 수행 | Vision을 호출해 수행 |
 | 위험 조항 분석 | 하지 않음 | 결과 조회 API 제공 | 분석 수행 |
@@ -106,7 +106,7 @@ flowchart TB
     subgraph Frontend["프론트엔드 · Expo 앱"]
         Capture["촬영·선택"]
         Draft["페이지 Draft·미리보기"]
-        Upload["S3 직접 업로드"]
+        Upload["스토리지 직접 업로드"]
         Highlight["Skia 하이라이트"]
     end
 
@@ -144,16 +144,16 @@ flowchart TB
 
 - 로그인 및 사용자 관리
 - 무료 분석 횟수와 구독 상태 확인
-- S3 Presigned URL 발급
+- 오브젝트 스토리지 Presigned URL 발급
 - 문서, 세션, 페이지, revision 관리
-- OCR 작업을 SQS에 등록
+- OCR 작업을 큐(BullMQ)에 등록
 - 작업 상태와 분석 결과 조회 API 제공
 - 저장 권한 및 구독 정책 처리
 
 ### 2. OCR Worker
 
-- SQS에서 분석 작업 수신
-- S3에서 원본 이미지 조회
+- 큐(BullMQ)에서 분석 작업 수신
+- 오브젝트 스토리지에서 원본 이미지 조회
 - Google Cloud Vision API 호출
 - OCR 텍스트와 좌표 정규화
 - 위험 조항 분석 로직 실행
@@ -171,15 +171,15 @@ OCR Worker와 Google Cloud Vision은 서로 다른 구성입니다.
 flowchart TB
     App["Expo 모바일 앱"]
 
-    subgraph Backend["우리 서버 영역"]
+    subgraph Backend["우리 서버 영역 · Railway"]
         API["NestJS API Server"]
-        Queue["Amazon SQS"]
+        Queue["Redis · BullMQ"]
         Worker["OCR Worker"]
         DB[("PostgreSQL")]
+        S3[("MinIO · S3 호환")]
     end
 
-    S3[("Amazon S3")]
-    Vision["Google Cloud Vision API"]
+    Vision["Google Cloud Vision API · 외부"]
 
     App -->|"인증·문서·분석 API"| API
     API -->|"Presigned URL 발급"| App
@@ -197,14 +197,18 @@ NestJS API Server와 OCR Worker는 배포와 실행 책임이 분리된 두 개�
 
 ## 인프라
 
-| 기술 | 역할 |
-| --- | --- |
-| Amazon S3 | 계약서 원본 이미지 저장 |
-| Amazon SQS | OCR 비동기 작업 큐 |
-| PostgreSQL | 사용자, 문서, 페이지, 작업 상태, 분석 결과 저장 |
-| Google Cloud Vision | 이미지에서 텍스트와 좌표 추출 |
-| NestJS | 모바일 앱용 API 서버 |
-| OCR Worker | OCR 호출과 위험 조항 분석 수행 |
+**배포는 Railway 단일 벤더입니다. AWS를 직접 사용하지 않습니다.** 백엔드(API·Worker)와 의존 서비스(DB·큐·스토리지)를 모두 Railway에서 운영하고, 외부 의존은 Google Cloud Vision 하나뿐입니다. 결정 근거·대안·트레이드오프는 [architecture.md — 인프라 결정(ADR)](agents/context/architecture.md#인프라--railway-단일-벤더-결정--adr).
+
+> 이 문서에서 **"S3"** 는 *S3 호환 오브젝트 스토리지*를 의미하며, 실제 구현은 **MinIO**(Railway 자체 호스팅)입니다. 접근은 표준 S3 SDK로 하므로, 추후 Cloudflare R2·AWS S3로 코드 변경 없이 이전할 수 있습니다.
+
+| 기술 | 역할 | 위치 |
+| --- | --- | --- |
+| MinIO (S3 호환) | 계약서 원본 이미지 저장 | Railway 자체 호스팅 |
+| Redis + BullMQ | OCR 비동기 작업 큐 | Railway 관리형 Redis |
+| PostgreSQL | 사용자, 문서, 페이지, 작업 상태, 분석 결과 저장 | Railway 관리형 |
+| NestJS | 모바일 앱용 API 서버 | Railway 서비스 |
+| OCR Worker | OCR 호출과 위험 조항 분석 수행 | Railway 서비스 |
+| Google Cloud Vision | 이미지에서 텍스트와 좌표 추출 | 외부 API (유일한 외부 의존) |
 
 ## 전체 분석 흐름
 
@@ -213,8 +217,8 @@ sequenceDiagram
     actor User as 사용자
     participant App as Expo 앱
     participant API as NestJS API
-    participant S3 as Amazon S3
-    participant Queue as Amazon SQS
+    participant S3 as MinIO 스토리지
+    participant Queue as Redis · BullMQ
     participant Worker as OCR Worker
     participant Vision as Google Vision
     participant DB as PostgreSQL
@@ -247,8 +251,8 @@ sequenceDiagram
     actor User as 사용자
     participant App as Expo 앱
     participant API as NestJS API
-    participant S3 as Amazon S3
-    participant Queue as Amazon SQS
+    participant S3 as MinIO 스토리지
+    participant Queue as Redis · BullMQ
     participant Worker as OCR Worker
     participant Vision as Google Vision
     participant DB as PostgreSQL
@@ -373,7 +377,7 @@ const highlight = {
 - Node.js 22
 - pnpm 11
 - Expo SDK 57
-- React Native 0.86.2
+- React Native 0.86.3
 - React Native Skia 2.6.2
 - Java 21
 - Xcode 26
