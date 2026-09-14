@@ -103,9 +103,9 @@ function parseChangedLines(patch) {
   return changedLines;
 }
 
-function buildReviewPrompt(pr, files) {
-  const reviewedFiles = files
-    .filter((file) => file.patch && file.status !== "removed")
+function buildReviewPrompt(pr, files, { incremental, rangeCommits = [], priorFindings = [] } = {}) {
+  const patchable = files.filter((file) => file.patch && file.status !== "removed");
+  const reviewedFiles = patchable
     .slice(0, 12)
     .map((file) => {
       const changedLines = [...parseChangedLines(file.patch)].slice(0, 200).join(", ");
@@ -120,16 +120,30 @@ function buildReviewPrompt(pr, files) {
     })
     .join("\n\n");
 
-  const skippedCount = files.filter((file) => file.patch && file.status !== "removed").length - Math.min(
-    files.filter((file) => file.patch && file.status !== "removed").length,
-    12,
-  );
+  const skippedCount = patchable.length - Math.min(patchable.length, 12);
+
+  // 이번 구간(직전 리뷰 이후)의 커밋 메시지 = "무엇을 왜 바꿨고 어떻게 검증했는지"의 기록.
+  const commitLog = rangeCommits
+    .slice(0, 30)
+    .map((c) => `- ${(c.message ?? "").split("\n")[0]}\n${truncate((c.message ?? "").split("\n").slice(1).join("\n").trim(), 1000)}`.trim())
+    .join("\n");
+
+  // 이전에 이미 남긴 AI 리뷰 지적 — 반복 방지용.
+  const priorLog = priorFindings
+    .slice(0, 40)
+    .map((f) => `- [${f.path}:${f.line}] ${truncate(f.body, 500)}`)
+    .join("\n");
 
   return [
     "이 Pull Request를 엄격한 시니어 엔지니어처럼 리뷰하라.",
     "버그, 회귀, 보안 문제, 깨진 UX 흐름, 누락된 가드만 다뤄라.",
     "스타일, 네이밍, 취향 차이 코멘트는 금지.",
     "반드시 patch 에서 실제로 바뀐 라인만 지적하라.",
+    incremental
+      ? "아래 FILES 는 '직전 리뷰 이후 새로 변경된 부분'이다. 이 증분만 리뷰하라."
+      : "",
+    "아래 '이전 리뷰 지적'에서 이미 제기됐거나, '이번 구간 커밋 메시지'에서 근거를 들어 해결/기각·검증한 사항은 다시 지적하지 마라.",
+    "커밋 메시지가 특정 지적을 '의도된 결정' 또는 '사실오류'로 반박했다면 존중하고 반복하지 마라.",
     "findings 는 최대 6개까지만 반환하라.",
     "액션 가능한 이슈가 없으면 findings 를 빈 배열로 반환하라.",
     "title 과 body 는 모두 한국어로 작성하라.",
@@ -137,7 +151,13 @@ function buildReviewPrompt(pr, files) {
     `PR TITLE: ${pr.title}`,
     `PR BODY:\n${pr.body ?? "(empty)"}`,
     "",
-    "FILES:",
+    "이번 구간 커밋 메시지 (변경·검증·근거):",
+    commitLog || "(없음)",
+    "",
+    "이전 리뷰 지적 (이미 논의/해결됨 — 반복 금지):",
+    priorLog || "(없음)",
+    "",
+    incremental ? "FILES (직전 리뷰 이후 변경분):" : "FILES:",
     reviewedFiles || "(no patchable files)",
     skippedCount > 0 ? `\n${skippedCount} additional changed files were omitted for brevity.` : "",
   ].join("\n");
@@ -324,12 +344,73 @@ async function main() {
     return;
   }
 
+  // 직전에 리뷰한 커밋 sha를 이전 리뷰 마커에서 추출(가장 최근 것).
+  const markerRe = /<!-- ai-pr-review:([0-9a-f]{7,40}) -->/;
+  const reviewedShas = existingReviews
+    .filter((r) => typeof r.body === "string")
+    .map((r) => ({ at: r.submitted_at ?? "", sha: r.body.match(markerRe)?.[1] }))
+    .filter((r) => r.sha && r.sha !== pr.head.sha)
+    .sort((a, b) => a.at.localeCompare(b.at));
+  const lastReviewedSha = reviewedShas.length ? reviewedShas[reviewedShas.length - 1].sha : null;
+
+  // 인라인 코멘트 유효성은 항상 PR 전체 diff(base…head) 기준으로 검사한다.
   const files = await githubPaginate(`/repos/${owner}/${repo}/pulls/${prNumber}/files`);
   const changedLineMap = new Map(
     files.map((file) => [file.filename, parseChangedLines(file.patch)]),
   );
 
-  const prompt = buildReviewPrompt(pr, files);
+  // 리뷰 대상 결정: 직전 리뷰 sha가 있으면 그 이후 증분만(compare API), 아니면 PR 전체.
+  let reviewFiles = files;
+  let rangeCommits = [];
+  let incremental = false;
+  if (lastReviewedSha) {
+    try {
+      const cmp = await githubRequest(
+        `/repos/${owner}/${repo}/compare/${lastReviewedSha}...${pr.head.sha}`,
+      );
+      if (cmp && Array.isArray(cmp.files) && (cmp.status === "ahead" || cmp.status === "identical")) {
+        reviewFiles = cmp.files;
+        rangeCommits = Array.isArray(cmp.commits) ? cmp.commits.map((c) => c.commit) : [];
+        incremental = true;
+        console.log(`Incremental review: ${reviewFiles.length} file(s) since ${lastReviewedSha.slice(0, 7)}.`);
+      } else {
+        console.log(`Compare status='${cmp?.status}' — full review로 fallback.`);
+      }
+    } catch (e) {
+      console.log(`Compare 실패(${e.message}) — full review로 fallback.`);
+    }
+  }
+  if (!incremental) {
+    const prCommits = await githubPaginate(`/repos/${owner}/${repo}/pulls/${prNumber}/commits`);
+    rangeCommits = prCommits.map((c) => c.commit);
+  }
+
+  // 증분 리뷰인데 새로 리뷰할 패치가 없으면 종료(마커만 남김).
+  const patchable = reviewFiles.filter((f) => f.patch && f.status !== "removed");
+  if (incremental && patchable.length === 0) {
+    await githubRequest(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`, {
+      method: "POST",
+      body: JSON.stringify({
+        event: "COMMENT",
+        body: [marker, "직전 리뷰 이후 새로 변경된 코드가 없어 추가 리뷰를 건너뜁니다."].join("\n\n"),
+      }),
+    });
+    console.log("No new changes since last review.");
+    return;
+  }
+
+  // 이전 AI 리뷰가 남긴 인라인 코멘트(반복 방지용 맥락).
+  let priorFindings = [];
+  try {
+    const priorComments = await githubPaginate(`/repos/${owner}/${repo}/pulls/${prNumber}/comments`);
+    priorFindings = priorComments
+      .filter((c) => typeof c.body === "string" && /\*\*P[123]\s/.test(c.body))
+      .map((c) => ({ path: c.path, line: c.line ?? c.original_line, body: c.body }));
+  } catch (e) {
+    console.log(`이전 코멘트 조회 실패(${e.message}) — 맥락 없이 진행.`);
+  }
+
+  const prompt = buildReviewPrompt(pr, reviewFiles, { incremental, rangeCommits, priorFindings });
   const result = await requestOpenAIReview(prompt);
 
   const inlineComments = [];
