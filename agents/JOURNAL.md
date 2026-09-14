@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-14 · Claude · #16 Expo SDK 57 버전 정렬 · 게이트 복구
+- **무엇**: 완료 게이트를 막던 Expo 패키지 버전 드리프트 정리. `apps/mobile` 6개 패키지(expo·expo-constants·expo-image-picker·expo-linking·expo-router, react-native 0.86.2→0.86.3)를 SDK 57 기대치로 정렬하고, `packages/ui`의 `react-native`도 0.86.3으로 함께 올림.
+- **왜**: 베이스라인에서 Expo Doctor가 버전 드리프트로 FAIL → 모든 태스크의 완료 게이트를 막는 공용 블로커였음.
+- **파일**: `apps/mobile/package.json`, `packages/ui/package.json`, `pnpm-lock.yaml`
+- **게이트**: ✅ PASS (Typecheck + Expo Doctor 21/21, 중복 0)
+- **다음/주의(중요)**: 앱의 `react-native`만 올리면 `packages/ui`가 pin한 옛 버전과 어긋나 **네이티브 모듈 중복(duplicate)** 이 새로 발생함 → 네이티브 모듈 버전은 **앱과 `packages/ui`를 항상 함께** 올릴 것. 조사 중 stray `package-lock.json`(npm 잔재) 제거. `expo install --fix`는 앱 package.json만 건드리므로 워크스페이스 패키지는 수동 정렬 필요.
+
 ## 2026-08-19 · Codex · #OPS-PR-REVIEW-WORKFLOW
 - **무엇**: GitHub Actions 기반 PR 자동 리뷰 워크플로 추가. `pull_request_target` 이벤트에서 PR diff를 읽고 OpenAI Responses API로 리뷰한 뒤, actionable finding만 inline PR review comment로 남기는 흐름 구현. 중복 방지용 `head.sha` 마커 추가.
 - **왜**: PR마다 반복되는 1차 코드 리뷰를 자동화하고, 버그·회귀·가드 누락 중심의 고신호 피드백을 빠르게 남기기 위함.
