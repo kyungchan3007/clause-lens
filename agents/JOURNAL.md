@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-14 · Claude · #23 PR 리뷰 노이즈 감소 (docs-only 스킵 + P1-only)
+- **무엇**: `pr-ai-review.mjs`에 (1) **문서 전용 PR(모든 변경 .md/.mdx) 코드 리뷰 스킵**, (2) **P1만 인라인**(P2/P3는 요약 개수만) 추가. 프롬프트에 "P1 집중·메타 지적 금지" 지시.
+- **왜**: 진단 결과 리뷰는 PR당 1회지만(증분 정상 작동) **findings 과다**가 문제. 특히 문서 PR에 "정책인데 CI 강제 안 됨" 류 P2 메타 지적 다수 → 개발 흐름 저해.
+- **파일**: `.github/scripts/pr-ai-review.mjs`, `agents/harness/github-pr-review-workflow.md`, `agents/intent/specs/0003-quiet-pr-review.md`(신규 spec)
+- **게이트**: `node --check` PASS + docs-only 판정 6케이스 단위검증 ALL PASS. (실제 스킵·P1-only 동작은 머지 후 관측.)
+- **다음/주의**: docs 판정은 **확장자(.md/.mdx)** 기준 — 경로 기준은 `agents/**/*.mjs`·`checks.sh` 오탐이라 회피. P2를 완전 은폐하진 않음(요약에 개수). SDD/PRD 상시 규칙의 첫 정식 적용(spec 0003 선작성).
+
 ## 2026-09-14 · Claude · #18 PR AI 리뷰 증분 + 맥락 기반 개선
 - **무엇**: `pr-ai-review.mjs`를 (a) **증분 리뷰**(직전 리뷰 sha 이후 변경분만, compare API) (b) **맥락 전달**(구간 커밋 메시지 + 이전 AI 리뷰 코멘트를 프롬프트에 포함, 반복 지적 억제)로 개선.
 - **왜**: 매 push마다 PR 전체를 재리뷰 + 리뷰어가 기억이 없어 이미 해결·기각한 지적(예: pnpm overrides 위치)을 무한 반복 → 개발 흐름 저해. 변경분만 + "이미 다룬 건 반복 금지"로 수렴시킴.
