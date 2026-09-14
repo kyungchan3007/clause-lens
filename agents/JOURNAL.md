@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-14 · Claude · #23 PR 리뷰 노이즈 감소 (docs-only 스킵 + P1-only)
+- **무엇**: `pr-ai-review.mjs`에 (1) **문서 전용 PR(모든 변경 .md/.mdx) 코드 리뷰 스킵**, (2) **P1만 인라인**(P2/P3는 요약 개수만) 추가. 프롬프트에 "P1 집중·메타 지적 금지" 지시.
+- **왜**: 진단 결과 리뷰는 PR당 1회지만(증분 정상 작동) **findings 과다**가 문제. 특히 문서 PR에 "정책인데 CI 강제 안 됨" 류 P2 메타 지적 다수 → 개발 흐름 저해.
+- **파일**: `.github/scripts/pr-ai-review.mjs`, `agents/harness/github-pr-review-workflow.md`, `agents/intent/specs/0003-quiet-pr-review.md`(신규 spec)
+- **게이트**: `node --check` PASS + docs-only 판정 6케이스 단위검증 ALL PASS. (실제 스킵·P1-only 동작은 머지 후 관측.)
+- **다음/주의**: docs 판정은 **확장자(.md/.mdx)** 기준 — 경로 기준은 `agents/**/*.mjs`·`checks.sh` 오탐이라 회피. P2를 완전 은폐하진 않음(요약에 개수). SDD/PRD 상시 규칙의 첫 정식 적용(spec 0003 선작성).
+
 ## 2026-09-14 · Claude · #20 SDD/PRD 상시 기록 규칙 + 오늘 작업 REFLECT
 - **무엇**: (1) "태스크마다 SDD/PRD를 **무조건** 파일로 남기고 문서 없이 BUILD 금지" 규칙을 loop·guardrails·intent README에 반영. (2) 보류돼 있던 workflow 문서 보강분(loop 9단계·§4/§6/§9, guardrails 브랜치 규칙, orchestration 브랜치 전략)을 함께 커밋. (3) 오늘 #16·#18의 결정·대안·검증을 소급 SDD(`specs/0002`)로 기록. (4) 네이티브 모듈 단독 버전변경 금지 규칙 guardrails에 추가.
 - **왜**: 사용자가 결과는 보지만 **과정(왜·대안·근거)** 을 볼 수 없음. JOURNAL은 사후 결과 로그라 과정을 못 담음 → SDD/PRD가 그 자리. 과정을 항상 파일로 남겨 관측 가능하게.
