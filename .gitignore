@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# 다른 패키지 매니저 lockfile 금지 (이 레포는 pnpm만 사용)
+package-lock.json
+yarn.lock
+
 # Expo
 .expo/
 dist/
