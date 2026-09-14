@@ -36,10 +36,14 @@ architecture.md에 "인프라 — Railway 단일 벤더(ADR)" 섹션 신설 + �
 | 주제 | 대안 | 결정 | 근거 |
 | --- | --- | --- | --- |
 | 큐 | AWS SQS 유지 | **Redis + BullMQ** | Railway엔 SQS 없음. 이중 관리(자격증명·리전) 회피, NestJS 표준. |
-| 스토리지 | AWS S3 / Cloudflare R2 | **MinIO(Railway 자체호스팅)** | S3 호환 SDK라 코드 무변경으로 이전 가능. 단일 벤더 유지. |
+| 스토리지 | AWS S3 / R2 / MinIO 자체호스팅 | **Railway Storage Bucket**(프로덕션) + **MinIO**(로컬) | 관리형 S3 호환. 비용·운영 우위(아래). S3 SDK라 코드 무변경. |
 | 배포 | ECS/Fargate 등 AWS | **Railway 단일** | MVP 규모에 운영 표면 최소. |
 
-**트레이드오프**: MinIO 자체운영이라 내구성·백업 직접 관리(관리형보다 약함). MVP 수용, 실서비스 확장 시 R2/S3 재검토(코드 무변경).
+**스토리지 결정 정정 (2026-09-15)**: 초기엔 "MinIO(자체호스팅)"였으나 "Railway엔 Volume뿐"이라는 **잘못된 전제**였음. Railway에 **관리형 Storage Bucket**이 존재.
+- **비용**(railway.com/pricing 실측): Storage Bucket `$0.015/GB·월 + egress 무료` vs MinIO(상시 컨테이너 ~$3~5/월 + Volume `$0.15/GB·월`). MVP(10GB 가정) ≈ **$0.15 vs $4.5~6.5**, 약 30~40배 차이. GB단가부터 Bucket이 Volume의 1/10.
+- **운영**: Bucket은 백업·내구성·Presigned URL 관리형(부담 0), MinIO는 자체 운영.
+- → **프로덕션 = Railway Storage Bucket, 로컬 개발 = MinIO**(공짜, 동일 S3 API). *프로덕션 MinIO 자체호스팅은 미채택.*
+- **배포 주의**: path-style·region 서명·CORS는 구현체 차이가 있을 수 있어 배포 시 업로드 1회 실검증.
 
 ### 4. 파일
 `README.md`, `agents/context/architecture.md`(+ 프론트 스택 RN 0.86.3 정정).

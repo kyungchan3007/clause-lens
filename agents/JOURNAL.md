@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-15 · Claude · #29 스토리지 결정 정정 (프로덕션 Railway Bucket / 로컬 MinIO)
+- **무엇**: 스토리지를 **프로덕션 = Railway Storage Bucket(관리형 S3 호환)**, **로컬 개발 = MinIO(docker-compose)** 로 정정. architecture.md ADR·README·backend-architecture·spec 0004·docker-compose·.env.example 갱신.
+- **왜**: 초기 ADR "MinIO 자체호스팅"은 "Railway엔 Volume뿐"이라는 잘못된 전제. Railway에 관리형 Storage Bucket 존재 → 비용·운영 압도적 우위.
+- **비용 근거(railway.com/pricing 실측)**: Bucket `$0.015/GB·월 + egress 무료` vs MinIO(상시 컨테이너 ~$3~5/월 + Volume `$0.15/GB·월`). MVP 10GB ≈ $0.15 vs $4.5~6.5 (약 30~40배). GB단가도 Bucket이 Volume의 1/10.
+- **파일**: `agents/context/architecture.md`(인프라 ADR·경계·백엔드결정), `README.md`(인프라 표·정의노트·다이어그램), `agents/context/backend-architecture.md`, `agents/intent/specs/0004-infra-decision-railway.md`, `docker-compose.yml`·`.env.example`(로컬 전용 명시)
+- **게이트**: ✅ ALL PASS.
+- **다음/주의**: 둘 다 S3 호환이라 코드 동일(`S3_*` 환경변수만 교체, `StoragePort` 격리). Notion `08. 인프라·배포`는 이미 Railway Storage Bucket으로 맞음. 배포 시 path-style·region·CORS는 설정 조정 + 업로드 1회 실검증 필요. #15 presign은 이 기준으로.
+
 ## 2026-09-14 · Claude · #13 로컬 개발 환경 (docker-compose)
 - **무엇**: 루트 `docker-compose.yml`(PostgreSQL 17·Redis 7·MinIO + `createbuckets` 원샷) + `.env.example` + `.gitignore`에 `.env` 추가 + `environment.md` 로컬 인프라 절차. `docker compose up -d` 한 번으로 3종 기동 + 버킷 자동 생성.
 - **왜**: 백엔드(#14) 개발에 DB·큐·스토리지가 로컬에 필요. 프로덕션 MinIO와 동일 S3 API를 로컬 재현.

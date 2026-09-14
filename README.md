@@ -176,7 +176,7 @@ flowchart TB
         Queue["Redis · BullMQ"]
         Worker["OCR Worker"]
         DB[("PostgreSQL")]
-        S3[("MinIO · S3 호환")]
+        S3[("오브젝트 스토리지 · Railway Bucket")]
     end
 
     Vision["Google Cloud Vision API · 외부"]
@@ -199,11 +199,11 @@ NestJS API Server와 OCR Worker는 배포와 실행 책임이 분리된 두 개�
 
 **배포는 Railway 단일 벤더입니다. AWS를 직접 사용하지 않습니다.** 백엔드(API·Worker)와 의존 서비스(DB·큐·스토리지)를 모두 Railway에서 운영하고, 외부 의존은 Google Cloud Vision 하나뿐입니다. 결정 근거·대안·트레이드오프는 [architecture.md — 인프라 결정(ADR)](agents/context/architecture.md#인프라--railway-단일-벤더-결정--adr).
 
-> 이 문서에서 **"S3"** 는 *S3 호환 오브젝트 스토리지*를 의미하며, 실제 구현은 **MinIO**(Railway 자체 호스팅)입니다. 접근은 표준 S3 SDK로 하므로, 추후 Cloudflare R2·AWS S3로 코드 변경 없이 이전할 수 있습니다.
+> 이 문서에서 **"S3"** 는 *S3 호환 오브젝트 스토리지*를 의미합니다. 실제 구현은 **프로덕션 = Railway Storage Bucket(관리형)**, **로컬 개발 = MinIO**(docker-compose)입니다. 접근은 표준 S3 SDK라 엔드포인트·자격증명만 교체하면 되고, R2·AWS S3로도 코드 변경 없이 이전할 수 있습니다.
 
 | 기술 | 역할 | 위치 |
 | --- | --- | --- |
-| MinIO (S3 호환) | 계약서 원본 이미지 저장 | Railway 자체 호스팅 |
+| Railway Storage Bucket (S3 호환) | 계약서 원본 이미지 저장 (프로덕션) · 로컬은 MinIO | Railway 관리형 / 로컬 docker-compose |
 | Redis + BullMQ | OCR 비동기 작업 큐 | Railway 관리형 Redis |
 | PostgreSQL | 사용자, 문서, 페이지, 작업 상태, 분석 결과 저장 | Railway 관리형 |
 | NestJS | 모바일 앱용 API 서버 | Railway 서비스 |
@@ -217,7 +217,7 @@ sequenceDiagram
     actor User as 사용자
     participant App as Expo 앱
     participant API as NestJS API
-    participant S3 as MinIO 스토리지
+    participant S3 as 오브젝트 스토리지
     participant Queue as Redis · BullMQ
     participant Worker as OCR Worker
     participant Vision as Google Vision
@@ -251,7 +251,7 @@ sequenceDiagram
     actor User as 사용자
     participant App as Expo 앱
     participant API as NestJS API
-    participant S3 as MinIO 스토리지
+    participant S3 as 오브젝트 스토리지
     participant Queue as Redis · BullMQ
     participant Worker as OCR Worker
     participant Vision as Google Vision

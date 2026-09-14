@@ -1,6 +1,7 @@
 # ClauseLens 로컬 개발 인프라 — PostgreSQL · Redis · MinIO(S3 호환)
 # 사용:  cp .env.example .env  &&  docker compose up -d
-# 자격증명은 로컬 throwaway. 프로덕션은 Railway 관리형(이 파일과 무관).
+# 자격증명은 로컬 throwaway. 프로덕션은 Railway 관리형(Postgres·Redis·Storage Bucket) — 이 파일과 무관.
+# MinIO는 로컬 개발 전용(프로덕션 스토리지는 Railway Storage Bucket, 둘 다 S3 호환이라 코드 동일).
 name: clause-lens
 
 services:

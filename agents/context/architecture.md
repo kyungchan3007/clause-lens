@@ -24,21 +24,27 @@
 | OCR Worker | Node 워커 | Railway 서비스 |
 | DB | PostgreSQL | Railway 관리형 |
 | **큐** | **Redis + BullMQ** | Railway 관리형 Redis |
-| **오브젝트 스토리지** | **MinIO (S3 호환)** | Railway 자체 호스팅 |
+| **오브젝트 스토리지** | **Railway Storage Bucket** (관리형 S3 호환) — 프로덕션 / **MinIO** — 로컬 개발 | Railway 관리형 / 로컬 docker-compose |
 | 외부 OCR | Google Cloud Vision | 유일한 외부 의존 |
 
 **근거**
 - 초기·MVP 규모에 **단일 벤더 = 운영 표면 최소**. ECS/Fargate·IAM·리전 관리 회피.
 - 큐를 BullMQ로 두면 API·Worker·DB·Queue가 **한 곳**에 모임(SQS는 Railway에 없음). NestJS 생태계에서 BullMQ가 사실상 표준.
-- 스토리지는 **S3 호환 SDK**로 접근 → MinIO/R2/AWS S3 간 **엔드포인트·자격증명만 교체, 코드 0줄** 이전.
+- 스토리지는 **S3 호환 SDK**(`@aws-sdk/client-s3`)로 접근 → 프로덕션(Railway Bucket)·로컬(MinIO)·R2·S3 간 **엔드포인트·자격증명만 교체, 코드 0줄** 이전. `StoragePort` 어댑터로 격리.
+
+**스토리지 결정 정정 (2026-09-15)** — 상세·비용은 [spec 0004](../intent/specs/0004-infra-decision-railway.md):
+- 초기 ADR은 "MinIO(Railway 자체 호스팅)"였으나, "Railway엔 Volume뿐"이라는 **잘못된 전제**였음. Railway에 **관리형 Storage Bucket**이 존재.
+- **비용**: Railway Bucket `$0.015/GB·월 + egress 무료` vs MinIO(상시 컨테이너 ~$3~5/월 + Volume `$0.15/GB·월`) → MVP 기준 **약 30~40배 저렴** + 백업·내구성·Presigned URL 관리형(운영부담 0).
+- → **프로덕션 = Railway Storage Bucket**, **로컬 개발 = MinIO**(docker-compose). 둘 다 S3 호환이라 코드 동일.
 
 **대안 & 미채택**
 - *AWS SQS 유지* → Railway↔AWS 이중 관리(자격증명·리전·네트워크). 초기 복잡도 대비 이점 없음 → 미채택.
-- *Cloudflare R2 / AWS S3* → 관리형 내구성은 우위지만 벤더가 늘어남. **지금은** Railway 내 MinIO로 단일화, 프로덕션 확장 시 재검토(코드 무변경).
+- *프로덕션 MinIO 자체 호스팅* → 상시 컨테이너 비용 + 자체 백업/내구성 부담. Railway Bucket이 더 싸고 관리형이라 **미채택(로컬 개발용으로만)**.
+- *Cloudflare R2 / AWS S3* → 벤더 추가. Railway Bucket으로 단일 벤더 유지, 필요 시 코드 무변경 이전.
 
-**트레이드오프(감수)**: MinIO는 자체 운영이라 내구성·백업을 직접 챙겨야 함(관리형 버킷보다 약함). 학습·MVP 단계에선 수용. → 재검토 트리거: 실서비스 트래픽/데이터 보존 요건 상승 시 R2/S3로 이전.
+**배포 시 주의**: MinIO↔Railway Bucket은 대부분 호환이나 **path-style·region 서명·CORS** 등은 설정 수준 조정이 필요할 수 있음 → 배포 때 업로드 1회 실검증.
 
-**불변조건 유지**: "앱은 스토리지에 **직접** 업로드하고, Presigned URL·`imageKey`는 API가 발급"하는 패턴은 그대로다(MinIO도 Presigned URL 지원). 아래 [절대 경계](#절대-경계-에이전트가-자주-어기는-것)의 "S3"는 모두 **S3 호환 스토리지(MinIO)** 를 뜻한다.
+**불변조건 유지**: "앱은 스토리지에 **직접** 업로드하고, Presigned URL·`imageKey`는 API가 발급"하는 패턴은 그대로다. 아래 [절대 경계](#절대-경계-에이전트가-자주-어기는-것)의 "S3"는 모두 **S3 호환 스토리지**(프로덕션 Railway Bucket / 로컬 MinIO)를 뜻한다.
 
 ## BFF는 두지 않는다 (재검토 트리거 있음)
 
@@ -63,7 +69,7 @@ YES라도 **계층 추가 전에**: ① NestJS(현 BFF)에 집계/맞춤 엔드�
 ## 절대 경계 (에이전트가 자주 어기는 것)
 
 - 프론트는 **OCR을 실행하지 않고 위험 조항을 판단하지 않는다.** 서버 결과를 표현만.
-- 프론트는 이미지를 오브젝트 스토리지(MinIO, S3 호환)에 **직접** 업로드하되, Presigned URL·imageKey는 API가 발급한다.
+- 프론트는 이미지를 오브젝트 스토리지(S3 호환 — 프로덕션 Railway Bucket / 로컬 MinIO)에 **직접** 업로드하되, Presigned URL·imageKey는 API가 발급한다.
 - **서버가 진실의 기준.** 클라이언트 Draft는 화면 합성용 임시 상태일 뿐.
 
 ## 상태 모델
@@ -144,7 +150,7 @@ packages/
 **결정**: `apps/api`·`apps/worker`는 **모듈러 모놀리스 + 실용 3층 + 외부 경계만 포트**로 조직한다.
 - **도메인 모듈**: auth · subscriptions · documents · uploads · analysis (프론트 domain-map과 같은 언어).
 - **3층**: Controller(검증) → Service(로직) → Repository(Prisma). 풀 헥사고날/클린 아키텍처는 하지 않는다(MVP 과설계).
-- **포트/어댑터는 외부 경계만**: Storage(MinIO) · Queue(BullMQ) · OCR(Vision) → 교체 자유.
+- **포트/어댑터는 외부 경계만**: Storage(프로덕션 Railway Bucket·로컬 MinIO) · Queue(BullMQ) · OCR(Vision) → 교체 자유.
 - **ORM = Prisma.** DB 모델 단일 소스 = `packages/db/prisma/schema.prisma` (api·worker 공유). worker는 api를 import하지 않는다.
 - **두 계약 층**: `packages/contracts`(zod=API) ↔ `packages/db`(Prisma=DB 모델). 서로 다른 층, Service가 매핑.
 
