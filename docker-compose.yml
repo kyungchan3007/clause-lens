@@ -34,8 +34,9 @@ services:
       timeout: 5s
       retries: 10
 
+  # 이미지는 quay.io에서 받는다(MinIO가 Docker Hub 배포를 중단 → minio/mc pull 불가).
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -46,25 +47,22 @@ services:
       - "${MINIO_CONSOLE_PORT:-9001}:9001"  # 웹 콘솔
     volumes:
       - miniodata:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   # MinIO에 버킷을 자동 생성하는 원샷 서비스(성공 후 종료).
+  # minio healthcheck에 의존하지 않고, mc가 붙을 때까지 직접 재시도한다.
   createbuckets:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     depends_on:
-      minio:
-        condition: service_healthy
+      - minio
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
       S3_BUCKET: ${S3_BUCKET:-clause-lens}
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
+      until mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do
+        echo 'waiting for minio...'; sleep 2;
+      done &&
       mc mb --ignore-existing local/$$S3_BUCKET &&
       mc anonymous set none local/$$S3_BUCKET &&
       echo 'bucket ready: '$$S3_BUCKET;

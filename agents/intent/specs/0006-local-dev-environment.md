@@ -44,6 +44,8 @@ architecture.md(인프라 ADR·backend), backend-architecture.md, `.gitignore`, 
 | 버킷 생성 | 수동/앱 부팅 시 | **compose `createbuckets`(mc) 원샷** | up 한 번으로 완결, 재현성. |
 | 자격증명 | compose에 하드코딩 | **`.env` + 기본값(`${VAR:-default}`)** | 비밀값 커밋 금지 원칙, 그래도 up은 무설정 동작. |
 | 이미지 태그 | latest | **핀(postgres:17-alpine·redis:7-alpine)** / minio는 최신 | 재현성. minio는 date 태그라 주기적 갱신. |
+| MinIO 이미지 출처 | Docker Hub `minio/minio`·`minio/mc` | **quay.io/minio/\*** | MinIO가 Docker Hub 배포 중단 → `minio/mc` pull 불가(실측). quay.io가 공식. |
+| MinIO 준비 대기 | compose healthcheck + `condition: service_healthy` | **createbuckets가 `until`로 직접 재시도** | 서버 이미지에 `mc` 없어 healthcheck 불안정 → mc 붙을 때까지 재시도가 견고. |
 
 ### 4. 파일·순서
 1. `docker-compose.yml` (postgres·redis·minio·createbuckets + volumes·healthcheck)
