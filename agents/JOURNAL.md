@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-14 · Claude · #18 PR AI 리뷰 증분 + 맥락 기반 개선
+- **무엇**: `pr-ai-review.mjs`를 (a) **증분 리뷰**(직전 리뷰 sha 이후 변경분만, compare API) (b) **맥락 전달**(구간 커밋 메시지 + 이전 AI 리뷰 코멘트를 프롬프트에 포함, 반복 지적 억제)로 개선.
+- **왜**: 매 push마다 PR 전체를 재리뷰 + 리뷰어가 기억이 없어 이미 해결·기각한 지적(예: pnpm overrides 위치)을 무한 반복 → 개발 흐름 저해. 변경분만 + "이미 다룬 건 반복 금지"로 수렴시킴.
+- **파일**: `.github/scripts/pr-ai-review.mjs`(buildReviewPrompt·main), `agents/harness/github-pr-review-workflow.md`
+- **핵심 설계**: 마지막 리뷰 sha는 이전 리뷰 body의 마커(`<!-- ai-pr-review:SHA -->`)에서 추출. compare status가 `ahead`/`identical`일 때만 증분, `diverged`/`behind`/실패면 **전체 리뷰 fallback**. 인라인 코멘트 유효성은 여전히 **PR 전체 diff** 라인 기준(코멘트 정상 등록 보장). 증분 대상에 새 패치 없으면 리뷰 스킵. `synchronize` 트리거는 유지.
+- **게이트**: `node --check .github/scripts/pr-ai-review.mjs` PASS. sha 추출·compare 게이팅 로직 목데이터 단위검증 PASS. (실제 리뷰 동작은 이 변경 머지 후 다음 PR push에서 관측 필요.)
+- **다음/주의**: 실제 GitHub 실행 검증은 머지 후 관측으로만 가능(로컬에서 GitHub/OpenAI 호출 불가). 리뷰가 여전히 반복되면 프롬프트의 반복-금지 지시 강도나 priorFindings 전달 범위를 조정.
+
 ## 2026-08-19 · Codex · #OPS-PR-REVIEW-WORKFLOW
 - **무엇**: GitHub Actions 기반 PR 자동 리뷰 워크플로 추가. `pull_request_target` 이벤트에서 PR diff를 읽고 OpenAI Responses API로 리뷰한 뒤, actionable finding만 inline PR review comment로 남기는 흐름 구현. 중복 방지용 `head.sha` 마커 추가.
 - **왜**: PR마다 반복되는 1차 코드 리뷰를 자동화하고, 버그·회귀·가드 누락 중심의 고신호 피드백을 빠르게 남기기 위함.
