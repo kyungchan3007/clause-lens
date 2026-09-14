@@ -38,6 +38,9 @@ run "Expo Doctor" bash -c 'cd apps/mobile && pnpm dlx expo-doctor'
 #    node_modules만 제외하고 레포 전체를 검색(서브패키지의 nested lockfile까지 잡음).
 run "No npm/yarn lockfiles" bash -c '! find . -type d -name node_modules -prune -o -type f \( -name package-lock.json -o -name yarn.lock \) -print | grep -q .'
 
+# 4) 네이티브 모듈 단일 버전 — 워크스페이스 전체 resolved 버전 검사(중복 시 네이티브 빌드 실패).
+run "Native modules single version" node agents/harness/evals/check-native-singletons.mjs
+
 # ── 새 검사는 위 형식으로 여기에 한 줄씩 추가 ──
 # run "Lint" pnpm exec eslint .
 # run "Unit tests" pnpm test
