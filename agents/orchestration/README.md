@@ -19,20 +19,28 @@ Claude와 Codex(그리고 각자의 subagent)가 **충돌 없이 병렬로** 일
 
 상태: `todo → in-progress → review → done` (막히면 `blocked`).
 
+## 브랜치 전략
+
+| 브랜치 | 역할 | 규칙 |
+| --- | --- | --- |
+| **`main`** | 안정/릴리스 | 직접 작업·직접 커밋 **금지** |
+| **`develop`** | 통합 브랜치 | 모든 태스크 PR의 **대상(base)** |
+| **`task/<번호>-<슬러그>`** | 태스크 작업 | **`develop`에서 분기** → 작업 → **`develop`으로 PR** → (리뷰) → 머지 |
+
+- 문서/설정 등 태스크 아닌 변경은 `docs/<슬러그>`·`chore/<슬러그>`(역시 develop 분기, develop PR).
+- 커밋·푸시·PR은 **사용자 요청 시에만**. → [Guardrails](../harness/guardrails.md)
+- 흐름: `develop 분기 → Loop 수행 → 커밋(요청 시) → 푸시 → PR(→develop) → 리뷰 → 머지`.
+
 ## Worktrees
 
 태스크는 가능한 한 **별도 브랜치/worktree**에서 진행해 두 AI가 물리적으로 분리되게 합니다.
 
 ```bash
-# 태스크용 worktree 생성 (예: TASK-001)
-git worktree add ../clause-lens-task-001 -b task/001-image-capture
+# 태스크용 worktree 생성 (develop 기준으로 분기, 예: TASK-001)
+git worktree add ../clause-lens-task-001 -b task/001-image-capture develop
 # 작업 후
 git worktree remove ../clause-lens-task-001
 ```
-
-- 브랜치 규칙: `task/<번호>-<슬러그>`.
-- `main`에서 직접 작업하지 않는다.
-- 커밋·푸시는 사용자 요청 시에만. → [Guardrails](../harness/guardrails.md)
 
 ## Subagents
 
@@ -57,9 +65,13 @@ git worktree remove ../clause-lens-task-001
    │
    ├─▶ 에이전트가 CLAIM (owner=나, in-progress) ─┐  동시에 다른 에이전트는
    │                                              │  다른 태스크를 CLAIM
-   ├─▶ worktree/브랜치에서 Loop 수행 ────────────┘
+   ├─▶ develop 분기 → Loop 수행(§4 필수출력 포함) ─┘
    │
-   ├─▶ 게이트 PASS + Acceptance Criteria 충족
+   ├─▶ 게이트 PASS + Acceptance Criteria 충족   (실패면 status=blocked + JOURNAL)
    │
-   └─▶ JOURNAL.md 기록 + status=done
+   ├─▶ JOURNAL.md 기록 + status=done
+   │
+   ├─▶ REFLECT: 드러난 공백을 Intent/Context에 반영 (루프를 닫음)
+   │
+   └─▶ (요청 시) 커밋 → 푸시 → PR(→develop) → 리뷰 → 머지
 ```

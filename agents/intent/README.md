@@ -39,15 +39,16 @@
 | **SDD** | 어떻게 만드는가(엔지니어링) · 대안·트레이드오프 | [templates/sdd.md](templates/sdd.md) |
 | **Acceptance Criteria** | 무엇이 만족되면 "됐다"인가 | [templates/acceptance-criteria.md](templates/acceptance-criteria.md) |
 
-작은 태스크는 PRD/SDD 없이 Acceptance Criteria만으로 충분:
-- **UI 미세 조정, 버그 수정** → Acceptance Criteria만
-- **새 화면·새 API 연동·상태 흐름 변경** → PRD 요약 + SDD + AC
+**모든 태스크는 착수 시 spec 파일을 남긴다 (무조건).** 결과물은 사용자가 보지만 **과정(왜·대안·근거)** 은 문서로만 남기 때문 — [loop.md §4](../harness/loop.md#4-구현-전-게이트--sddprd-필수-코드보다-먼저) · [guardrails](../harness/guardrails.md). 규모에 따라 분량만 조절:
+- **UI 미세 조정, 버그 수정, 사소한 chore** → PRD는 얇게(1~2줄), **SDD의 대안·트레이드오프·검증은 필수**, AC 포함
+- **새 화면·새 API 연동·상태 흐름 변경** → PRD + SDD + AC 충실히
 
 ### specs 규칙
-1. `NNNN-슬러그.md` (4자리 번호 + kebab-case)로 [`specs/`](specs/)에 저장.
+1. `NNNN-슬러그.md` (4자리 번호 + kebab-case)로 [`specs/`](specs/)에 저장. 한 파일에 **PRD 섹션 + SDD 섹션** 통합.
 2. 번호는 단조 증가.
 3. 모든 스펙은 **Acceptance Criteria(체크박스)** 포함 — [Eval](../harness/evals/README.md)·완료 판정의 기준.
 4. 스펙 하나 = [작업 보드](../orchestration/TASKS.md)의 태스크 하나 이상에 연결.
+5. **SDD/PRD = 사전·과정·근거** / **JOURNAL = 사후 결과 로그**. 역할을 섞지 않는다.
 
 ## 피드백 루프
 

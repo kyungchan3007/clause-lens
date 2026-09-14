@@ -21,6 +21,13 @@
 - **게이트**: `node --check` PASS + docs-only 판정 6케이스 단위검증 ALL PASS. (실제 스킵·P1-only 동작은 머지 후 관측.)
 - **다음/주의**: docs 판정은 **확장자(.md/.mdx)** 기준 — 경로 기준은 `agents/**/*.mjs`·`checks.sh` 오탐이라 회피. P2를 완전 은폐하진 않음(요약에 개수). SDD/PRD 상시 규칙의 첫 정식 적용(spec 0003 선작성).
 
+## 2026-09-14 · Claude · #20 SDD/PRD 상시 기록 규칙 + 오늘 작업 REFLECT
+- **무엇**: (1) "태스크마다 SDD/PRD를 **무조건** 파일로 남기고 문서 없이 BUILD 금지" 규칙을 loop·guardrails·intent README에 반영. (2) 보류돼 있던 workflow 문서 보강분(loop 9단계·§4/§6/§9, guardrails 브랜치 규칙, orchestration 브랜치 전략)을 함께 커밋. (3) 오늘 #16·#18의 결정·대안·검증을 소급 SDD(`specs/0002`)로 기록. (4) 네이티브 모듈 단독 버전변경 금지 규칙 guardrails에 추가.
+- **왜**: 사용자가 결과는 보지만 **과정(왜·대안·근거)** 을 볼 수 없음. JOURNAL은 사후 결과 로그라 과정을 못 담음 → SDD/PRD가 그 자리. 과정을 항상 파일로 남겨 관측 가능하게.
+- **파일**: `agents/harness/loop.md`(DEFINE=PRD·PLAN=SDD·§4 파일영구화·자기점검), `agents/harness/guardrails.md`(SDD/PRD 무조건 + 네이티브 단일버전), `agents/intent/README.md`(무조건 규칙·역할분리), `agents/orchestration/README.md`, `agents/intent/specs/0002-dependency-and-ci-hardening.md`(신규)
+- **게이트**: ✅ ALL PASS (Typecheck + Expo Doctor 21/21 + lockfile + native 단일버전).
+- **다음/주의**: 역할 분리 준수 — **SDD/PRD=사전·과정·근거, JOURNAL=사후 결과**. 앞으로 모든 태스크는 `intent/specs/NNNN-슬러그.md`부터 시작(사소한 chore도 SDD의 대안·검증은 필수). 미완: #12 인프라 문서(stash@{0})는 아직 별도로 남아 있음.
+
 ## 2026-09-14 · Claude · #18 PR AI 리뷰 증분 + 맥락 기반 개선
 - **무엇**: `pr-ai-review.mjs`를 (a) **증분 리뷰**(직전 리뷰 sha 이후 변경분만, compare API) (b) **맥락 전달**(구간 커밋 메시지 + 이전 AI 리뷰 코멘트를 프롬프트에 포함, 반복 지적 억제)로 개선.
 - **왜**: 매 push마다 PR 전체를 재리뷰 + 리뷰어가 기억이 없어 이미 해결·기각한 지적(예: pnpm overrides 위치)을 무한 반복 → 개발 흐름 저해. 변경분만 + "이미 다룬 건 반복 금지"로 수렴시킴.
