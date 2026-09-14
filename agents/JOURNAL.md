@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-14 · Claude · #12 인프라 결정 문서화 (Railway 단일 벤더)
+- **무엇**: 인프라를 **Railway 단일 벤더**로 확정한 결정을 README·architecture.md에 반영. 큐 `SQS→Redis·BullMQ`, 스토리지 `S3→MinIO(S3 호환)`, 배포 전부 Railway, 외부 의존은 Google Vision만. architecture.md에 인프라 ADR(근거·대안·트레이드오프) 신설. 프론트 스택 RN 0.86.3 정정.
+- **왜**: 문서가 AWS(SQS·S3) 전제라 실제 배포(Railway)와 어긋남 → 두 AI가 다른 인프라를 가정할 위험.
+- **파일**: `README.md`(인프라 표·서버구성·4개 mermaid), `agents/context/architecture.md`(ADR), `agents/intent/specs/0004-infra-decision-railway.md`(신규 spec)
+- **게이트**: ✅ ALL PASS (문서 변경, 코드 영향 없음).
+- **다음/주의**: "S3"는 문서 전반에서 S3 호환 스토리지(MinIO)를 뜻함(정의 노트 명시). 실제 인프라 구축은 #13(docker-compose)·#14(NestJS 스캐폴드)에서 이 ADR 기준으로. AWS 직접 의존 없음.
+
 ## 2026-09-14 · Claude · #23 PR 리뷰 노이즈 감소 (docs-only 스킵 + P1-only)
 - **무엇**: `pr-ai-review.mjs`에 (1) **문서 전용 PR(모든 변경 .md/.mdx) 코드 리뷰 스킵**, (2) **P1만 인라인**(P2/P3는 요약 개수만) 추가. 프롬프트에 "P1 집중·메타 지적 금지" 지시.
 - **왜**: 진단 결과 리뷰는 PR당 1회지만(증분 정상 작동) **findings 과다**가 문제. 특히 문서 PR에 "정책인데 CI 강제 안 됨" 류 P2 메타 지적 다수 → 개발 흐름 저해.
