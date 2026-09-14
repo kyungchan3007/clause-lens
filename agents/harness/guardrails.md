@@ -11,6 +11,8 @@
 - **npm/yarn 금지.** pnpm만.
 - **FSD import 경계 위반 금지.** import는 상위→하위만(screens→features→entities→shared), 역방향 금지. `entities`는 `features`를 import하지 않는다. → [frontend-architecture.md](../context/frontend-architecture.md)
 - **UI 작업 시 `ui-ux-pro-max` 스킬 조회 없이 화면/컴포넌트 디자인 금지.** 색·타이포·레이아웃·접근성·모션은 감이 아니라 스킬의 검증된 가이드 기준. 호출법 → [environment.md](environment.md#ui-작업-도구--ui-ux-pro-max-스킬-필수)
+- **SDD/PRD 없이 코드 작성 금지 (무조건).** 태스크 착수 시 `intent/specs/NNNN-슬러그.md`에 PRD(왜/무엇) + SDD(어떻게·**대안**·검증)를 먼저 남긴다. 채팅 출력이 아니라 **파일**로. 사소한 chore도 예외 없음. → [loop.md §4](loop.md#4-구현-전-게이트--sddprd-필수-코드보다-먼저)
+- **네이티브 모듈 버전 단독 변경 금지.** react-native 계열 등 네이티브 모듈은 앱·`packages/ui`·`pnpm-workspace.yaml overrides`를 **함께** 정렬한다(한쪽만 올리면 중복→빌드 실패). 게이트의 "Native modules single version"이 검사. → [check-native-singletons.mjs](evals/check-native-singletons.mjs)
 - **상대 AI가 `in-progress`로 점유한 태스크의 파일 편집 금지.** → [TASKS.md](../orchestration/TASKS.md)
 - **게이트 미통과 상태로 "완료" 선언 금지.**
 - **되돌리기 어려운 작업은 확인 먼저** — 파일/브랜치 삭제, 외부 전송, 설정·권한 변경, 커밋·푸시.
@@ -31,7 +33,7 @@
 ## 커밋/브랜치 규칙
 
 - 사용자가 요청할 때만 커밋·푸시한다.
-- `main`에 직접 작업하지 않는다. 태스크마다 브랜치/worktree. → [orchestration](../orchestration/README.md)
+- `main`·`develop`에 직접 작업하지 않는다. 태스크마다 `task/<번호>-<슬러그>`를 **develop에서 분기**, PR은 **develop 대상**. → [브랜치 전략](../orchestration/README.md#브랜치-전략)
 - 커밋 메시지는 무엇을·왜. 관련 태스크 `#TASK-xxx`와 스펙 번호 참조.
 
 ## 안전 기본값
