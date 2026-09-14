@@ -9,7 +9,8 @@
 - **비밀값 하드코딩 금지.** API 키, Google Vision 크리덴셜, S3 자격증명을 코드/커밋에 넣지 않는다.
 - **민감정보 로그 금지.** 이미지 원문, OCR 전문·계약서 원문, 토큰·사용자 식별정보, Presigned URL을 로그에 남기지 않는다.
 - **npm/yarn 금지.** pnpm만.
-- **FSD import 경계 위반 금지.** import는 상위→하위만(screens→features→entities→shared), 역방향 금지. `entities`는 `features`를 import하지 않는다. → [frontend-architecture.md](../context/frontend-architecture.md)
+- **FSD import 경계 위반 금지.** (프론트) import는 상위→하위만(screens→features→entities→shared), 역방향 금지. `entities`는 `features`를 import하지 않는다. → [frontend-architecture.md](../context/frontend-architecture.md)
+- **백엔드 레이어 경계 위반 금지.** (api·worker) Controller→Service→Repository 방향만. Service에서 Prisma·외부 SDK·fetch 직접 호출 금지(Repository/포트 경유). `worker`는 `api`를 import하지 않는다(공유는 `packages/db`·`packages/contracts`). → [backend-architecture.md](../context/backend-architecture.md)
 - **UI 작업 시 `ui-ux-pro-max` 스킬 조회 없이 화면/컴포넌트 디자인 금지.** 색·타이포·레이아웃·접근성·모션은 감이 아니라 스킬의 검증된 가이드 기준. 호출법 → [environment.md](environment.md#ui-작업-도구--ui-ux-pro-max-스킬-필수)
 - **SDD/PRD 없이 코드 작성 금지 (무조건).** 태스크 착수 시 `intent/specs/NNNN-슬러그.md`에 PRD(왜/무엇) + SDD(어떻게·**대안**·검증)를 먼저 남긴다. 채팅 출력이 아니라 **파일**로. 사소한 chore도 예외 없음. → [loop.md §4](loop.md#4-구현-전-게이트--sddprd-필수-코드보다-먼저)
 - **네이티브 모듈 버전 단독 변경 금지.** react-native 계열 등 네이티브 모듈은 앱·`packages/ui`·`pnpm-workspace.yaml overrides`를 **함께** 정렬한다(한쪽만 올리면 중복→빌드 실패). 게이트의 "Native modules single version"이 검사. → [check-native-singletons.mjs](evals/check-native-singletons.mjs)

@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-14 · Claude · #26 백엔드 아키텍처 결정 (ADR + 지침서)
+- **무엇**: NestJS 백엔드 내부 아키텍처 확정. 모듈러 모놀리스 + Controller→Service→Repository 3층 + 외부 경계만 포트(Storage/Queue/OCR) + **Prisma**(`packages/db`) + `apps/*`+`packages/*` 레이아웃. zod(API)/Prisma(DB) 계약 층 분리.
+- **왜**: 프론트는 FSD로 정해졌으나 api·worker 조직 기준이 없어 두 AI 일관성 위험. 백엔드 착수(#14)의 전제.
+- **파일**: `agents/context/backend-architecture.md`(신규 지침서), `agents/context/architecture.md`(백엔드 결정 섹션 + packages/db), `AGENTS.md`(Context 링크), `agents/harness/guardrails.md`(백엔드 레이어 경계), `agents/intent/specs/0005-backend-architecture.md`(ADR)
+- **게이트**: ✅ ALL PASS (문서 변경).
+- **다음/주의**: 결정 근거·대안(레이어링·ORM Prisma vs Drizzle·레이아웃 apps vs front/back)은 ADR 0005에. worker는 api import 금지(공유는 packages/db·contracts). 실제 구조 검증은 #14 스캐폴드에서.
+
 ## 2026-09-14 · Claude · #12 인프라 결정 문서화 (Railway 단일 벤더)
 - **무엇**: 인프라를 **Railway 단일 벤더**로 확정한 결정을 README·architecture.md에 반영. 큐 `SQS→Redis·BullMQ`, 스토리지 `S3→MinIO(S3 호환)`, 배포 전부 Railway, 외부 의존은 Google Vision만. architecture.md에 인프라 ADR(근거·대안·트레이드오프) 신설. 프론트 스택 RN 0.86.3 정정.
 - **왜**: 문서가 AWS(SQS·S3) 전제라 실제 배포(Railway)와 어긋남 → 두 AI가 다른 인프라를 가정할 위험.

@@ -116,7 +116,8 @@ apps/
   api/        NestJS
   worker/     OCR Worker
 packages/
-  contracts/  API 계약 = zod 스키마 (서버 검증 + 앱 타입, 단일 소스). 순수 TS·런타임 중립
+  contracts/  API 계약 = zod 스키마 (api + mobile 공유, 단일 소스). 순수 TS·런타임 중립
+  db/         Prisma schema + client + 큐 job 타입 (api + worker 공유)
   tokens/     3층 디자인 토큰 + tailwind preset (모바일 전용)
   ui/         공유 디자인 시스템 — reusables 컴포넌트 + Icon 래퍼 (모바일 전용)
   config/     공유 tsconfig / eslint (+ 경계 규칙)
@@ -137,3 +138,14 @@ packages/
 - **zod 계약**: `packages/contracts`(서버+앱 단일 소스) → `shared/api`(parse) → `entities/api`. entity 타입 = `z.infer`.
 
 레이어·세그먼트·import 경계·폴더맵·예시 상세: **[frontend-architecture.md](frontend-architecture.md)**.
+
+## 백엔드 내부 아키텍처 — NestJS 모듈러 모놀리스 (결정)
+
+**결정**: `apps/api`·`apps/worker`는 **모듈러 모놀리스 + 실용 3층 + 외부 경계만 포트**로 조직한다.
+- **도메인 모듈**: auth · subscriptions · documents · uploads · analysis (프론트 domain-map과 같은 언어).
+- **3층**: Controller(검증) → Service(로직) → Repository(Prisma). 풀 헥사고날/클린 아키텍처는 하지 않는다(MVP 과설계).
+- **포트/어댑터는 외부 경계만**: Storage(MinIO) · Queue(BullMQ) · OCR(Vision) → 교체 자유.
+- **ORM = Prisma.** DB 모델 단일 소스 = `packages/db/prisma/schema.prisma` (api·worker 공유). worker는 api를 import하지 않는다.
+- **두 계약 층**: `packages/contracts`(zod=API) ↔ `packages/db`(Prisma=DB 모델). 서로 다른 층, Service가 매핑.
+
+도메인 모듈·3층·포트·import 경계·폴더맵 상세: **[backend-architecture.md](backend-architecture.md)**. 결정 근거·대안: **[ADR 0005](../intent/specs/0005-backend-architecture.md)**.
