@@ -1,0 +1,14 @@
+// ClauseLens DB 스키마 (api·worker 공유의 단일 소스)
+// DB = PostgreSQL. 로컬은 docker Postgres, 프로덕션은 Railway 관리형.
+// 모델(Document·Page·Job·Clause 등)은 후속 태스크(#15+)에서 추가.
+
+generator client {
+  provider = "prisma-client-js"
+  // 고정 경로에 생성 — pnpm의 peer 변형(typescript 버전별) 해싱과 무관하게 단일 위치.
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
