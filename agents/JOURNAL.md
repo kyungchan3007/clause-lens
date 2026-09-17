@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-17 · Claude · #14 NestJS API 스캐폴드 + packages/db(Prisma)
+- **무엇**: `apps/api` NestJS 11 스캐폴드(모듈러 모놀리스 골조: `modules/health`·`db/{PrismaService,DbModule}`·ConfigModule 전역) + `packages/db` Prisma 6(schema=Postgres, 고정경로 client 생성). `GET /health` 동작. 게이트에 api typecheck + Prisma validate 편입.
+- **왜**: #15(presign) 전에 부팅되는 백엔드 뼈대 + DB 계층 필요.
+- **파일**: `apps/api/**`(package.json·tsconfig·nest-cli·src), `packages/db/**`(package.json·prisma/schema.prisma·.gitignore), `agents/harness/evals/checks.sh`(api·db 검사), `pnpm-workspace.yaml`(allowBuilds: prisma·@prisma/client·@prisma/engines·@nestjs/core), `agents/intent/specs/0007-*.md`. `apps/mobile/package.json`(expo 패치 드리프트 정렬-부수).
+- **게이트**: ✅ 6/6 PASS. **부팅·`/health` 200 실측**: `node dist/main.js`(DATABASE_URL env, 실 DB 없이) → `{"status":"ok",...}`.
+- **함정·해결(중요)**: ① `@prisma/client`가 pnpm의 **typescript peer 변형별 2개**로 갈려 "did not initialize" → generator `output` **고정경로**(`packages/db/generated/client`)로 해결, api는 `@clause-lens/db`에서 import. ② `PrismaClient` 생성에 `DATABASE_URL` env 필요(연결 아님) → `.env`로 주입. ③ 부팅 시 DB 연결 강제 안 함(지연 연결)이라 docker 없이 뜸.
+- **다음/주의**: 실 DB 연결·첫 마이그레이션은 #15에서 docker 필요. `generated/`·`dist/`는 gitignore(install 시 재생성). expo 드리프트 반복 → #22 CI에서 근본 대응.
+
 ## 2026-09-15 · Claude · #29 스토리지 결정 정정 (프로덕션 Railway Bucket / 로컬 MinIO)
 - **무엇**: 스토리지를 **프로덕션 = Railway Storage Bucket(관리형 S3 호환)**, **로컬 개발 = MinIO(docker-compose)** 로 정정. architecture.md ADR·README·backend-architecture·spec 0004·docker-compose·.env.example 갱신.
 - **왜**: 초기 ADR "MinIO 자체호스팅"은 "Railway엔 Volume뿐"이라는 잘못된 전제. Railway에 관리형 Storage Bucket 존재 → 비용·운영 압도적 우위.

@@ -30,6 +30,12 @@ echo "════════════════════════�
 # 1) 타입 체크 (모바일 앱)
 run "Typecheck (mobile)" pnpm --filter @clause-lens/mobile exec tsc --noEmit
 
+# 1b) 타입 체크 (백엔드 API)
+run "Typecheck (api)" pnpm --filter @clause-lens/api exec tsc --noEmit
+
+# 1c) Prisma 스키마 검증 (DB 연결 안 함 — env() 해석용 더미 URL만 주입)
+run "Prisma schema validate" bash -c 'DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" pnpm --filter @clause-lens/db exec prisma validate'
+
 # 2) Expo 환경 점검 (apps/mobile에서 expo-doctor를 dlx로 실행)
 #    expo-doctor는 네이티브 모듈 중복(duplicate)도 함께 검사한다.
 run "Expo Doctor" bash -c 'cd apps/mobile && pnpm dlx expo-doctor'
