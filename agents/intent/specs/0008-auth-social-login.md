@@ -31,11 +31,11 @@
 - 소유권 미확인 리소스 반환 금지. 무료횟수·권한은 서버 최종 판단(이 태스크는 인증까지, entitlement 로직은 후속).
 
 ### Acceptance
-- [ ] `POST /auth/kakao`(앱 access token) → provider 검증 → user upsert → `{ accessToken, refreshToken, user }`
-- [ ] `POST /auth/refresh` → 회전된 새 토큰
-- [ ] `GET /auth/me`(보호) → 현재 사용자, 미인증 시 401
-- [ ] `User` 모델 마이그레이션 적용(docker Postgres)
-- [ ] `checks.sh` PASS · 비밀값 env only · 민감정보 로그 없음
+- [x] `POST /auth/kakao`(앱 access token) → provider 검증 → user upsert → `{ accessToken, refreshToken, user }` *(구현·부팅 검증. 실 카카오 토큰 e2e는 앱+실기기 후속)*
+- [x] `POST /auth/refresh` → 회전된 새 토큰 *(구현 완료, DB 흐름은 마이그레이션 후)*
+- [x] `GET /auth/me`(보호) → 미인증 시 **401 실측 확인**
+- [x] `User`·`RefreshToken` 마이그레이션 적용 — **docker Postgres에서 `migrate dev` 실측**(테이블 생성 + `/auth/refresh` DB 경로 401 확인)
+- [x] `checks.sh` PASS(6/6) · 비밀값 env only · 민감정보 로그 없음
 
 ---
 

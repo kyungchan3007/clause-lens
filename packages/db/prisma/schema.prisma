@@ -1,6 +1,5 @@
 // ClauseLens DB 스키마 (api·worker 공유의 단일 소스)
 // DB = PostgreSQL. 로컬은 docker Postgres, 프로덕션은 Railway 관리형.
-// 모델(Document·Page·Job·Clause 등)은 후속 태스크(#15+)에서 추가.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,4 +10,39 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ── 인증 (#32) ──
+
+enum AuthProvider {
+  KAKAO
+  // Apple은 iOS 정식 출시 전 추가 예정(ADR 0008) → 그때 APPLE 값 마이그레이션.
+}
+
+model User {
+  id             String   @id @default(cuid())
+  provider       AuthProvider
+  providerUserId String // provider 내 고유 id (카카오 회원번호)
+  email          String?
+  displayName    String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  refreshTokens RefreshToken[]
+
+  @@unique([provider, providerUserId])
+}
+
+// 불투명 refresh 토큰의 해시를 저장(회전·폐기 가능). 원문은 저장하지 않는다.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

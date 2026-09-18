@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
 import { DbModule } from "./db/db.module";
+import { AuthModule } from "./modules/auth/auth.module";
 import { HealthModule } from "./modules/health/health.module";
 
 @Module({
@@ -10,6 +11,7 @@ import { HealthModule } from "./modules/health/health.module";
     ConfigModule.forRoot({ isGlobal: true }),
     DbModule,
     HealthModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
