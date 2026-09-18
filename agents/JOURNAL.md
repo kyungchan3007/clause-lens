@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-18 · Claude · #32 인증(Auth) 구현 — 카카오 소셜 로그인 + JWT
+- **무엇**: auth 모듈(카카오 로그인 + JWT 세션). `POST /auth/{kakao,refresh,logout}` · `GET /auth/me`(보호). `User`·`RefreshToken` 모델 추가. spec 0008 기준.
+- **왜**: 서버 도메인 토대(per-user). documents·presign(#15) 등의 선행.
+- **설계**: (A) 앱 주도 — 앱 카카오 access token → 백엔드가 `/v2/user/me` **재검증** → User upsert → **access(JWT) + 불투명 refresh(DB sha256 해시·회전)**. 카카오 검증에 서버 키 불필요. `SocialVerifier` 포트 + `KakaoVerifier` 어댑터(Apple 재개 시 어댑터만 추가). `JwtAuthGuard`+`@CurrentUser`.
+- **파일**: `packages/db/prisma/schema.prisma`(User·RefreshToken·enum), `apps/api/src/modules/auth/**`(controller·service·module·token·guards·decorators·ports·adapters), `app.module.ts`, `apps/api/package.json`(@nestjs/jwt), `.env.example`(JWT env).
+- **게이트**: ✅ 6/6 PASS. **부팅 실측**(DB 없이): 5개 라우트 매핑 + `/health` 200 + `/auth/me` 무토큰 **401** + `/auth/kakao` 빈바디 **401**.
+- **함정·주의**: `@nestjs/jwt` `expiresIn`이 `string`(예 "15m") 대신 `ms.StringValue` 요구 → **초 단위 number(900)** 로 해결(캐스팅·우회 없이). **미완(docker 필요)**: `User`/`RefreshToken` **마이그레이션**(`prisma migrate dev`) + 실 카카오 로그인 e2e(앱 SDK+실기기). 바디 검증은 지금 수동 → 프론트 연동 시 zod 계약(packages/contracts) 정식화 후속.
+
 ## 2026-09-17 · Claude · #14 NestJS API 스캐폴드 + packages/db(Prisma)
 - **무엇**: `apps/api` NestJS 11 스캐폴드(모듈러 모놀리스 골조: `modules/health`·`db/{PrismaService,DbModule}`·ConfigModule 전역) + `packages/db` Prisma 6(schema=Postgres, 고정경로 client 생성). `GET /health` 동작. 게이트에 api typecheck + Prisma validate 편입.
 - **왜**: #15(presign) 전에 부팅되는 백엔드 뼈대 + DB 계층 필요.
