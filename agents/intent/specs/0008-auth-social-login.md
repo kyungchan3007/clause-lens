@@ -34,7 +34,7 @@
 - [x] `POST /auth/kakao`(앱 access token) → provider 검증 → user upsert → `{ accessToken, refreshToken, user }` *(구현·부팅 검증. 실 카카오 토큰 e2e는 앱+실기기 후속)*
 - [x] `POST /auth/refresh` → 회전된 새 토큰 *(구현 완료, DB 흐름은 마이그레이션 후)*
 - [x] `GET /auth/me`(보호) → 미인증 시 **401 실측 확인**
-- [ ] `User` 모델 마이그레이션 적용 — **docker 필요 → 로컬에서 `prisma migrate dev` (미완)**
+- [x] `User`·`RefreshToken` 마이그레이션 적용 — **docker Postgres에서 `migrate dev` 실측**(테이블 생성 + `/auth/refresh` DB 경로 401 확인)
 - [x] `checks.sh` PASS(6/6) · 비밀값 env only · 민감정보 로그 없음
 
 ---
