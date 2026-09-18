@@ -25,8 +25,8 @@ model User {
   providerUserId String // provider 내 고유 id (카카오 회원번호)
   email          String?
   displayName    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
 
   refreshTokens RefreshToken[]
 
@@ -38,9 +38,9 @@ model RefreshToken {
   id        String    @id @default(cuid())
   userId    String
   tokenHash String    @unique
-  expiresAt DateTime
-  createdAt DateTime  @default(now())
-  revokedAt DateTime?
+  expiresAt DateTime  @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
