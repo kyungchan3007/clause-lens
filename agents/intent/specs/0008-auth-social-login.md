@@ -47,8 +47,8 @@ Notion `01. 제품 기획`(로그인 정책)·`02. 사용자 기능 §9`·`05. N
 ### 2. 결정: (A) 앱 주도 + 네이티브 SDK (현업 모바일 표준)
 앱이 카카오 네이티브 SDK로 로그인 → **access token** 획득 → 백엔드에 전달 → **백엔드가 카카오 API로 검증 후 우리 JWT 발급**. 백엔드는 **stateless**(OAuth 핸드셰이크용 서버 세션/`state` 저장 불필요, 웹 리다이렉트 아님).
 
-- **Kakao**: 앱 카카오 SDK(네이티브 앱 키 `adbd628c…`) → **access token** → 백엔드가 `GET https://kapi.kakao.com/v2/user/me` (Bearer)로 **검증·프로필** → upsert.
-- 번들 ID/패키지명 = `com.chan.clauselens` (카카오 콘솔 플랫폼 등록 완료 대상). 스킴 `kakaoadbd628c3de5e07e5f0a81e100408917`.
+- **Kakao**: 앱 카카오 SDK(**네이티브 앱 키는 카카오 콘솔 참조** — 문서/코드에 값 넣지 않음, 앱 config/env로 주입) → **access token** → 백엔드가 `GET https://kapi.kakao.com/v2/user/me` (Bearer)로 **검증·프로필** → upsert.
+- 번들 ID/패키지명 = `com.chan.clauselens` (카카오 콘솔 플랫폼 등록 완료 대상). 로그인 리다이렉트 스킴 = `kakao{NATIVE_APP_KEY}` (실제 키 값은 콘솔·env 참조).
 
 ### 3. 고려한 대안 · 트레이드오프
 | 주제 | 대안 | 결정 | 근거 |
