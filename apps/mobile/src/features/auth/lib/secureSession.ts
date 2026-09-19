@@ -31,8 +31,13 @@ export async function loadSession(): Promise<StoredSession | null> {
     }
     return { accessToken: parsed.accessToken, refreshToken: parsed.refreshToken };
   } catch {
-    // 손상된 값 → 제거 후 세션 없음으로 취급(반복 파싱 실패·복구 루프 방지).
-    await SecureStore.deleteItemAsync(SESSION_KEY);
+    // 손상된 값 → best-effort 제거(반복 파싱 실패 방지). 삭제 실패해도
+    // loadSession은 예외를 전파하지 않고 null 반환(복원·시작 흐름 보호).
+    try {
+      await SecureStore.deleteItemAsync(SESSION_KEY);
+    } catch {
+      // 로깅 없이 무시(토큰·PII 로그 금지). 다음 저장이 값을 덮어씀.
+    }
     return null;
   }
 }
