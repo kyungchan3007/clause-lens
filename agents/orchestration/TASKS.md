@@ -43,4 +43,4 @@
 - TanStack Query 도입 (서버 상태 캐시)
 - Zustand store 구조 확정
 - 에러/재시도 UX 공통 컴포넌트
-- `MenuRow`/`ListRow` 공유 UI 승격 (현재 profile 단일 사용 — 설정/구독 등 2번째 사용처 생길 때. #43에서 보류)
+- `MenuRow`/`ListRow`를 `packages/ui`로 승격 (shared-first 정책상 제네릭 UI = 승격 대상. 현재 profile에 인라인 — 다음 UI 작업 시 이동)

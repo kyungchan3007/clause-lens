@@ -70,12 +70,12 @@ apps/mobile/src/
 ```
 > **과설계 금지**: 빈 레이어를 미리 만들지 않는다. `widgets`·`entities`는 필요해질 때 추가.
 
-## 공유 UI 승격 기준 (`packages/ui`)
+## 공유 UI 승격 기준 (`packages/ui`) — shared-first
 
-피처의 UI를 `packages/ui`(크로스앱 shared)로 올릴지는 **rule of three**로 판단한다:
+**기본값 = shared로 승격.** 도메인 성격이 뚜렷하지 않은 **프레젠테이셔널/제네릭 UI**(버튼·아이콘 배지·리스트 행·섹션 헤더·카드·인풋·모달·칩 등)는 **재사용 횟수와 무관하게 처음부터 `packages/ui`에 만든다.** 디자인 시스템 일관성이 우선이며, "왠만하면 shared".
 
-- **승격**: 같은 패턴이 **2개 이상 피처**에서 쓰이거나 **3회 이상** 반복될 때. (예: `IconBadge`=EmptyState+ProfileScreen, `SectionHeader`=3곳 → 승격)
-- **보류**: **단일 사용**은 피처 안에 두고 **백로그**에 등재. 2번째 사용처가 생길 때 승격(프리매처 추상화 방지). (예: `MenuRow` 단일 사용 → 보류)
+- **피처에 남기는 예외 = 도메인 성격이 뚜렷한 UI만.** 특정 도메인 데이터·로직·플로우에 강결합돼 다른 앱/피처에 그대로 못 옮기는 것. 예: `PageItem`(draft page 편집·삭제·교체), `LoginScreen`(카카오 인증 플로우), `FaqSection`(FAQ 콘텐츠) → `features/*/ui`에.
+- **위치는 UI 작업 "전"에 먼저 판단한다.** 컴포넌트를 만들기 전 "제네릭(shared) vs 도메인 결합(feature)"을 정하고 처음부터 올바른 위치에 둔다(사후 승격보다 우선). **애매하면 shared 쪽으로.**
 - 색·간격 등은 **하드코딩 금지** → `@clause-lens/tokens`의 `semantic` 사용(off-palette 값은 최근접 팔레트 토큰으로 정규화).
 
 ## NativeWind 설정 주의

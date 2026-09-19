@@ -16,8 +16,8 @@
 
 ## 2026-09-19 · Claude · #45 지침서 갱신 (세션 함정·리뷰 규칙·게이트·FSD 기준)
 - **무엇**: 이번 세션에서 드러난 반복 함정·규칙을 지침서에 반영(docs). REFLECT의 일부.
-- **변경**: ① `environment.md` — iOS/Metro 함정 섹션(디자인 깨지면 `expo start --clear`·iOS 빌드 `LANG=UTF-8`·시뮬 탭=포인트·CNG·PIPESTATUS) + RN 0.86.3 정정 + 게이트 설명 8검사. ② `evals/README.md` — 게이트 표 2→8검사, 유닛/e2e 위치 명시(진실 소스는 checks.sh). ③ `loop.md` — §7 PR 리뷰 대응(인라인 답글+resolve·false-premise 근거 반려·무한대응 금지). ④ `frontend-architecture.md` — 공유 UI 승격 rule of three + tailwind content `./src/**` 필수.
-- **왜**: 같은 실수(디자인 깨짐 원인 오판·리뷰 스레드 방치·낡은 게이트 문서·프리매처 추상화) 반복 방지.
+- **변경**: ① `environment.md` — iOS/Metro 함정 섹션(디자인 깨지면 `expo start --clear`·iOS 빌드 `LANG=UTF-8`·시뮬 탭=포인트·CNG·PIPESTATUS) + RN 0.86.3 정정 + 게이트 설명 8검사. ② `evals/README.md` — 게이트 표 2→8검사, 유닛/e2e 위치 명시(진실 소스는 checks.sh). ③ `loop.md` — §7 PR 리뷰 대응(인라인 답글+resolve·false-premise 근거 반려) + **§테스트 필수(매 코드 태스크 단위+e2e 무조건, 시나리오 필요시 추가)** + §3·self-check에 shared-first/테스트 반영. ④ `frontend-architecture.md` — 공유 UI 승격 **shared-first**(도메인 결합 UI만 feature, 나머지 왠만하면 packages/ui) + tailwind content `./src/**` 필수. ⑤ `TASKS.md` — MenuRow는 shared-first상 승격 대상으로 정정.
+- **왜**: 사용자 지정 상시 규칙 2건(테스트 무조건·shared-first) + 세션 함정(디자인 깨짐 오판·리뷰 스레드 방치·낡은 게이트 문서) 반복 방지.
 - **게이트**: ✅ 8/8 PASS(문서 변경).
 - **다음/주의**: 문서 전용이라 pr-ai-review는 docs-only 스킵. 다음 실무는 #15 presign / 세션 하드닝 / entitlement.
 
