@@ -8,11 +8,20 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 const KAKAO_KEY_PLACEHOLDER = "kakao-native-app-key-missing";
 const KAKAO_NATIVE_APP_KEY =
   process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY ?? KAKAO_KEY_PLACEHOLDER;
+// 프로덕션(EAS production 프로파일) 빌드는 placeholder로 나가지 않도록 강제 실패.
+// dev/CI는 경고만(빌드 차단 방지), 릴리스는 잘못된 키 배포 차단.
+const IS_PRODUCTION_BUILD = process.env.EAS_BUILD_PROFILE === "production";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   if (KAKAO_NATIVE_APP_KEY === KAKAO_KEY_PLACEHOLDER) {
+    if (IS_PRODUCTION_BUILD) {
+      throw new Error(
+        "[app.config] 프로덕션 빌드에 EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY 누락 — " +
+          "placeholder 배포 차단. Railway/EAS env에 키 설정 필요.",
+      );
+    }
     console.warn(
-      "[app.config] EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY 누락 — placeholder로 빌드. " +
+      "[app.config] EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY 누락 — placeholder로 빌드(개발/CI). " +
         "실제 카카오 로그인은 동작하지 않음. apps/mobile/.env 설정 필요(.env.example 참고).",
     );
   }

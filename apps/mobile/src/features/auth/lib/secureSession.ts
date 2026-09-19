@@ -31,7 +31,8 @@ export async function loadSession(): Promise<StoredSession | null> {
     }
     return { accessToken: parsed.accessToken, refreshToken: parsed.refreshToken };
   } catch {
-    // 손상된 값 → 세션 없음으로 취급(재로그인 유도).
+    // 손상된 값 → 제거 후 세션 없음으로 취급(반복 파싱 실패·복구 루프 방지).
+    await SecureStore.deleteItemAsync(SESSION_KEY);
     return null;
   }
 }
