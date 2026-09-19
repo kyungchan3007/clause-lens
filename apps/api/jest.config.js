@@ -10,5 +10,6 @@ module.exports = {
     ],
   },
   testEnvironment: "node",
-  clearMocks: true,
+  // 호출기록 + 구현까지 초기화(mobile과 통일, mock 누수 방지).
+  resetMocks: true,
 };
