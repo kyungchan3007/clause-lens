@@ -4,17 +4,22 @@ appId: com.chan.clauselens
 ---
 - launchApp:
     clearState: false
-- assertVisible: "계약서를 담아주세요"
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
 # S4. 프로필 진입 (헤더 아이콘: 접근성 라벨 "마이페이지")
 - tapOn: "마이페이지"
 - assertVisible: "카카오 계정으로 로그인"
 - assertVisible: "자주 묻는 질문"
-# S5. FAQ 펼침 → 답변 노출
+# S5. FAQ 펼침 → 답변 노출 (LayoutAnimation 끝난 뒤 확인)
+# ⚠️ Maestro는 요소의 "전체 텍스트"를 정규식 매칭 → 부분 문자열은 .* 로 감싼다.
 - tapOn: "ClauseLens는 무엇을 해주나요?"
-- assertVisible: "불리할 수 있는 조항을 찾아"
+- waitForAnimationToEnd
+- assertVisible: ".*불리할 수 있는 조항을 찾아.*"
 # 다시 탭 → 접힘
 - tapOn: "ClauseLens는 무엇을 해주나요?"
-- assertNotVisible: "불리할 수 있는 조항을 찾아"
+- waitForAnimationToEnd
+- assertNotVisible: ".*불리할 수 있는 조항을 찾아.*"
 # S6. 1:1 문의 → "준비 중"
 - tapOn: "1:1 문의"
 - assertVisible: "준비 중"
