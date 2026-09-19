@@ -4,7 +4,10 @@ appId: com.chan.clauselens
 ---
 - launchApp:
     clearState: true
-- assertVisible: "카카오로 시작하기"
+# clearState 직후 재실행 → 번들 로딩·세션 복원 스플래시가 있어 대기(고정 assert는 타이밍 브리틀).
+- extendedWaitUntil:
+    visible: "카카오로 시작하기"
+    timeout: 20000
 - tapOn: "카카오로 시작하기"
 # 카카오 로그인 웹뷰(kauth.kakao.com)로 전환됨.
 # ⚠️ 자격증명 입력·"계속하기"는 수동(테스트 계정). 아래는 완료를 최대 60초 대기.

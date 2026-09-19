@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-19 · Claude · #47 Maestro e2e 플로우 하드닝 (실행 검증)
+- **무엇**: `maestro` CLI 설치 후 e2e 플로우 5개를 **실제 실행**해 검증(그동안 "작성만" 됨). 브리틀 2건 수정.
+- **발견(실행으로)**: ① Maestro 텍스트 매칭 = 요소 **전체 텍스트 정규식** → 긴 문장의 **부분 문자열 assert 실패**(화면엔 보이는데). ② `clearState` 재실행 직후 번들 로딩/복원 스플래시로 고정 `assertVisible` 성급 실패.
+- **변경**: `profile.yaml`(FAQ 답변 `.*불리할 수 있는 조항을 찾아.*` + `waitForAnimationToEnd`), `login.yaml`·`capture-gate.yaml`(첫 화면 `extendedWaitUntil`).
+- **게이트/검증**: maestro test **5/5 PASS**(capture-gate·login[카카오 수동]·session-restore·profile·logout). checks.sh 무관(문서/테스트 플로우).
+- **다음/주의**: login/카카오는 자격증명 수동(자동화 불가) → #22 CI에선 테스트 계정 딥링크나 백엔드 목 경로 필요. Maestro 부분매칭은 `.*` 규칙으로.
+
 ## 2026-09-19 · Claude · #45 지침서 갱신 (세션 함정·리뷰 규칙·게이트·FSD 기준)
 - **무엇**: 이번 세션에서 드러난 반복 함정·규칙을 지침서에 반영(docs). REFLECT의 일부.
 - **변경**: ① `environment.md` — iOS/Metro 함정 섹션(디자인 깨지면 `expo start --clear`·iOS 빌드 `LANG=UTF-8`·시뮬 탭=포인트·CNG·PIPESTATUS) + RN 0.86.3 정정 + 게이트 설명 8검사. ② `evals/README.md` — 게이트 표 2→8검사, 유닛/e2e 위치 명시(진실 소스는 checks.sh). ③ `loop.md` — §7 PR 리뷰 대응(인라인 답글+resolve·false-premise 근거 반려) + **§테스트 필수(매 코드 태스크 단위+e2e 무조건, 시나리오 필요시 추가)** + §3·self-check에 shared-first/테스트 반영. ④ `frontend-architecture.md` — 공유 UI 승격 **shared-first**(도메인 결합 UI만 feature, 나머지 왠만하면 packages/ui) + tailwind content `./src/**` 필수. ⑤ `TASKS.md` — MenuRow는 shared-first상 승격 대상으로 정정.
