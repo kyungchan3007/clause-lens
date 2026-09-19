@@ -1,0 +1,15 @@
+# S7. 로그아웃 — 프로필 계정 섹션 → 확인 → 로그인 화면
+# 사전조건: 로그인된 상태
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- assertVisible: "계약서를 담아주세요"
+- tapOn: "마이페이지"
+# 계정 > 로그아웃(메뉴 행)
+- tapOn: "로그아웃"
+- assertVisible: "로그아웃 하시겠어요?"
+# 확인 다이얼로그의 "로그아웃" 버튼(다이얼로그가 최상단)
+- tapOn: "로그아웃"
+# 로그인 화면 복귀
+- assertVisible: "카카오로 시작하기"

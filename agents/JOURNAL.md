@@ -24,6 +24,17 @@
 - **함정**: 브랜치 전환+pnpm 재설치 churn으로 Metro/nativewind 상태 깨져 무스타일 렌더 → **Metro `--clear` 재시작**으로 해결(코드 문제 아님, 앞선 세션과 동일 부류).
 - **다음/주의**: 스택 PR(base #38). C 승격은 2번째 사용처 생길 때. 다크모드 시 Icon 색도 스킴 반응 검토.
 
+## 2026-09-19 · Claude · #41 테스트 — 전 기능 단위 테스트 + e2e 시나리오
+- **무엇**: 테스트 인프라 도입(전무했음) + 전 기능 단위 테스트 41개 + e2e 시나리오/Maestro 플로우.
+- **왜**: 회귀 안전망. 게이트에 테스트 편입으로 "done" 기준 강화.
+- **단위(api, Jest+ts-jest, 19)**: TokenService(서명/검증·refresh 생성·해시 결정성)·AuthService(upsert·회전·만료/폐기 401·logout)·KakaoVerifier(/v2/user/me 파싱·실패 401)·JwtAuthGuard(유효/무효/누락).
+- **단위(mobile, jest-expo+@testing-library, 22)**: secureSession(JSON 원자적·손상값 삭제·best-effort)·authApi(fetch 목·에러)·authStore(restore/setSession/signOut 상태전이)·faq.
+- **e2e**: `apps/mobile/.maestro/`에 SCENARIOS.md(S1~S8 Given/When/Then) + 플로우 5개(capture-gate·login·session-restore·profile·logout). 카카오 자격증명은 수동.
+- **파일**: `apps/api/`(jest.config.js·tsconfig.spec.json·*.spec.ts·package.json test), `apps/mobile/`(jest.config.js·jest.setup.js·*.test.ts·.maestro/·package.json test·tsconfig 제외), `agents/harness/evals/checks.sh`(Unit tests 2줄 추가 → 8검사).
+- **게이트**: ✅ 8/8 PASS (typecheck×2·prisma·expo-doctor·lockfile·native-singleton·**unit api·unit mobile**).
+- **함정·해결(중요)**: ① ts-jest가 jest 전역 못 찾음 → api는 `tsconfig.spec.json`(types에 jest) 별도, 빌드 tsconfig는 `**/*.spec.ts` exclude. mobile은 `**/*.test.ts(x)` exclude. ② jest-expo가 pnpm `.pnpm` 하위 RN/Expo 미트랜스파일 → `transformIgnorePatterns`를 **`.pnpm` 인식**(스코프는 `@scope+name`) 단일 패턴으로. ③ `clearMocks`는 구현 누수 → `resetMocks:true`. ④ 증분 설치가 node_modules를 반쪽 상태로 만들어 nativewind className 타입 깨짐 → **`pnpm install` 재정합**으로 해결.
+- **다음/주의**: 컴포넌트 렌더 테스트(FaqSection/ProfileScreen)는 네이티브(svg/skia) 목이 필요해 e2e(Maestro)로 커버. #22 CI에서 checks.sh 실행 시 test까지 자동.
+
 ## 2026-09-19 · Claude · #36 앱 카카오 로그인 — 화면 + 세션 + e2e
 - **무엇**: 앱 쪽 카카오 로그인 구현·검증. `@react-native-kakao/{core,user}` + Expo config plugin + `initializeKakaoSDK` + `expo-secure-store`. `src/features/auth/`(lib/secureSession·api/authApi·model/authStore·useKakaoLogin·ui/LoginScreen) + `app/login.tsx` + `_layout.tsx` 게이트 3상태 + `app/index.tsx` 로그아웃. #32 백엔드 auth를 실제로 켜서 e2e 갭 닫음.
 - **왜**: #32는 백엔드만 실측(부팅·401). 실 카카오 로그인 e2e 미검증 → per-user 기능의 전제.
