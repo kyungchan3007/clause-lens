@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-09-19 · Claude · #36 앱 카카오 로그인 — 화면 + 세션 + e2e
+- **무엇**: 앱 쪽 카카오 로그인 구현·검증. `@react-native-kakao/{core,user}` + Expo config plugin + `initializeKakaoSDK` + `expo-secure-store`. `src/features/auth/`(lib/secureSession·api/authApi·model/authStore·useKakaoLogin·ui/LoginScreen) + `app/login.tsx` + `_layout.tsx` 게이트 3상태 + `app/index.tsx` 로그아웃. #32 백엔드 auth를 실제로 켜서 e2e 갭 닫음.
+- **왜**: #32는 백엔드만 실측(부팅·401). 실 카카오 로그인 e2e 미검증 → per-user 기능의 전제.
+- **설계(Codex 회의 반영)**: UI보다 **네이티브 검증 선행**(기준선→SDK추가→prebuild→회귀 스모크). 게이트 **3상태(복원 중/비인증/인증)**, SecureStore엔 백엔드 access·refresh 저장(카카오 토큰 아님), 복원 시 `/auth/me` 서버 검증(토큰 존재만으로 인증 금지). `authApi`는 FSD `api/` 세그먼트. app.json→app.config.ts(env로 네이티브 키 주입, 하드코딩 없음).
+- **파일**: `apps/mobile/`: `app.config.ts`(신규)·`.env.example`·`.env`(gitignore)·`app/_layout.tsx`·`app/index.tsx`·`app/login.tsx`·`src/features/auth/**`·`tailwind.config.js`·`package.json`. spec `0009-app-kakao-login.md`.
+- **게이트**: ✅ 6/6 PASS(Expo Doctor 21/21). **시뮬레이터 e2e 실측(iPhone 17 Pro, 로컬 API+docker Postgres)**: 로그인→DB에 User(provider=KAKAO, displayName=실프로필)·RefreshToken 생성 → capture 진입 / 재시작→세션 복원(capture) / 로그아웃→RefreshToken 0건·로그인 복귀.
+- **함정·해결(중요)**: ① CocoaPods가 Ruby 4.0+비UTF8 로케일에서 크래시 → `LANG=en_US.UTF-8`로 빌드. ② tailwind `content`에 `./src/**` **누락**(숨은 버그) → FSD 피처 className 미생성 → 추가(capture 아이콘 배경도 정상화). ③ iOS 시뮬레이터 탭 좌표는 **포인트(402×874)** 기준(스크린샷 픽셀 아님). ④ config plugin이 Swift AppDelegate `application(_:open:)` 맨앞에 카카오 URL 체크 삽입 → expo-router 링킹과 공존 확인.
+- **다음/주의**: refresh 자동 회전·동시요청 병합, entitlement(무료 3회), `분석하기` 게이트 연결, Apple 로그인(4.8)은 후속. 카카오톡 앱 전환/실기기 웹 콜백은 실기기 검증 몫. zod 계약(packages/contracts) 정식화도 후속.
+
 ## 2026-09-18 · Claude · #32 인증(Auth) 구현 — 카카오 소셜 로그인 + JWT
 - **무엇**: auth 모듈(카카오 로그인 + JWT 세션). `POST /auth/{kakao,refresh,logout}` · `GET /auth/me`(보호). `User`·`RefreshToken` 모델 추가. spec 0008 기준.
 - **왜**: 서버 도메인 토대(per-user). documents·presign(#15) 등의 선행.

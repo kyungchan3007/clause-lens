@@ -31,7 +31,7 @@
 | TASK-002 | S3 Presigned URL 연동·직접 업로드 | [capture-import](../intent/features/capture-import.md) | – | – | todo | TASK-001 |
 | TASK-003 | 분석 요청·jobId 상태 폴링 | [analyze-document](../intent/features/analyze-document.md) | – | – | todo | TASK-002 |
 | TASK-004 | OCR·위험 조항 결과 + Skia 하이라이트 표시 | [view-highlights](../intent/features/view-highlights.md) | – | – | todo | TASK-003 |
-| TASK-005 | 로그인·무료 분석 횟수 | [login-entitlement](../intent/features/login-entitlement.md) | – | – | todo | – |
+| TASK-005 | 로그인·무료 분석 횟수 | [login-entitlement](../intent/features/login-entitlement.md) | [0009](../intent/specs/0009-app-kakao-login.md)(앱 로그인) | Claude | **in-progress** (#36 앱 카카오 로그인; entitlement는 후속 분리) | #32 |
 | TASK-006 | 구독·문서 저장 | [save-retain](../intent/features/save-retain.md) | – | – | todo | TASK-005 |
 | TASK-007 | 특정 페이지 이미지 교체·재분석 | [replace-page](../intent/features/replace-page.md) | – | – | todo | TASK-003 |
 
