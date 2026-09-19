@@ -14,6 +14,16 @@
 
 ---
 
+## 2026-09-19 · Claude · #43 공유 UI 승격 (IconBadge·SectionHeader) + 색상 토큰화
+- **무엇**: 피처 중복 UI를 `packages/ui`(shared)로 승격 + capture 하드코딩 색 토큰화. 외부 동작 불변(refactor).
+- **왜**: 재사용 패턴 중복 제거 + raw hex→토큰 일관성(가드레일).
+- **변경**: A) `IconBadge`(원형 tint+아이콘, EmptyState·ProfileScreen 사용) B) `SectionHeader`(muted 섹션 라벨, ProfileScreen·FaqSection 3곳) C) capture(PageItem·PageList·EmptyState) 아이콘색 hex→`semantic`(#2563EB→primary·#64748B→textMuted 정확, #B6BCC7→borderStrong 정규화).
+- **판단(FSD rule of three)**: A(2피처)·B(3회) 승격 / `MenuRow`는 단일 사용 → 백로그(과설계 방지).
+- **파일**: `packages/ui/src/{icon-badge,section-header}.tsx`+index, `apps/mobile/src/features/{capture/ui/EmptyState·PageItem·PageList, profile/ui/ProfileScreen·FaqSection}.tsx`, `agents/orchestration/TASKS.md`(백로그 C), spec `0012`.
+- **게이트**: ✅ PASS. **시뮬레이터 스모크(실 로그인)**: Capture(IconBadge)·프로필(IconBadge·SectionHeader) 렌더 **동일** 확인(회귀 없음).
+- **함정**: 브랜치 전환+pnpm 재설치 churn으로 Metro/nativewind 상태 깨져 무스타일 렌더 → **Metro `--clear` 재시작**으로 해결(코드 문제 아님, 앞선 세션과 동일 부류).
+- **다음/주의**: 스택 PR(base #38). C 승격은 2번째 사용처 생길 때. 다크모드 시 Icon 색도 스킴 반응 검토.
+
 ## 2026-09-19 · Claude · #41 테스트 — 전 기능 단위 테스트 + e2e 시나리오
 - **무엇**: 테스트 인프라 도입(전무했음) + 전 기능 단위 테스트 41개 + e2e 시나리오/Maestro 플로우.
 - **왜**: 회귀 안전망. 게이트에 테스트 편입으로 "done" 기준 강화.

@@ -1,5 +1,5 @@
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { Icon } from "@clause-lens/ui";
+import { Icon, IconBadge, SectionHeader } from "@clause-lens/ui";
 import { semantic } from "@clause-lens/tokens";
 
 import { useAuthStore } from "../../auth";
@@ -46,9 +46,7 @@ export function ProfileScreen() {
     <ScrollView className="flex-1 bg-background" contentContainerClassName="pb-10">
       {/* 내 정보 */}
       <View className="items-center gap-3 px-6 py-8">
-        <View className="h-20 w-20 items-center justify-center rounded-full bg-primary-tint">
-          <Icon name="User" size={40} color={semantic.light.primary} />
-        </View>
+        <IconBadge name="User" size={40} />
         <View className="items-center gap-1">
           <Text className="text-xl font-bold text-foreground">
             {user?.displayName ?? "사용자"}
@@ -65,9 +63,7 @@ export function ProfileScreen() {
       <FaqSection />
 
       {/* 문의 */}
-      <Text className="px-4 pb-2 pt-6 text-xs font-medium text-foreground-muted">
-        문의
-      </Text>
+      <SectionHeader label="문의" />
       <View className="border-t border-border">
         <MenuRow
           icon="MessageCircleQuestion"
@@ -79,9 +75,7 @@ export function ProfileScreen() {
       </View>
 
       {/* 계정 */}
-      <Text className="px-4 pb-2 pt-6 text-xs font-medium text-foreground-muted">
-        계정
-      </Text>
+      <SectionHeader label="계정" />
       <View className="border-t border-border">
         <Pressable
           accessibilityRole="button"

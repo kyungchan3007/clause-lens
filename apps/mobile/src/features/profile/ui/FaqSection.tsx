@@ -7,7 +7,7 @@ import {
   UIManager,
   View,
 } from "react-native";
-import { Icon } from "@clause-lens/ui";
+import { Icon, SectionHeader } from "@clause-lens/ui";
 import { semantic } from "@clause-lens/tokens";
 
 import { FAQ_ITEMS } from "../model/faq";
@@ -30,9 +30,7 @@ export function FaqSection() {
 
   return (
     <View>
-      <Text className="px-4 pb-2 pt-6 text-xs font-medium text-foreground-muted">
-        자주 묻는 질문
-      </Text>
+      <SectionHeader label="자주 묻는 질문" />
       <View className="border-t border-border">
         {FAQ_ITEMS.map((item, index) => {
           const isOpen = openIndex === index;
