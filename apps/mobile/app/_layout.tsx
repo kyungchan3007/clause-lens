@@ -46,6 +46,10 @@ function AuthGate() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={status === "authenticated"}>
         <Stack.Screen name="index" />
+        <Stack.Screen
+          name="profile"
+          options={{ headerShown: true, title: "마이페이지", headerBackTitle: "뒤로" }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={status === "unauthenticated"}>
         <Stack.Screen name="login" />
