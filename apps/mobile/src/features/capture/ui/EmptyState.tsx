@@ -7,7 +7,7 @@ export function EmptyState() {
 
   return (
     <View className="flex-1 items-center justify-center px-6">
-      <IconBadge name="FileText" size={36} className="mb-5 h-20 w-20" />
+      <IconBadge name="FileText" size={36} className="mb-5" />
       <Text className="text-lg font-medium text-foreground">계약서를 담아주세요</Text>
       <Text className="mb-8 mt-1.5 text-center text-sm text-foreground-muted">
         촬영하거나 갤러리에서 불러올 수 있어요
