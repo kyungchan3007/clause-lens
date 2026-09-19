@@ -70,6 +70,19 @@ apps/mobile/src/
 ```
 > **과설계 금지**: 빈 레이어를 미리 만들지 않는다. `widgets`·`entities`는 필요해질 때 추가.
 
+## 공유 UI 승격 기준 (`packages/ui`)
+
+피처의 UI를 `packages/ui`(크로스앱 shared)로 올릴지는 **rule of three**로 판단한다:
+
+- **승격**: 같은 패턴이 **2개 이상 피처**에서 쓰이거나 **3회 이상** 반복될 때. (예: `IconBadge`=EmptyState+ProfileScreen, `SectionHeader`=3곳 → 승격)
+- **보류**: **단일 사용**은 피처 안에 두고 **백로그**에 등재. 2번째 사용처가 생길 때 승격(프리매처 추상화 방지). (예: `MenuRow` 단일 사용 → 보류)
+- 색·간격 등은 **하드코딩 금지** → `@clause-lens/tokens`의 `semantic` 사용(off-palette 값은 최근접 팔레트 토큰으로 정규화).
+
+## NativeWind 설정 주의
+
+- `apps/mobile/tailwind.config.js`의 `content`에 **`./src/**` 를 반드시 포함**한다. 빠지면 FSD 피처(`src/features/*`)의 className이 CSS로 생성되지 않아 **무스타일로 렌더**된다(숨은 버그). `app/`·`components/`·`packages/ui/src`만 스캔하지 않도록 주의.
+- 색은 tokens 프리셋의 semantic 토큰을 className/`semantic.*`으로 쓴다.
+
 ## 상태 배치 원칙
 - **클라 임시 상태**(편집 중 Draft 등)는 해당 feature의 `model`에 둔다.
 - **서버 도메인 명사**가 되는 순간 `entities`로 승격한다(그때 zod contract 연결).

@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-19 · Claude · #45 지침서 갱신 (세션 함정·리뷰 규칙·게이트·FSD 기준)
+- **무엇**: 이번 세션에서 드러난 반복 함정·규칙을 지침서에 반영(docs). REFLECT의 일부.
+- **변경**: ① `environment.md` — iOS/Metro 함정 섹션(디자인 깨지면 `expo start --clear`·iOS 빌드 `LANG=UTF-8`·시뮬 탭=포인트·CNG·PIPESTATUS) + RN 0.86.3 정정 + 게이트 설명 8검사. ② `evals/README.md` — 게이트 표 2→8검사, 유닛/e2e 위치 명시(진실 소스는 checks.sh). ③ `loop.md` — §7 PR 리뷰 대응(인라인 답글+resolve·false-premise 근거 반려·무한대응 금지). ④ `frontend-architecture.md` — 공유 UI 승격 rule of three + tailwind content `./src/**` 필수.
+- **왜**: 같은 실수(디자인 깨짐 원인 오판·리뷰 스레드 방치·낡은 게이트 문서·프리매처 추상화) 반복 방지.
+- **게이트**: ✅ 8/8 PASS(문서 변경).
+- **다음/주의**: 문서 전용이라 pr-ai-review는 docs-only 스킵. 다음 실무는 #15 presign / 세션 하드닝 / entitlement.
+
 ## 2026-09-19 · Claude · #43 공유 UI 승격 (IconBadge·SectionHeader) + 색상 토큰화
 - **무엇**: 피처 중복 UI를 `packages/ui`(shared)로 승격 + capture 하드코딩 색 토큰화. 외부 동작 불변(refactor).
 - **왜**: 재사용 패턴 중복 제거 + raw hex→토큰 일관성(가드레일).

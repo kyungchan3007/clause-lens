@@ -12,10 +12,18 @@ bash agents/harness/evals/checks.sh
 
 | 검사 | 명령 | 의미 |
 | --- | --- | --- |
-| Typecheck | `pnpm exec tsc --noEmit` | 타입 오류 0 |
+| Typecheck (mobile) | `pnpm --filter @clause-lens/mobile exec tsc --noEmit` | 앱 타입 오류 0 |
+| Typecheck (api) | `pnpm --filter @clause-lens/api exec tsc --noEmit` | 백엔드 타입 오류 0 |
+| Prisma schema validate | `prisma validate`(더미 DATABASE_URL) | 스키마 유효 |
 | Expo Doctor | `pnpm dlx expo-doctor` | 환경·의존성 정합성 |
+| No npm/yarn lockfiles | find 기반 | pnpm 단일 사용 |
+| Native modules single version | `check-native-singletons.mjs` | RN 계열 단일 버전 |
+| **Unit tests (api)** | `pnpm --filter @clause-lens/api test` | 백엔드 로직(auth 등) |
+| **Unit tests (mobile)** | `pnpm --filter @clause-lens/mobile test` | 앱 상태·저장·API |
 
-> 린트·유닛 테스트는 아직 미구성. 도입되면 여기(표)와 `checks.sh`에 **한 줄씩** 추가합니다.
+> 표는 참고용이며 **진실의 소스는 `checks.sh`**. 새 검사는 거기 한 줄 추가하고 이 표도 갱신.
+> 유닛 테스트 위치: api `src/**/*.spec.ts`(Jest+ts-jest), mobile `src/**/*.test.ts`(jest-expo).
+> **e2e 시나리오/Maestro 플로우**는 `apps/mobile/.maestro/`(SCENARIOS.md + `*.yaml`) — maestro CLI 필요라 게이트엔 미포함(수동/후속 CI).
 > 게이트는 이 저장소의 "CI를 로컬에서 미리 도는" 지점입니다.
 
 ## 두 종류의 Eval
