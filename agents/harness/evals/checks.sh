@@ -47,6 +47,10 @@ run "No npm/yarn lockfiles" bash -c '! find . -type d -name node_modules -prune 
 # 4) 네이티브 모듈 단일 버전 — 워크스페이스 전체 resolved 버전 검사(중복 시 네이티브 빌드 실패).
 run "Native modules single version" node agents/harness/evals/check-native-singletons.mjs
 
+# 5) 유닛 테스트 (백엔드 로직·앱 상태/저장/API). e2e 시나리오는 apps/mobile/.maestro 참조.
+run "Unit tests (api)" pnpm --filter @clause-lens/api test
+run "Unit tests (mobile)" pnpm --filter @clause-lens/mobile test
+
 # ── 새 검사는 위 형식으로 여기에 한 줄씩 추가 ──
 # run "Lint" pnpm exec eslint .
 # run "Unit tests" pnpm test
