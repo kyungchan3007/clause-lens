@@ -9,7 +9,7 @@
 | Node.js | 22 |
 | pnpm | 11 |
 | Expo SDK | 57 |
-| React Native | 0.86.2 |
+| React Native | 0.86.3 |
 | React Native Skia | 2.6.2 |
 | TypeScript | ~6.0.3 |
 
@@ -53,7 +53,21 @@ docker compose down -v        # 중지 + 볼륨 삭제(초기화)
 bash agents/harness/evals/checks.sh
 ```
 
-typecheck + expo-doctor + lockfile + 네이티브 단일버전을 묶어 실행. 완료 선언 전 반드시 PASS. → [evals/README.md](evals/README.md)
+typecheck(mobile·api) + Prisma validate + expo-doctor + lockfile + 네이티브 단일버전 + **유닛 테스트(api·mobile)** 를 묶어 실행(8검사). 완료 선언 전 반드시 PASS. → [evals/README.md](evals/README.md)
+
+## iOS·Metro 함정 (이 맥·이 세션에서 반복 확인)
+
+- **디자인이 갑자기 무스타일로 깨질 때** (텍스트 좌상단 몰림·버튼 색 없음): 대개 **브랜치 전환·머지·`pnpm install` 후 Metro/nativewind 캐시가 흔들린 것**(코드 문제 아님). → Metro를 **캐시 클리어로 재시작**하고 앱 리로드:
+  ```bash
+  pnpm exec expo start --clear
+  ```
+- **iOS 빌드(`expo run:ios`·`expo prebuild`)는 UTF-8 로케일 필수.** 안 그러면 CocoaPods가 `Unicode Normalization not appropriate for ASCII-8BIT`로 크래시(Ruby + 비-UTF8 셸):
+  ```bash
+  LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pnpm exec expo run:ios
+  ```
+- **iOS 시뮬레이터 자동화 탭 좌표는 포인트 기준**(스크린샷 픽셀 아님). `픽셀/이미지폭 × 포인트폭`으로 환산해서 탭.
+- `ios/`·`android/`는 gitignore(CNG) — 네이티브 설정은 config plugin이 진실 소스. 네이티브 의존성 추가 후 `expo prebuild --clean` + 재빌드.
+- 파이프(`... | tee log`) 종료코드는 tee 것 → 빌드 성공/실패는 `${PIPESTATUS[0]}`로 확인.
 
 ## UI 작업 도구 — `ui-ux-pro-max` 스킬 (필수)
 

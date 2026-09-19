@@ -6,11 +6,11 @@
 ```
 1. CLAIM      TASKS.md에서 owner=나, status=in-progress
 2. DEFINE ★   spec 파일 `intent/specs/NNNN-슬러그.md` 생성 → PRD 섹션(왜/무엇 + Acceptance) 작성. 연결된 intent/features·기존 specs 확인.
-3. CONTEXT    architecture → domain-map → 관련 도메인 문서 + frontend-architecture. (UI면 ui-ux-pro-max 스킬 조회) 관련 코드만.
+3. CONTEXT    architecture → domain-map → 관련 도메인 문서 + frontend-architecture. (UI면 **shared/domain 위치 먼저 판단**[§공유 UI 승격, shared-first] + ui-ux-pro-max 스킬 조회) 관련 코드만.
 4. PLAN ★     같은 spec 파일에 SDD 섹션 작성(**무조건**): 접근·**대안·트레이드오프**·파일계획·검증계획. → 구현 전 게이트(아래 §4). 위험한 작업이면 사용자 승인.
 5. BUILD      Guardrails 지키며 작게 구현. Expo 코드면 v57 문서 먼저.
 6. GATE       bash agents/harness/evals/checks.sh → PASS까지 반복. 계속 실패하면 §6(막힘·실패·롤백).
-7. VERIFY     Acceptance(feature Checklist / spec AC)를 실제로 만족하는지 확인 (필요시 시뮬레이터). **결과를 spec의 SDD §검증에 채운다.**
+7. VERIFY ★   Acceptance 확인 + **단위 테스트·e2e 테스트를 무조건 작성·실행**(→ 아래 §테스트 필수, 필요시 시나리오 추가). 필요시 시뮬레이터. **결과를 spec의 SDD §검증에 채운다.**
 8. RECORD     JOURNAL.md append(무엇/왜/파일/게이트/**이번에 드러난 공백**/다음), TASKS.md status=done.
 9. REFLECT ★  이번 태스크가 드러낸 규칙·스펙·문서 공백을 Intent(spec/feature)·Context(문서)에 반영 → 루프를 닫는다(§9).
 ```
@@ -34,6 +34,24 @@ spec 파일 한 개에 아래를 담는다 (기능/chore 동일 형식, 템플�
 - **AC를 못 맞추거나 막히면**: TASKS.md status를 **`blocked`** 로 바꾸고 **이유를 JOURNAL에 기록**, 사용자에게 표면화. **"done" 절대 금지.**
 - **의도가 자꾸 어긋나면**: 코드가 아니라 스펙이 틀린 것 → DEFINE으로 돌아가 spec/feature를 고친다(= REFLECT).
 - **롤백**: 태스크 브랜치라 안전. 커밋 전이면 `git restore .`, 브랜치째 폐기 가능. 커밋 후 되돌리기는 **사용자 확인 후** `git revert`. (되돌리기 어려운 작업은 애초에 승인 후 진행.)
+
+## §테스트 필수 — 단위 + e2e (매 태스크, 무조건)
+
+**코드를 바꾸는 태스크는 완료 시 반드시 단위 테스트 + e2e 테스트를 남기고 실행한다.** "기능 하나 완료될 때"가 아니라 **매 태스크마다** (SDD/PRD-always와 같은 위상의 필수 규칙). 문서 전용 태스크는 해당 없음.
+
+- **단위 테스트**: 새/변경 로직에 작성. api `src/**/*.spec.ts`(Jest), mobile `src/**/*.test.ts`(jest-expo). `checks.sh` 게이트가 실행.
+- **e2e 테스트**: 화면 흐름은 `apps/mobile/.maestro/`(SCENARIOS.md + Maestro `*.yaml`). **기존 시나리오로 안 덮이면 시나리오를 새로 추가**해서 커버를 넓히고 진행한다.
+- 자동화 불가 부분(카카오 자격증명 등)은 **수동 단계로 명시**하고 관측 결과를 JOURNAL에.
+- **테스트 없이 "done" 금지.** 게이트(단위)는 자동, e2e 시나리오는 최소 문서화+가능 범위 실행.
+
+## §7. PR 리뷰 대응 (봇·사람)
+
+PR을 열면 자동 리뷰(봇)·사람 리뷰가 코멘트를 남긴다. 처리 원칙:
+
+- **인라인 코멘트는 "답글 + resolve"까지 닫는다.** 코드만 고치고 스레드를 열어두면 다음에 계속 눈에 걸린다. 조치한 코멘트마다 스레드에 한 줄 답글(무엇을 바꿨는지) 후 resolve.
+- **false-premise(전제가 틀린) 지적은 근거 대고 반려한다** — "아닌건 아니다". 예: `EXPO_PUBLIC_*`는 빌드 시 인라인되므로 "런타임 미보장"은 성립 안 함 / Jest는 파일별 격리라 "테스트 간 누수"는 성립 안 함. **무한 대응 금지**: 실질(버그·회귀·보안·명확한 개선)만 반영하고, 투기적/메타 지적은 근거와 함께 닫는다.
+- **수정→그 수정에 또 지적** 루프가 돌면 실질만 반영하고 나머지는 반려로 끊는다. 리뷰어를 만족시키려 코드를 계속 바꾸지 않는다.
+- 리뷰로 실제 코드를 고쳤으면 §6 게이트 재통과 후 push. 커밋·푸시는 사용자 요청/Auto-fix 권한 범위에서.
 
 ## §9. REFLECT — 피드백 루프 (완료의 일부)
 
@@ -65,7 +83,9 @@ RECORD로 끝이 아니다. 이번 태스크에서 **게이트·검증·구현�
 - [ ] **§4 spec 문서(SDD/PRD)** 를 코드 전에 파일로 남겼나? (대안·검증 포함)
 - [ ] Acceptance(feature Checklist / spec AC) 전부 충족?
 - [ ] `checks.sh` PASS? (실패면 `blocked` 처리했나?)
+- [ ] (코드 태스크면) **단위 테스트 + e2e 테스트**를 작성·실행했나? 필요한 시나리오 추가했나? (§테스트 필수)
 - [ ] [Guardrails](guardrails.md) 위반 없음? (UI면 ui-ux-pro-max 조회했나?)
+- [ ] UI면 **shared-first** 위치 판단했나? 도메인 결합 아닌 제네릭 UI는 `packages/ui`에 만들었나? ([frontend-architecture](../context/frontend-architecture.md#공유-ui-승격-기준-packagesui--shared-first))
 - [ ] 변경한 코드의 책임이 **하나의 도메인**으로 설명되나? ([domain-map](../context/domain-map.md))
 - [ ] 도메인 경계를 넘는 데이터는 명시적 타입/API 계약을 쓰나?
 - [ ] 서버 상태와 클라이언트 Draft를 **혼합 저장**하지 않았나?
