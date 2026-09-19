@@ -1,0 +1,21 @@
+# S4~S6. 프로필 진입 · 내 정보 · FAQ 아코디언 · 1:1 준비중
+# 사전조건: 로그인된 상태
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- assertVisible: "계약서를 담아주세요"
+# S4. 프로필 진입 (헤더 아이콘: 접근성 라벨 "마이페이지")
+- tapOn: "마이페이지"
+- assertVisible: "카카오 계정으로 로그인"
+- assertVisible: "자주 묻는 질문"
+# S5. FAQ 펼침 → 답변 노출
+- tapOn: "ClauseLens는 무엇을 해주나요?"
+- assertVisible: "불리할 수 있는 조항을 찾아"
+# 다시 탭 → 접힘
+- tapOn: "ClauseLens는 무엇을 해주나요?"
+- assertNotVisible: "불리할 수 있는 조항을 찾아"
+# S6. 1:1 문의 → "준비 중"
+- tapOn: "1:1 문의"
+- assertVisible: "준비 중"
+- tapOn: "OK"

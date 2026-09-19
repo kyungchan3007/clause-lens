@@ -1,0 +1,15 @@
+# S2. 카카오 로그인 (일부 수동: 카카오 자격증명)
+# 사전조건: 로컬 백엔드(/auth/kakao) + docker Postgres 기동
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: true
+- assertVisible: "카카오로 시작하기"
+- tapOn: "카카오로 시작하기"
+# 카카오 로그인 웹뷰(kauth.kakao.com)로 전환됨.
+# ⚠️ 자격증명 입력·"계속하기"는 수동(테스트 계정). 아래는 완료를 최대 60초 대기.
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 60000
+# 로그인 성공 → Capture 진입
+- assertVisible: "계약서를 담아주세요"

@@ -1,0 +1,11 @@
+# S3. 세션 복원 — 재실행 시 로그인 화면 없이 Capture 직행
+# 사전조건: login.yaml로 이미 로그인된 상태(clearState 하지 않음)
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+# 복원 중 스플래시 후 인증 상태면 Capture
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+- assertNotVisible: "카카오로 시작하기"

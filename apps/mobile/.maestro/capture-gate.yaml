@@ -1,0 +1,9 @@
+# S1. 미인증 게이트 — 세션 없으면 로그인 화면
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: true
+- assertVisible: "ClauseLens"
+- assertVisible: "카카오로 시작하기"
+# Capture로 진입하지 않아야 함
+- assertNotVisible: "계약서를 담아주세요"
