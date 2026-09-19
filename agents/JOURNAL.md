@@ -14,6 +14,16 @@
 
 ---
 
+## 2026-09-19 · Claude · #43 공유 UI 승격 (IconBadge·SectionHeader) + 색상 토큰화
+- **무엇**: 피처 중복 UI를 `packages/ui`(shared)로 승격 + capture 하드코딩 색 토큰화. 외부 동작 불변(refactor).
+- **왜**: 재사용 패턴 중복 제거 + raw hex→토큰 일관성(가드레일).
+- **변경**: A) `IconBadge`(원형 tint+아이콘, EmptyState·ProfileScreen 사용) B) `SectionHeader`(muted 섹션 라벨, ProfileScreen·FaqSection 3곳) C) capture(PageItem·PageList·EmptyState) 아이콘색 hex→`semantic`(#2563EB→primary·#64748B→textMuted 정확, #B6BCC7→borderStrong 정규화).
+- **판단(FSD rule of three)**: A(2피처)·B(3회) 승격 / `MenuRow`는 단일 사용 → 백로그(과설계 방지).
+- **파일**: `packages/ui/src/{icon-badge,section-header}.tsx`+index, `apps/mobile/src/features/{capture/ui/EmptyState·PageItem·PageList, profile/ui/ProfileScreen·FaqSection}.tsx`, `agents/orchestration/TASKS.md`(백로그 C), spec `0012`.
+- **게이트**: ✅ PASS. **시뮬레이터 스모크(실 로그인)**: Capture(IconBadge)·프로필(IconBadge·SectionHeader) 렌더 **동일** 확인(회귀 없음).
+- **함정**: 브랜치 전환+pnpm 재설치 churn으로 Metro/nativewind 상태 깨져 무스타일 렌더 → **Metro `--clear` 재시작**으로 해결(코드 문제 아님, 앞선 세션과 동일 부류).
+- **다음/주의**: 스택 PR(base #38). C 승격은 2번째 사용처 생길 때. 다크모드 시 Icon 색도 스킴 반응 검토.
+
 ## 2026-09-19 · Claude · #36 앱 카카오 로그인 — 화면 + 세션 + e2e
 - **무엇**: 앱 쪽 카카오 로그인 구현·검증. `@react-native-kakao/{core,user}` + Expo config plugin + `initializeKakaoSDK` + `expo-secure-store`. `src/features/auth/`(lib/secureSession·api/authApi·model/authStore·useKakaoLogin·ui/LoginScreen) + `app/login.tsx` + `_layout.tsx` 게이트 3상태 + `app/index.tsx` 로그아웃. #32 백엔드 auth를 실제로 켜서 e2e 갭 닫음.
 - **왜**: #32는 백엔드만 실측(부팅·401). 실 카카오 로그인 e2e 미검증 → per-user 기능의 전제.

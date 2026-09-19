@@ -1,6 +1,7 @@
 import { View, Text, Image, Pressable } from "react-native";
 import { ScaleDecorator } from "react-native-draggable-flatlist";
 import { Icon } from "@clause-lens/ui";
+import { semantic } from "@clause-lens/tokens";
 import { useDraftStore } from "../model/draftStore";
 import { useImagePicker } from "../model/useImagePicker";
 import type { DraftPage } from "../model/types";
@@ -23,7 +24,11 @@ export function PageItem({ page, drag, isActive }: PageItemProps) {
         }`}
       >
         <Pressable onLongPress={drag} delayLongPress={120} hitSlop={8} accessibilityLabel="순서 변경">
-          <Icon name="GripVertical" size={18} color={isActive ? "#2563EB" : "#B6BCC7"} />
+          <Icon
+            name="GripVertical"
+            size={18}
+            color={isActive ? semantic.light.primary : semantic.light.borderStrong}
+          />
         </Pressable>
         <Image
           source={{ uri: page.localUri }}
@@ -33,10 +38,10 @@ export function PageItem({ page, drag, isActive }: PageItemProps) {
         />
         <Text className="flex-1 text-sm text-foreground">{page.order + 1}페이지</Text>
         <Pressable hitSlop={8} onPress={() => replaceDraft(page.id, "library")} accessibilityLabel="페이지 교체">
-          <Icon name="RefreshCw" size={18} color="#64748B" />
+          <Icon name="RefreshCw" size={18} color={semantic.light.textMuted} />
         </Pressable>
         <Pressable hitSlop={8} onPress={() => removePage(page.id)} accessibilityLabel="페이지 삭제">
-          <Icon name="Trash2" size={18} color="#64748B" />
+          <Icon name="Trash2" size={18} color={semantic.light.textMuted} />
         </Pressable>
       </View>
     </ScaleDecorator>
