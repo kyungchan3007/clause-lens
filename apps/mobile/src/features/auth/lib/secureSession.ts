@@ -45,3 +45,9 @@ export async function loadSession(): Promise<StoredSession | null> {
 export async function clearSession(): Promise<void> {
   await SecureStore.deleteItemAsync(SESSION_KEY);
 }
+
+// API 호출 직전 access token 취득(app 레이어가 upload에 주입). 장기 캡처 금지.
+export async function getAccessToken(): Promise<string | null> {
+  const session = await loadSession();
+  return session?.accessToken ?? null;
+}
