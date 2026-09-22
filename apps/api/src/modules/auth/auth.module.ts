@@ -21,5 +21,7 @@ import { TokenService } from "./token/token.service";
   ],
   controllers: [AuthController],
   providers: [AuthService, TokenService, KakaoVerifier, JwtAuthGuard],
+  // 다른 모듈(uploads 등)이 JwtAuthGuard로 라우트를 보호할 수 있게 export.
+  exports: [JwtAuthGuard, TokenService],
 })
 export class AuthModule {}

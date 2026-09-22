@@ -13,6 +13,7 @@
     "deploy": "npx expo export -p web && npx eas-cli@latest deploy"
   },
   "dependencies": {
+    "@clause-lens/contracts": "workspace:*",
     "@clause-lens/tokens": "workspace:*",
     "@clause-lens/ui": "workspace:*",
     "@react-native-kakao/core": "2.4.6",

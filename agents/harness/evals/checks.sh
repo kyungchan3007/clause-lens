@@ -27,6 +27,9 @@ echo " ClauseLens 완료 게이트"
 echo " root: $ROOT"
 echo "════════════════════════════════════════"
 
+# 0) 공유 계약 빌드 (contracts) — api·mobile 타입 해석의 선행(dist 필요)
+run "Build (contracts)" pnpm --filter @clause-lens/contracts build
+
 # 1) 타입 체크 (모바일 앱)
 run "Typecheck (mobile)" pnpm --filter @clause-lens/mobile exec tsc --noEmit
 
@@ -48,6 +51,7 @@ run "No npm/yarn lockfiles" bash -c '! find . -type d -name node_modules -prune 
 run "Native modules single version" node agents/harness/evals/check-native-singletons.mjs
 
 # 5) 유닛 테스트 (백엔드 로직·앱 상태/저장/API). e2e 시나리오는 apps/mobile/.maestro 참조.
+run "Unit tests (contracts)" pnpm --filter @clause-lens/contracts test
 run "Unit tests (api)" pnpm --filter @clause-lens/api test
 run "Unit tests (mobile)" pnpm --filter @clause-lens/mobile test
 
