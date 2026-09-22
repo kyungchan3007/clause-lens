@@ -50,14 +50,15 @@ Draft(이미지 N장) → [분석하기]
 ```
 
 ### Acceptance
-- [ ] contracts에 presign/reprisign/complete 요청·응답 zod 스키마, 앱·API 공유
-- [ ] `Document`·`Page`(+`revision`,`expiresAt`,`confirmedAt`,`expectedSize`) 모델 + 마이그레이션(실 DB)
-- [ ] presign 멱등(`UNIQUE(userId, clientRequestId)`) — 동일키 동일세션, 다른 payload는 409
-- [ ] 임시키 PUT → complete가 **후보키로 copy·검증·원자 확정**, 확정 최종참조는 앱 미접근
-- [ ] complete 조건 = **모든 페이지 uploaded**일 때만 Document uploaded(부분은 페이지별 결과)
-- [ ] 동시 complete·응답 유실·copy 후 DB 실패·삭제 실패에도 상태 일관(테스트)
-- [ ] 크기 정확 일치·MIME·매직바이트 검증, 잘못된 타입/크기/교차문서 pageId 거부
-- [ ] 로컬 MinIO 실측(presign→PUT→complete) · URL·원문 로그 없음 · `checks.sh` PASS
+> 백엔드 슬라이스(#15/PR #59, 머지) 기준 상태. 앱(RN) 연동·동시성 부하 테스트는 후속(TASK-002 프론트).
+- [x] contracts에 presign/reprisign/complete 요청·응답 zod 스키마, 앱·API 공유 *(패키지 공유·api 사용. 앱 import는 연동 태스크)*
+- [x] `Document`·`Page`(+`revision`,`expiresAt`,`confirmedAt`,`expectedSize`) 모델 + 마이그레이션(실 DB)
+- [x] presign 멱등(`UNIQUE(userId, clientRequestId)`) — 동일키 동일세션, 다른 payload는 409
+- [x] 임시키 PUT → complete가 **후보키로 copy·검증·원자 확정**, 확정 최종참조는 앱 미접근
+- [x] complete 조건 = **모든 페이지 uploaded**일 때만 Document uploaded(부분은 페이지별 결과)
+- [ ] 동시 complete·응답 유실·copy 후 DB 실패·삭제 실패에도 상태 일관(테스트) *(후속: 현재 멱등 재호출·Serializable tx는 구현, 동시성/실패주입 전용 테스트 미작성)*
+- [x] 크기 정확 일치·MIME·매직바이트 검증, 잘못된 타입/크기/교차문서 pageId 거부
+- [x] 로컬 MinIO 실측(presign→PUT→complete) · URL·원문 로그 없음 · `checks.sh` PASS
 
 ## SDD (어떻게)
 
