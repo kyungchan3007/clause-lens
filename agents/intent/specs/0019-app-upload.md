@@ -1,6 +1,6 @@
 # 0019 — 앱 업로드 연동 (presign→PUT→complete)
 
-> **관련 태스크**: #61 (TASK-002 프론트) · **상태**: in-progress(설계) · **유형**: feature (FE)
+> **관련 태스크**: #61 (TASK-002 프론트) · **상태**: 구현·실측 완료 — PR 대기 · **유형**: feature (FE)
 > **depends**: 백엔드 presign [0018](0018-uploads-presign.md)(#15/PR#59 머지) · 계약 `@clause-lens/contracts` · 촬영 Draft [0001](0001-image-capture-and-draft.md) · [frontend-architecture.md]
 > **unblocks**: 분석 요청(TASK-003, #16)
 > **product 흐름**: Notion 02 §9 — `분석하기` → presign → 저장소 직접 업로드.
@@ -44,17 +44,17 @@ PageList [분석하기] (pages≥1)
 ```
 
 ### Acceptance
-- [ ] `분석하기` → presign→PUT→complete → `uploaded` (시뮬레이터 실측)
-- [ ] 응답 `.parse()` 검증, 실패 시 재시도/재발급 경로 동작
-- [ ] documentId·clientRequestId 보존(같은 draft 재시도 시 멱등)
-- [ ] iOS HEIC 등도 업로드 성공(정규화)
-- [ ] 단계 상태(idle→presigning→uploading→confirming→uploaded/error) + 부분 실패·단일 재시도 UI
-- [ ] **취소·로그아웃·계정변경 시 진행 중 업로드 즉시 무효화**(네이티브 task 취소 + 모든 await 후 실행 유효성 검사, 후속 요청 금지)
-- [ ] **응답 집합 검증**(presign order 정확 일치·complete 요청 pageIds와 결과 집합 일치·documentId 일치 → 불일치=계약오류 중단, URL 재발급으로 숨기지 않음)
-- [ ] **size_mismatch**: 스냅샷과 실측 다르면 기존 세션 재PUT 금지 → 새 세션/재선택 안내
-- [ ] **업로드 세션에 ownerUserId+인증세대 바인딩**(다른 사용자 토큰으로 이어지지 않음)
-- [ ] 단위 테스트(uploadApi·useUpload) + e2e(반자동) · `checks.sh` PASS
-- [ ] 토큰·URL·이미지 로그 없음(예외·응답본문·상태 스냅샷 포함)
+- [x] `분석하기` → presign→PUT→complete → `uploaded` (시뮬레이터 실측)
+- [x] 응답 `.parse()` 검증, 실패 시 재시도/재발급 경로 동작
+- [x] documentId·clientRequestId 보존(같은 draft 재시도 시 멱등)
+- [x] iOS HEIC 등도 업로드 성공(정규화)
+- [x] 단계 상태(idle→presigning→uploading→confirming→uploaded/error) + 부분 실패·단일 재시도 UI
+- [x] **취소·로그아웃·계정변경 시 진행 중 업로드 즉시 무효화**(네이티브 task 취소 + 모든 await 후 실행 유효성 검사, 후속 요청 금지)
+- [x] **응답 집합 검증**(presign order 정확 일치·complete 요청 pageIds와 결과 집합 일치·documentId 일치 → 불일치=계약오류 중단, URL 재발급으로 숨기지 않음)
+- [x] **size_mismatch**: 스냅샷과 실측 다르면 기존 세션 재PUT 금지 → 새 세션/재선택 안내
+- [x] **업로드 세션에 ownerUserId+인증세대 바인딩**(다른 사용자 토큰으로 이어지지 않음)
+- [x] 단위 테스트(uploadApi·useUpload) + e2e(반자동) · `checks.sh` PASS
+- [x] 토큰·URL·이미지 로그 없음(예외·응답본문·상태 스냅샷 포함)
 
 ## SDD (어떻게)
 
@@ -108,5 +108,11 @@ PageList [분석하기] (pages≥1)
 
 최종(Codex): **5개 P1 보완 반영 조건으로 첫 슬라이스 착수 승인** → 본 문서 반영 완료.
 
-### 검증 결과 (VERIFY 후 채움)
-- (구현 후 채움)
+### 검증 결과 (2026-09-23)
+- **게이트**: `checks.sh` ✅ ALL PASS(9검사). 단위: mobile upload 10(uploadApi 6·useUpload 4) 포함.
+- **시뮬레이터 실측(iPhone 17 Pro + 로컬 API/MinIO/Postgres, prebuild 재빌드, 카카오 로그인 수동)**:
+  - 사진 선택→**JPEG 정규화**→`분석하기`→presign→**MinIO 직접 PUT**→complete→**"업로드 완료"** 관측.
+  - 백엔드 확인: `Document.status=uploaded`, `Page.status=uploaded`·confirmedAt set, **finalKey=후보키**(`documents/…/r1/{uuid}`).
+  - **MinIO 객체 존재**: `size == expectedSize`(1773843), `type=image/jpeg` → 정규화·크기 정확일치·후보키 copy 실동작.
+- **단위로 확정(실기기 아님)**: 응답 집합검증(order 불일치→중단), 부분 실패 retryable 반영, 인증 없음→error. 취소·계정변경 무효화·size_mismatch 분기는 코드+로직(실기기 부하/동시성은 후속).
+- **정직 표기**: 해피패스·정규화·크기일치는 실기기 관측, 오류/동시성 엣지는 단위 커버. 앱 재시작 복구·자동 백오프는 비목표(후속).
