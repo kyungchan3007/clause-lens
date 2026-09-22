@@ -11,7 +11,7 @@
 5. BUILD      Guardrails 지키며 작게 구현. Expo 코드면 v57 문서 먼저.
 6. GATE       bash agents/harness/evals/checks.sh → PASS까지 반복. 계속 실패하면 §6(막힘·실패·롤백).
 7. VERIFY ★   Acceptance 확인 + **단위 테스트·e2e 테스트를 무조건 작성·실행**(→ 아래 §테스트 필수, 필요시 시나리오 추가). 필요시 시뮬레이터. **결과를 spec의 SDD §검증에 채운다.**
-8. RECORD     JOURNAL.md append(무엇/왜/파일/게이트/**이번에 드러난 공백**/다음), TASKS.md status=done.
+8. RECORD     JOURNAL.md append(무엇/왜/파일/게이트/**이번에 드러난 공백**/다음), TASKS.md status=done. **Acceptance 체크박스 갱신**(아래 §Acceptance 갱신).
 9. REFLECT ★  이번 태스크가 드러낸 규칙·스펙·문서 공백을 Intent(spec/feature)·Context(문서)에 반영 → 루프를 닫는다(§9).
 ```
 
@@ -57,6 +57,15 @@ spec 파일 한 개에 아래를 담는다 (기능/chore 동일 형식, 템플�
 
 - **문구 assert는 실제 UI 문자열과 일치**해야 한다(Maestro는 요소 전체 텍스트 정규식 매칭). 기능 문구를 바꾸면 yaml도 같이 바꾼다.
 - 실제 시나리오의 단일 소스는 `apps/mobile/.maestro/`(SCENARIOS.md + yaml)이다. 지침서는 이 규칙(트리거)만 두고 시나리오 내용은 담지 않는다.
+
+## §Acceptance 갱신 — 완료 상태를 문서에 반영 (RECORD의 일부)
+
+Acceptance 체크박스는 **만들어만 두면 안 된다.** 만들 때는 미체크(`[ ]`)로 두되, **RECORD 단계에서 실제 상태로 갱신**해 무엇이 done이고 무엇이 남았는지 한눈에 보이게 한다.
+
+- **완료했으면 `[x]`** 로 바꾼다 — **이슈와 spec 양쪽** 모두(이슈는 사용자가, spec은 과정 기록이 본다).
+- **미완/후속이면 `[ ]` 유지 + 한 줄로 사유/이어서 할 일**을 적는다(예: `- [ ] … (후속 #NN에서 처리)`). 그냥 미체크로 방치 금지.
+- **부분 충족은 정직하게**: 완전 자동이 아니면(예: e2e 반자동) 체크하되 spec 검증 결과에 범위를 명시한다. 안 한 걸 체크하지 않는다.
+- 커밋·푸시 후 PR 본문의 Acceptance도 동일하게 반영. 태스크가 이어지면 **다음에 할 항목이 미체크로 남아 보이게** 한다.
 
 ## §7. PR 리뷰 대응 (봇·사람)
 
@@ -108,4 +117,5 @@ RECORD로 끝이 아니다. 이번 태스크에서 **게이트·검증·구현�
 - [ ] 로그에 이미지 원문·OCR 전문·토큰·Presigned URL을 남기지 않았나?
 - [ ] 상대 AI가 점유한 파일을 건드리지 않았나? ([TASKS.md](../orchestration/TASKS.md))
 - [ ] [JOURNAL.md](../JOURNAL.md) 기록 완료?
+- [ ] **Acceptance 체크박스**를 완료 상태로 갱신했나? (이슈 + spec 양쪽, 미완/후속은 사유 표기 — §Acceptance 갱신)
 - [ ] **§9 REFLECT** — 이번 태스크의 학습을 Intent/Context에 반영했나?

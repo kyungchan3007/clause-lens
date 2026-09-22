@@ -19,7 +19,7 @@
 - [x] `loop.md §테스트 필수`에 트리거 표(추가/변경/삭제/백엔드) 반영
 - [x] self-check에 "시나리오 추가/수정/삭제 동기화" 항목
 - [x] memory `testing-and-shared-ui-rules` 갱신
-- [ ] 문서 전용 → `checks.sh` PASS
+- [x] 문서 전용 → `checks.sh` PASS
 
 ## SDD (어떻게)
 

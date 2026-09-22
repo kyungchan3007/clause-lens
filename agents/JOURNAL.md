@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-22 · Claude · #55 Acceptance 체크박스 완료 반영 규칙 (지침 갱신)
+- **무엇**: Acceptance 체크박스를 만들고 방치하던 문제 → `loop.md`에 RECORD 단계 갱신 규칙 + `§Acceptance 갱신` 섹션 + self-check. 기존 spec 0013/0014/0015 완료 항목 체크, 닫힌 이슈 #49/#51 체크 정리.
+- **왜**: 사용자 지적 — 완료 후에도 미체크라 done/후속 구분 불가로 혼란. "만들면 닫는다"를 지침으로 박음.
+- **파일**: `agents/harness/loop.md`(8.RECORD·§Acceptance 갱신·self-check), spec `0016`, specs 0013/0014/0015 체크, JOURNAL 포맷 흠(빈 줄) 수정.
+- **게이트**: ✅ ALL PASS(문서 전용).
+- **다음/주의**: 다음 = S9~S15 시나리오 백필(트리거 규칙 develop 반영 완료).
+
 ## 2026-09-22 · Claude · #53 e2e 시나리오 트리거 규칙 (지침 갱신)
 - **무엇**: `loop.md §테스트 필수`에 **시나리오 생명주기 = 기능 생명주기** 트리거 규칙(추가/변경/삭제/백엔드 표) + self-check 항목 + memory 갱신.
 - **왜**: "매 태스크 e2e"가 뭉툭 → 기능 변화와 시나리오 동기화 기준을 명문화(placeholder/썩는 시나리오 구조적 방지).
@@ -28,6 +35,7 @@
 - **파일**: `capture/lib/permission.ts`(신규)·`permission.test.ts`(신규 3케이스)·`useImagePicker.ts`(거부 시 호출)·`.maestro/SCENARIOS.md`(S17)·`.maestro/permission-denied.yaml`(신규, 반자동)·spec `0014`.
 - **게이트**: ✅ ALL PASS — mobile 단위 5스위트/25테스트(permission 포함), api 4/19.
 - **다음/주의**: S17 e2e는 OS 권한 다이얼로그가 시뮬레이터에서 브리틀 → 반자동(안내 로직은 단위가 확정). **SCENARIOS.md·JOURNAL은 #49(S16)와 같은 지점 수정 → 두 PR 순차 머지 시 충돌 예상, 둘 다 보존해 해소**. 다음 = 시나리오 백필 S9~S15.
+
 ## 2026-09-22 · Claude · #49 로그인 실패 친화 문구 매핑 (S16 공백 수정)
 - **무엇**: 로그인 실패 시 `e.message` 원문 노출/취소도 에러 표시하던 UX 공백 수정. 순수 매핑 함수 `lib/loginError.ts` 추가 → `useKakaoLogin`이 위임.
 - **왜**: e2e 시나리오(S16)를 쓰려다 드러난 공백 — placeholder 시나리오 대신 **실제 동작을 먼저 구현**하고 그 위에 시나리오를 얹기로(사용자 지시). 취소는 실패 아님, 네트워크/서버 원문은 사용자에게 부적절.
