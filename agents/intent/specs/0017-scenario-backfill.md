@@ -21,7 +21,7 @@
 - [x] S15 문서화(수동 관측)
 - [x] assert 문자열 실제 UI와 일치
 - [x] checks.sh PASS
-- [ ] (가능 시) maestro 실행 관측 — **미실행**: 로그인 상태(카카오 수동)+시뮬레이터 dev 앱 필요. 사용자와 함께 수동 세션에서 실행 예정
+- [x] (가능 시) maestro 실행 관측 — **완료**: 로그인(카카오 수동) 후 S9~S12 maestro 4/4 PASS, S13~S14 피커 수동으로 실측 PASS, S15 문서만
 
 ## SDD (어떻게)
 
@@ -61,4 +61,7 @@
 - **게이트**: `checks.sh` ✅ ALL PASS(앱 코드 무변경 확인 — 시나리오/문서만).
 - **작성물**: SCENARIOS.md S9~S15 + yaml 6개(capture-empty·faq-multi·logout-cancel·profile-back·capture-add-page·capture-remove-page). S15는 문서만.
 - **assert 근거**: 실제 UI 문자열/접근성 라벨과 대조 확인(EmptyState·PageList·PageItem·FaqSection·ProfileScreen 코드 기준).
-- **maestro 실행**: 미실행(로그인 카카오 수동 + 시뮬레이터 dev 앱 필요) → 사용자와 수동 세션에서 관측 예정. 자동 4개(S9~S12)는 로그인만 되면 완전 자동, 반자동 2개(S13~S14)는 피커 수동.
+- **maestro 실행 관측 완료(2026-09-22, iPhone 17 Pro + 로컬 API/Postgres, 카카오 로그인 수동 후)**:
+  - S9 capture-empty · S10 faq-multi(단일 열림) · S11 logout-cancel · S12 profile-back(엣지 스와이프) → **maestro 4/4 PASS**(모든 step COMPLETED). S12 iOS back 스와이프도 실측 성공.
+  - S13 capture-add-page · S14 capture-remove-page → **피커 수동 선택으로 실측 PASS**(추가 시 "1페이지"/"분석하기"/"페이지 추가" 노출, 삭제 시 빈 상태 복귀). yaml은 반자동(피커 수동).
+  - S15 드래그 → 문서만(미실행).
