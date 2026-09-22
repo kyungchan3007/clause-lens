@@ -172,5 +172,13 @@ complete는 시도마다 **새 후보키**(`.../r{revision}/{attemptId}`)로 cop
 - R2: 후보키 기반 확정(검증객체 자체를 DB 연결)·`CopySourceIfMatch`·copy 응답에러·저장소호출은 DB잠금 밖·**전체 uploaded 조건(pending==0은 버그)**·멱등 UNIQUE+payload 충돌 409·complete 재호출 부분복구·failed는 응답코드로·DocumentsService 구체메서드·정리 대상 확장·Railway versioning 미지원.
 - 최종(Codex): **후보키 확정 + 전체 uploaded 조건 + 멱등충돌·만료복구 규칙 반영 시 착수 승인.** → 본 문서에 반영 완료.
 
-### 검증 결과 (VERIFY 후 채움)
-- (구현 후 채움)
+### 검증 결과 (백엔드 슬라이스 — 2026-09-22)
+- **게이트**: `checks.sh` ✅ ALL PASS(9검사). 단위: contracts 8 · api 33(documents 6·uploads 8 포함) · mobile.
+- **DB**: 마이그레이션 `add_documents_pages` 실 DB 적용(docker Postgres).
+- **MinIO 실측(실 HTTP, iPhone 아님·서버 e2e, docker MinIO+Postgres) 12/12 PASS**:
+  - presign 200 → **실제 PUT(MinIO 직접)** → complete 200 → `status=uploaded`, page uploaded
+  - **후보키 채택**: `Page.finalKey`가 `documents/...`(임시키 아님) — copy+CopySourceIfMatch+path-style 동작 확인
+  - complete **멱등 재호출** → uploaded 유지(후퇴 없음)
+  - 음성: 크기 불일치 → `pending`+`size_mismatch`, 문서 밖 pageId → 400, 무토큰 → 401
+- **정직 표기**: 앱(RN) 측 업로드 연동·e2e(Maestro)는 **후속**(다음 스텝). 서버 검증은 완료.
+- **미검증(후속)**: 고아 정리 잡 실행경로, Railway Bucket 실환경 주소방식/copy, 동시 complete 부하.

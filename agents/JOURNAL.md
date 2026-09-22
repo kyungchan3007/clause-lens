@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-22 · Claude · #15 업로드 presign 백엔드 슬라이스 (TASK-002)
+- **무엇**: presign 첫 세로 슬라이스 백엔드 — contracts(zod)·Document/Page 모델·documents 도메인 서비스·uploads 모듈(StoragePort+MinioAdapter). Codex 2R 설계(spec 0018) 구현.
+- **설계 핵심**: 후보키 copy로 원본 불변성(확정 후 덮어쓰기 불가), 멱등키(userId+clientRequestId), 전체 uploaded만 전이(Serializable tx·후퇴 금지), 도메인 경계(uploads→documents 공개서비스), 크기 정확일치+매직바이트, 실패는 응답 error/retryable.
+- **파일**: `packages/contracts/**`(신규 패키지), `packages/db`(Document·Page+마이그레이션), `apps/api/src/{ports/storage.port,adapters/minio-storage.adapter,common/zod-body.pipe,modules/documents/**,modules/uploads/**}`, app.module·auth.module. spec 0018.
+- **게이트**: ✅ ALL PASS(9검사 — contracts 빌드/테스트 편입). 단위 contracts 8 + api 33(documents 6·uploads 8).
+- **실측(docker MinIO+Postgres, 서버 HTTP e2e) 12/12 PASS**: presign→실 PUT→complete=uploaded, finalKey 후보키 채택, 멱등 재호출·크기불일치·잘못된 pageId·무토큰 음성까지.
+- **다음/주의**: 앱(RN) 업로드 연동 + Maestro e2e는 후속. 고아 정리 잡·Railway 실환경(copy/주소방식)·동시 complete 부하는 미검증(후속). 커밋: contracts→db→uploads 3단계 + docs.
+
 ## 2026-09-22 · Claude · #57 기존 기능 e2e 시나리오 백필 (S9~S15)
 - **무엇**: 트리거 규칙 첫 적용 — 기존 화면(촬영·FAQ·로그아웃·프로필)의 미커버 흐름을 시나리오로 백필. 앱 코드 무변경(시나리오/문서만).
 - **범위**: 자동 4(S9 촬영 빈 상태·S10 FAQ 단일 열림·S11 로그아웃 취소·S12 프로필 back best-effort) + 반자동 2(S13 페이지 추가·S14 삭제, OS 피커 수동) + 문서만 1(S15 드래그, 브리틀).
