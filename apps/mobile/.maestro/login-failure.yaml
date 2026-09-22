@@ -1,0 +1,15 @@
+# S16. 로그인 실패 — 백엔드 미기동 시 친화 문구 노출 + 로그인 화면 유지
+# 사전조건: 백엔드를 내려둔 상태(docker/api off). 카카오 인증은 수동(테스트 계정).
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: true
+- assertVisible: "카카오로 시작하기"
+- tapOn: "카카오로 시작하기"
+# 카카오 웹뷰 → (수동) 계속하기. 백엔드가 없어 토큰 교환이 실패해야 함.
+- extendedWaitUntil:
+    visible: "네트워크 연결을 확인해주세요"
+    timeout: 60000
+# 실패해도 Capture 미진입, 로그인 화면 유지(재시도 가능)
+- assertVisible: "카카오로 시작하기"
+- assertNotVisible: "계약서를 담아주세요"

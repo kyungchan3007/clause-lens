@@ -71,6 +71,14 @@ maestro test apps/mobile/.maestro/profile.yaml   # 개별
 - **When** "촬영하기"/"갤러리에서 선택"을 탭한다
 - **Then** OS 카메라/사진 권한·피커가 뜬다(권한·피커 자체는 OS 영역, 스모크 수준)
 
+## S16. 로그인 실패 — 친화 문구 노출 (login-failure) — 반자동
+- **Given** 로그인 화면 · **백엔드(/auth/kakao)가 응답하지 않음**(docker/api off)
+- **When** "카카오로 시작하기" → (수동) 카카오 인증까지 완료
+- **Then** 토큰 교환이 실패하고 **친화 문구**가 뜬다("네트워크 연결을 확인해주세요") — 원문(`Network request failed` 등) 미노출
+- **And** Capture로 진입하지 않고 로그인 화면에 남아 재시도할 수 있다
+- **Edge** 사용자가 카카오 로그인을 **취소**하면 에러 문구를 띄우지 않는다(조용히 로그인 화면 유지)
+- **Note** 매핑 로직 4케이스는 단위 테스트(`lib/loginError.test.ts`)로 커버 — yaml은 화면 노출만 확인
+
 ## S17. 권한 거부 안내 (permission-denied) — 반자동
 - **Given** 로그인된 상태, Capture 빈 화면 · 카메라/사진 권한 **미허용**
 - **When** "촬영하기"(또는 "갤러리에서 선택")를 탭하고 OS 권한 다이얼로그에서 **거부**한다

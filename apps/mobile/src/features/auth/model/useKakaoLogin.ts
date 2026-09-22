@@ -2,6 +2,7 @@ import { useState } from "react";
 import { login as kakaoLogin } from "@react-native-kakao/user";
 
 import * as authApi from "../api/authApi";
+import { mapLoginError } from "../lib/loginError";
 import { useAuthStore } from "./authStore";
 
 // 로그인 오케스트레이션: 카카오 SDK → access token → 서버 교환 → 세션 저장.
@@ -22,8 +23,9 @@ export function useKakaoLogin() {
         result.user,
       );
     } catch (e) {
-      // 사용자 취소 포함. 토큰·프로필 원문은 로그로 남기지 않는다(guardrail).
-      setError(e instanceof Error ? e.message : "로그인에 실패했어요");
+      // 원문 대신 친화 문구로 매핑. 취소는 null → 문구 미표시.
+      // 토큰·프로필 원문은 로그로 남기지 않는다(guardrail).
+      setError(mapLoginError(e));
     } finally {
       setLoading(false);
     }
