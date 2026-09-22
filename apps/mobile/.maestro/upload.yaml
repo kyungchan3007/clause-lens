@@ -1,0 +1,19 @@
+# S18. 업로드 — 분석하기 → presign→PUT→complete → 업로드 완료 (반자동)
+# 사전조건: 로그인된 상태 · 로컬 API+MinIO 기동 · Draft에 이미지 1장 이상(피커 수동)
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+# 사진 추가(수동: 갤러리에서 선택 → 사진 고르기)
+- tapOn: "갤러리에서 선택"
+- extendedWaitUntil:
+    visible: "분석하기"
+    timeout: 30000
+# 업로드 시작 → 완료 대기
+- tapOn: "분석하기"
+- extendedWaitUntil:
+    visible: "업로드 완료"
+    timeout: 60000
