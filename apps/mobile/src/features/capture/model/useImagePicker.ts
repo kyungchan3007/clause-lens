@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
+import { notifyPermissionDenied } from "../lib/permission";
 import { useDraftStore } from "./draftStore";
 import type { DraftImageInput } from "./types";
 
@@ -15,7 +16,10 @@ export function useImagePicker() {
       source === "camera"
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return null; // TODO: 설정 이동 안내
+    if (!permission.granted) {
+      notifyPermissionDenied(source); // 설정 이동 안내(무동작 방지)
+      return null;
+    }
 
     const result =
       source === "camera"
