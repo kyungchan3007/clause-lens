@@ -17,7 +17,13 @@ function codeOf(e: unknown): string {
 }
 
 function messageOf(e: unknown): string {
-  return e instanceof Error ? e.message : "";
+  if (e instanceof Error) return e.message;
+  // 일부 SDK/환경은 Error가 아닌 plain object({ message })·DOMException으로 던진다.
+  if (e && typeof e === "object" && "message" in e) {
+    const m = (e as { message: unknown }).message;
+    return typeof m === "string" ? m : "";
+  }
+  return "";
 }
 
 /**

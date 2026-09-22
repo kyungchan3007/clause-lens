@@ -11,6 +11,14 @@ describe("mapLoginError", () => {
     expect(mapLoginError(new Error("사용자가 취소했습니다"))).toBeNull();
   });
 
+  it("plain object 에러(Error 아님)도 message로 분류", () => {
+    // 카카오/OS SDK는 { code, message } plain object를 던지기도 한다.
+    expect(mapLoginError({ message: "Network request failed" })).toBe(
+      "네트워크 연결을 확인해주세요",
+    );
+    expect(mapLoginError({ message: "user cancelled login" })).toBeNull();
+  });
+
   it("네트워크 오류 → 네트워크 문구", () => {
     expect(mapLoginError(new TypeError("Network request failed"))).toBe(
       "네트워크 연결을 확인해주세요",
