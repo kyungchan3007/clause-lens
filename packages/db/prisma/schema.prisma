@@ -29,6 +29,7 @@ model User {
   updatedAt      DateTime @updatedAt @db.Timestamptz(3)
 
   refreshTokens RefreshToken[]
+  documents     Document[]
 
   @@unique([provider, providerUserId])
 }
@@ -45,4 +46,58 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ── 업로드/문서 (#15) ──
+
+enum DocumentStatus {
+  draft // presign 완료, 업로드 대기
+  uploaded // 전체 페이지 업로드 확정
+  analyzing // 분석 중(TASK-003)
+  done
+  failed
+  expired // 세션 만료(정리 대상)
+}
+
+enum PageStatus {
+  pending // 업로드/확정 전
+  uploaded // 확정(finalKey 채택)
+  // 실패는 영속 상태가 아니라 complete 응답의 error/retryable로 표현
+}
+
+// 계약 세션 — 사용자가 분석하려는 페이지 묶음.
+model Document {
+  id              String         @id @default(cuid())
+  userId          String
+  clientRequestId String // 멱등키(첫 요청 전 클라 생성·영속)
+  status          DocumentStatus @default(draft)
+  expiresAt       DateTime       @db.Timestamptz(3) // 세션 만료(정리 기준). URL TTL과 분리
+  createdAt       DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(3)
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pages Page[]
+
+  @@unique([userId, clientRequestId]) // 멱등: 같은 사용자+요청키=같은 세션
+  @@index([userId, status])
+}
+
+// 문서의 개별 페이지. imageKey 대신 확정 후보키(finalKey)를 서버가 소유.
+model Page {
+  id           String     @id @default(cuid())
+  documentId   String
+  order        Int
+  revision     Int        @default(1) // 교체/재분석은 TASK-007, 필드는 지금
+  contentType  String
+  expectedSize Int // presign 시 저장 → complete에서 실제 크기와 정확 일치 검증
+  width        Int? // 클라 제공값(비신뢰, 참고). 실검증은 분석 단계(#16)
+  height       Int?
+  finalKey     String?    @unique // 확정된 후보키(copy 목적지). 확정 전 null
+  status       PageStatus @default(pending)
+  confirmedAt  DateTime?  @db.Timestamptz(3)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, order])
 }
