@@ -73,7 +73,8 @@ export class MinioStorageAdapter extends StoragePort {
       new CopyObjectCommand({
         Bucket: this.bucket,
         Key: params.toKey,
-        CopySource: encodeURI(`${this.bucket}/${params.fromKey}`),
+        // 세그먼트별 인코딩(슬래시는 보존) — encodeURI는 #·?·+ 등을 안전 처리 못 함.
+        CopySource: `${this.bucket}/${encodeS3Key(params.fromKey)}`,
         ...(params.ifMatchETag
           ? { CopySourceIfMatch: params.ifMatchETag }
           : {}),
@@ -104,6 +105,11 @@ export class MinioStorageAdapter extends StoragePort {
       new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
   }
+}
+
+// S3 CopySource용 키 인코딩: 각 경로 세그먼트를 encodeURIComponent, 슬래시는 보존.
+function encodeS3Key(key: string): string {
+  return key.split("/").map(encodeURIComponent).join("/");
 }
 
 function isNotFound(e: unknown): boolean {
