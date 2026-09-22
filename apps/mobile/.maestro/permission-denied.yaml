@@ -1,0 +1,17 @@
+# S17. 권한 거부 안내 — 촬영 권한 거부 시 설정 이동 안내
+# 사전조건: 로그인된 상태. 카메라 권한 미허용.
+# ⚠️ 반자동: OS 권한 다이얼로그의 "허용 안 함"은 수동(시뮬레이터 브리틀).
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- assertVisible: "계약서를 담아주세요"
+- tapOn: "촬영하기"
+# OS 카메라 권한 다이얼로그 → (수동) "허용 안 함"
+# 거부 후 앱 안내 다이얼로그 노출을 최대 30초 대기.
+- extendedWaitUntil:
+    visible: "카메라 권한이 필요해요"
+    timeout: 30000
+# 페이지 추가 안 됨 → 빈 화면 유지
+- tapOn: "취소"
+- assertVisible: "계약서를 담아주세요"

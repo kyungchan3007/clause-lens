@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-22 · Claude · #51 카메라/사진 권한 거부 안내 (S17 공백 수정)
+- **무엇**: 권한 거부 시 `return null`로 조용히 무동작하던 공백 수정. `lib/permission.ts` `notifyPermissionDenied` 추가 → `useImagePicker`가 거부 시 호출(설정 이동 안내).
+- **왜**: e2e 시나리오(S17)를 쓰려다 드러난 공백 — 실제 동작 먼저 구현. iOS는 권한 최초 1회만 물으므로 거부 후 설정 이동이 유일 경로인데 안내가 없었음.
+- **파일**: `capture/lib/permission.ts`(신규)·`permission.test.ts`(신규 3케이스)·`useImagePicker.ts`(거부 시 호출)·`.maestro/SCENARIOS.md`(S17)·`.maestro/permission-denied.yaml`(신규, 반자동)·spec `0014`.
+- **게이트**: ✅ ALL PASS — mobile 단위 5스위트/25테스트(permission 포함), api 4/19.
+- **다음/주의**: S17 e2e는 OS 권한 다이얼로그가 시뮬레이터에서 브리틀 → 반자동(안내 로직은 단위가 확정). **SCENARIOS.md·JOURNAL은 #49(S16)와 같은 지점 수정 → 두 PR 순차 머지 시 충돌 예상, 둘 다 보존해 해소**. 다음 = 시나리오 백필 S9~S15.
+
 ## 2026-09-19 · Claude · #47 Maestro e2e 플로우 하드닝 (실행 검증)
 - **무엇**: `maestro` CLI 설치 후 e2e 플로우 5개를 **실제 실행**해 검증(그동안 "작성만" 됨). 브리틀 2건 수정.
 - **발견(실행으로)**: ① Maestro 텍스트 매칭 = 요소 **전체 텍스트 정규식** → 긴 문장의 **부분 문자열 assert 실패**(화면엔 보이는데). ② `clearState` 재실행 직후 번들 로딩/복원 스플래시로 고정 `assertVisible` 성급 실패.
