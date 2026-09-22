@@ -127,6 +127,14 @@ maestro test apps/mobile/.maestro/profile.yaml   # 개별
 - **And** 페이지가 추가되지 않고 빈 화면이 유지된다
 - **Note** OS 권한 다이얼로그·설정 앱 전환은 시뮬레이터에서 브리틀 → yaml은 **반자동**(권한 거부 수동). 안내 로직(문구·설정 열기)은 단위 테스트(`lib/permission.test.ts`)가 확정
 
+## S18. 업로드 (upload) — 반자동 (#61)
+- **Given** 로그인된 상태 · 로컬 백엔드(API)+MinIO 기동 · Draft에 이미지 1장 이상(피커 수동)
+- **When** "분석하기"를 탭한다
+- **Then** presign→저장소 직접 PUT→complete 진행: "전송 중 n/N" → "서버 확인 중…" → **"업로드 완료"**
+- **And** (백엔드 확인) Document.status=uploaded, Page.finalKey 채택
+- **Edge** 부분 실패 시 "다시 시도" 버튼으로 미확정 페이지만 재발급→재전송→complete(멱등)
+- **Note** 로그인(카카오)·사진 선택 수동. 오케스트레이션 로직은 단위(`upload/*.test.ts`)로 커버. 서버 계약은 백엔드 MinIO 실측(#15)로 확정
+
 ---
 
 ## 백엔드 계약 검증(단위/통합에서 커버)

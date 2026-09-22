@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
+import { normalizeToJpeg } from "../lib/normalizeImage";
 import { notifyPermissionDenied } from "../lib/permission";
 import { useDraftStore } from "./draftStore";
 import type { DraftImageInput } from "./types";
@@ -29,9 +30,9 @@ export function useImagePicker() {
     if (result.canceled || result.assets.length === 0) return null;
 
     const asset = result.assets[0];
-    // 최소 유효성: uri 존재. (형식·디코딩 심층 검증은 후속)
     if (!asset.uri) return null;
-    return { localUri: asset.uri, width: asset.width, height: asset.height };
+    // JPEG 정규화 + 실측 크기(HEIC 등 대응). 실패 시 null → 추가 안 함.
+    return normalizeToJpeg(asset.uri);
   }, []);
 
   const captureToDraft = useCallback(

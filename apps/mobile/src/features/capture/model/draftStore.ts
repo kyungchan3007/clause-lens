@@ -10,27 +10,41 @@ const reindex = (pages: DraftPage[]): DraftPage[] =>
 
 interface DraftState {
   pages: DraftPage[];
+  // 업로드 진행 중엔 편집을 잠근다(스냅샷 불변성 — 교체된 이미지가 잘못 매핑되는 것 방지).
+  locked: boolean;
   addPage: (input: DraftImageInput) => void;
   removePage: (id: string) => void;
   replacePage: (id: string, input: DraftImageInput) => void;
   /** draggable list 의 onDragEnd 등에서 새 순서 배열을 통째로 반영 */
   setPages: (pages: DraftPage[]) => void;
+  setLocked: (locked: boolean) => void;
   clear: () => void;
 }
 
-export const useDraftStore = create<DraftState>((set) => ({
+export const useDraftStore = create<DraftState>((set, get) => ({
   pages: [],
-  addPage: (input) =>
+  locked: false,
+  addPage: (input) => {
+    if (get().locked) return;
     set((s) => ({
       pages: reindex([...s.pages, { id: nextId(), order: s.pages.length, ...input }]),
-    })),
-  removePage: (id) =>
-    set((s) => ({ pages: reindex(s.pages.filter((p) => p.id !== id)) })),
-  // 교체: localUri·width·height 만 변경, id·order 유지
-  replacePage: (id, input) =>
+    }));
+  },
+  removePage: (id) => {
+    if (get().locked) return;
+    set((s) => ({ pages: reindex(s.pages.filter((p) => p.id !== id)) }));
+  },
+  // 교체: 이미지·메타만 변경, id·order 유지
+  replacePage: (id, input) => {
+    if (get().locked) return;
     set((s) => ({
       pages: s.pages.map((p) => (p.id === id ? { ...p, ...input } : p)),
-    })),
-  setPages: (pages) => set({ pages: reindex(pages) }),
-  clear: () => set({ pages: [] }),
+    }));
+  },
+  setPages: (pages) => {
+    if (get().locked) return;
+    set({ pages: reindex(pages) });
+  },
+  setLocked: (locked) => set({ locked }),
+  clear: () => set({ pages: [], locked: false }),
 }));
