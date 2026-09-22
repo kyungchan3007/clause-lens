@@ -1,0 +1,13 @@
+# S9. 촬영 빈 상태 UI — 담긴 페이지 없을 때 빈 상태 노출
+# 사전조건: 로그인된 상태(login.yaml 선행). 재실행 시 draft store 초기화됨.
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+# 세션 복원 후 Capture 빈 상태
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+- assertVisible: "촬영하거나 갤러리에서 불러올 수 있어요"
+- assertVisible: "촬영하기"
+- assertVisible: "갤러리에서 선택"

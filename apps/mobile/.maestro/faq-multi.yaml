@@ -1,0 +1,18 @@
+# S10. FAQ 단일 열림 — 한 항목 열면 이전 항목이 닫힘
+# 사전조건: 로그인된 상태(login.yaml 선행).
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+- tapOn: "마이페이지"
+- assertVisible: "자주 묻는 질문"
+# 항목1 열기 → 답변1
+- tapOn: "ClauseLens는 무엇을 해주나요?"
+- assertVisible: ".*불리할 수 있는 조항을 찾아.*"
+# 항목2 열기 → 답변2 노출 + 답변1 닫힘(단일 열림)
+- tapOn: "분석 결과는 법적 효력이 있나요?"
+- assertVisible: ".*법률 자문을 대체하지 않아요.*"
+- assertNotVisible: ".*불리할 수 있는 조항을 찾아.*"

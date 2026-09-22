@@ -1,0 +1,17 @@
+# S13. 갤러리에서 페이지 추가 → 리스트 전환 (반자동)
+# 사전조건: 로그인된 상태(login.yaml 선행), 사진 권한 허용.
+# ⚠️ OS 사진 피커에서 사진 선택은 수동(자동화 브리틀). 선택 이후는 자동 검증.
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+- tapOn: "갤러리에서 선택"
+# OS 사진 피커 → (수동) 사진 1장 선택. 추가 후 리스트 전환을 최대 30초 대기.
+- extendedWaitUntil:
+    visible: "1페이지"
+    timeout: 30000
+- assertVisible: "분석하기"
+- assertVisible: "페이지 추가"
