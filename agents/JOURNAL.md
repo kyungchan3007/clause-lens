@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-22 · Claude · #49 로그인 실패 친화 문구 매핑 (S16 공백 수정)
+- **무엇**: 로그인 실패 시 `e.message` 원문 노출/취소도 에러 표시하던 UX 공백 수정. 순수 매핑 함수 `lib/loginError.ts` 추가 → `useKakaoLogin`이 위임.
+- **왜**: e2e 시나리오(S16)를 쓰려다 드러난 공백 — placeholder 시나리오 대신 **실제 동작을 먼저 구현**하고 그 위에 시나리오를 얹기로(사용자 지시). 취소는 실패 아님, 네트워크/서버 원문은 사용자에게 부적절.
+- **파일**: `auth/lib/loginError.ts`(신규)·`loginError.test.ts`(신규 8 assert)·`useKakaoLogin.ts`(위임)·`.maestro/SCENARIOS.md`(S16)·`.maestro/login-failure.yaml`(신규, 반자동)·spec `0013`.
+- **게이트**: ✅ ALL PASS — mobile 단위 5스위트/26테스트(loginError 포함), api 4/19.
+- **다음/주의**: S16 e2e는 백엔드 다운+카카오 수동이라 반자동(매핑은 단위가 완전 커버). 다음 = #50 권한 거부 안내(S17), 그 후 시나리오 백필 S9~S15. 취소 code 문자열은 SDK 실값과 다를 수 있어 code+message 이중 판별.
+
 ## 2026-09-19 · Claude · #47 Maestro e2e 플로우 하드닝 (실행 검증)
 - **무엇**: `maestro` CLI 설치 후 e2e 플로우 5개를 **실제 실행**해 검증(그동안 "작성만" 됨). 브리틀 2건 수정.
 - **발견(실행으로)**: ① Maestro 텍스트 매칭 = 요소 **전체 텍스트 정규식** → 긴 문장의 **부분 문자열 assert 실패**(화면엔 보이는데). ② `clearState` 재실행 직후 번들 로딩/복원 스플래시로 고정 `assertVisible` 성급 실패.
