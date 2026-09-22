@@ -1,0 +1,19 @@
+# S14. 페이지 삭제 → 빈 상태 복귀 (반자동)
+# 사전조건: 로그인된 상태(login.yaml 선행), 사진 권한 허용.
+# ⚠️ 페이지 추가를 위해 OS 피커에서 사진 선택은 수동.
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+# 페이지 1장 추가(수동 선택)
+- tapOn: "갤러리에서 선택"
+- extendedWaitUntil:
+    visible: "1페이지"
+    timeout: 30000
+# 삭제(접근성 라벨) → 빈 상태 복귀
+- tapOn: "페이지 삭제"
+- assertVisible: "계약서를 담아주세요"
+- assertNotVisible: "1페이지"

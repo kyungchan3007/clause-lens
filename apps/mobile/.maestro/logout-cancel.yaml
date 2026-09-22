@@ -1,0 +1,16 @@
+# S11. 로그아웃 취소 — 확인 다이얼로그에서 "취소" → 세션 유지
+# 사전조건: 로그인된 상태(login.yaml 선행).
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+- tapOn: "마이페이지"
+- tapOn: "로그아웃"
+- assertVisible: "로그아웃 하시겠어요?"
+# 취소 → 로그아웃되지 않고 마이페이지 유지
+- tapOn: "취소"
+- assertVisible: "자주 묻는 질문"
+- assertNotVisible: "카카오로 시작하기"

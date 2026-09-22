@@ -1,0 +1,17 @@
+# S12. 프로필 뒤로가기 → Capture (best-effort)
+# 사전조건: 로그인된 상태(login.yaml 선행).
+# ⚠️ iOS 네이티브 back은 시뮬레이터에서 브리틀 → 좌측 엣지 스와이프로 시도(실패 시 수동 확인).
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+- tapOn: "마이페이지"
+- assertVisible: "자주 묻는 질문"
+# iOS 좌측 엣지 스와이프(뒤로 가기 제스처)
+- swipe:
+    start: "2%, 50%"
+    end: "90%, 50%"
+- assertVisible: "계약서를 담아주세요"
