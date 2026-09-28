@@ -176,32 +176,25 @@ Skia 내부에는 C++ 기반 그래픽 엔진과 iOS·Android 네이티브 연�
 
 ### 책임 흐름
 
+각 계층이 무엇을 맡는지, 그리고 일이 어느 방향으로 넘어가는지 번호대로 따라가면 됩니다.
+
 ```mermaid
-flowchart TB
-    subgraph Frontend["프론트엔드 · Expo 앱"]
-        Capture["촬영·선택"]
-        Draft["페이지 Draft·미리보기"]
-        Upload["스토리지 직접 업로드"]
-        Highlight["Skia 하이라이트"]
+flowchart TD
+    subgraph FE["📱 프론트엔드 · 앱"]
+        A["촬영 · Draft 편집"]
+        Z["Skia 하이라이트 표시"]
+    end
+    subgraph AP["🛡️ NestJS API"]
+        B["인증 · 문서 · 작업 등록 · 결과 API"]
+    end
+    subgraph WK["⚙️ OCR Worker"]
+        C["OCR · 좌표 정규화 · 위험조항 분석"]
     end
 
-    subgraph APIArea["백엔드 · NestJS API"]
-        Auth["인증·구독 검증"]
-        Document["문서·페이지·revision"]
-        Job["작업 등록·결과 API"]
-    end
-
-    subgraph WorkerArea["백엔드 · OCR Worker"]
-        OCR["Google Vision 호출"]
-        Analyze["위험 조항 분석"]
-        Normalize["텍스트·좌표 정규화"]
-    end
-
-    Capture --> Draft --> Upload
-    Upload --> Document
-    Auth --> Document --> Job
-    Job --> OCR --> Normalize --> Analyze
-    Analyze --> Job --> Highlight
+    A -->|"① 업로드 · 분석 요청"| B
+    B -->|"② 작업 전달"| C
+    C -->|"③ 분석 결과 저장 · 반환"| B
+    B -->|"④ 결과 전달"| Z
 ```
 
 핵심 원칙은 다음과 같습니다.
@@ -297,6 +290,12 @@ flowchart TD
 
 ## 🔄 전체 분석 흐름
 
+> **한 줄 요약** — 앱이 이미지를 저장소에 직접 올리고 분석을 요청하면, 서버는 작업을 큐에 넣고 `jobId`를 바로 반환합니다. Worker가 OCR·분석해 DB에 저장하고, 앱은 상태를 조회해 결과를 이미지 위에 하이라이트합니다.
+
+**단계:** ① 촬영·업로드 → ② 분석 요청 → ③ 큐 등록(`jobId` 즉시 반환) → ④ Worker가 OCR(Vision)·위험조항 분석 → ⑤ 결과 DB 저장 → ⑥ 앱이 결과 조회 → Skia 하이라이트
+
+<sub>아래는 위 단계를 시간 순서로 자세히 펼친 다이어그램입니다.</sub>
+
 ```mermaid
 sequenceDiagram
     actor User as 사용자
@@ -330,6 +329,10 @@ sequenceDiagram
 ```
 
 ## ♻️ 페이지 이미지 교체 흐름
+
+> **한 줄 요약** — 특정 페이지 이미지를 새로 올리면 그 페이지의 `revision`이 올라가고 **그 페이지만** 다시 분석합니다. 교체 도중 들어온 **오래된(이전 revision) 결과는 버려서** 화면이 옛 이미지와 섞이지 않게 합니다.
+
+<sub>아래는 위 규칙을 시간 순서로 자세히 펼친 다이어그램입니다.</sub>
 
 ```mermaid
 sequenceDiagram
@@ -386,20 +389,17 @@ Worker는 작업에 포함된 `revision`과 DB의 현재 `revision`을 비교합
 ### 상태 결합 및 동기화 흐름
 
 ```mermaid
-flowchart TB
-    Server["서버 기준 상태<br>문서·페이지·revision·분석 결과"]
-    Cache["API 캐시<br>서버 상태의 클라이언트 복사본"]
-    Draft["클라이언트 Draft<br>촬영·미리보기·임시 편집"]
-    View["사용자 화면"]
-    Save["업로드·저장·분석 요청"]
+flowchart TD
+    S["🗄️ 서버 (최종 기준)<br/>문서·revision·분석 결과"]
+    C["📥 API 캐시<br/>서버 상태의 사본"]
+    D["✏️ 클라이언트 Draft<br/>촬영·임시 편집"]
+    V["👁️ 사용자 화면<br/>캐시 + Draft 합성"]
 
-    Server -->|"조회"| Cache
-    Cache -->|"기본 데이터"| View
-    Draft -->|"임시 변경 합성"| View
-    View -->|"확정"| Save
-    Save -->|"서버 반영"| Server
-    Server -->|"최신 결과 재조회"| Cache
-    Cache -->|"동기화 완료"| Draft
+    S -->|"① 서버 상태 조회"| C
+    C -->|"② 기본 데이터"| V
+    D -->|"③ 임시 변경 얹기"| V
+    V -->|"④ 확정 → 업로드·저장·분석"| S
+    S -.->|"⑤ 최신 결과 재조회 → Draft 제거"| C
 ```
 
 - 편집 중에는 `서버 상태 + 클라이언트 Draft`를 합쳐 화면에 표시합니다.
