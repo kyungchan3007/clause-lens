@@ -176,32 +176,25 @@ Skia 내부에는 C++ 기반 그래픽 엔진과 iOS·Android 네이티브 연�
 
 ### 책임 흐름
 
+각 계층이 무엇을 맡는지, 그리고 일이 어느 방향으로 넘어가는지 번호대로 따라가면 됩니다.
+
 ```mermaid
-flowchart TB
-    subgraph Frontend["프론트엔드 · Expo 앱"]
-        Capture["촬영·선택"]
-        Draft["페이지 Draft·미리보기"]
-        Upload["스토리지 직접 업로드"]
-        Highlight["Skia 하이라이트"]
+flowchart TD
+    subgraph FE["📱 프론트엔드 · 앱"]
+        A["촬영 · Draft 편집"]
+        Z["Skia 하이라이트 표시"]
+    end
+    subgraph AP["🛡️ NestJS API"]
+        B["인증 · 문서 · 작업 등록 · 결과 API"]
+    end
+    subgraph WK["⚙️ OCR Worker"]
+        C["OCR · 좌표 정규화 · 위험조항 분석"]
     end
 
-    subgraph APIArea["백엔드 · NestJS API"]
-        Auth["인증·구독 검증"]
-        Document["문서·페이지·revision"]
-        Job["작업 등록·결과 API"]
-    end
-
-    subgraph WorkerArea["백엔드 · OCR Worker"]
-        OCR["Google Vision 호출"]
-        Analyze["위험 조항 분석"]
-        Normalize["텍스트·좌표 정규화"]
-    end
-
-    Capture --> Draft --> Upload
-    Upload --> Document
-    Auth --> Document --> Job
-    Job --> OCR --> Normalize --> Analyze
-    Analyze --> Job --> Highlight
+    A -->|"① 업로드 · 분석 요청"| B
+    B -->|"② 작업 전달"| C
+    C -->|"③ 분석 결과 저장 · 반환"| B
+    B -->|"④ 결과 전달"| Z
 ```
 
 핵심 원칙은 다음과 같습니다.
@@ -244,35 +237,37 @@ OCR Worker와 Google Cloud Vision은 서로 다른 구성입니다.
 
 ### 서버 아키텍처
 
+> **한 줄 요약** — 앱이 요청하면 → API가 작업을 **큐에 넣고** → **Worker**가 꺼내 OCR·분석 → 결과를 **DB에 저장** → 앱은 진행 상태를 **실시간(SSE)** 으로 받아 화면에 표시합니다.
+
+**동작 순서 (그림의 번호와 동일)**
+
+1. **앱 → API** — 촬영·업로드를 마친 뒤 `분석하기`를 누르면 앱이 API에 분석을 요청합니다.
+2. **API → 큐** — API는 무거운 일을 직접 하지 않고 작업을 큐(Redis·BullMQ)에 넣은 뒤 `jobId`를 **즉시** 돌려줍니다. *(앱은 기다릴 필요 없음)*
+3. **큐 → Worker** — 대기 중인 작업을 OCR Worker가 하나씩 가져갑니다.
+4. **Worker → Google Vision** — 이미지를 Vision에 보내 글자·좌표를 받고, 위험 조항을 분석합니다.
+5. **Worker → DB** — 분석 결과를 PostgreSQL에 저장합니다.
+6. **API → 앱 (실시간)** — 진행 상태가 바뀔 때마다 SSE로 앱에 밀어줍니다. *(연결이 끊기면 앱이 다시 조회해 복원)*
+
 ```mermaid
-flowchart TB
-    App["Expo 모바일 앱"]
+flowchart TD
+    A["📱 앱"]
+    B["🛡️ API 서버"]
+    C["📮 큐 · Redis/BullMQ"]
+    D["⚙️ OCR Worker"]
+    E["🔍 Google Vision · 외부"]
+    F[("💾 PostgreSQL")]
 
-    subgraph Backend["우리 서버 영역 · Railway"]
-        API["NestJS API Server"]
-        Queue["Redis · BullMQ"]
-        Worker["OCR Worker"]
-        DB[("PostgreSQL")]
-        S3[("오브젝트 스토리지 · Railway Bucket")]
-    end
-
-    Vision["Google Cloud Vision API · 외부"]
-
-    App -->|"인증·문서·분석 API"| API
-    API -->|"Presigned URL 발급"| App
-    App -->|"이미지 직접 업로드"| S3
-    API -->|"OCR 작업 등록"| Queue
-    Queue -->|"비동기 작업 전달"| Worker
-    Worker -->|"원본 이미지 조회"| S3
-    Worker -->|"OCR 요청"| Vision
-    Vision -->|"텍스트·좌표 반환"| Worker
-    API -->|"문서·작업 조회/저장"| DB
-    Worker -->|"OCR·분석 결과 저장"| DB
-    Worker -.->|"상태 알림 (pub/sub)"| API
-    API -.->|"SSE 실시간 푸시"| App
+    A -->|"① 분석 요청"| B
+    B -->|"② 작업 등록"| C
+    C -->|"③ 작업 전달"| D
+    D -->|"④ OCR 요청·응답"| E
+    D -->|"⑤ 결과 저장"| F
+    B -.->|"⑥ 실시간 상태 · SSE"| A
 ```
 
-NestJS API Server와 OCR Worker는 배포와 실행 책임이 분리된 두 개의 서버입니다. API Server는 모바일 요청에 빠르게 응답하고, 시간이 오래 걸리는 OCR와 분석은 Worker가 비동기로 처리합니다. 진행 상태는 **Redis pub/sub → SSE** 로 앱에 실시간 전달하고, 끊기면 GET 조회로 복원합니다.
+> 📌 계약서 **원본 이미지**는 앱이 저장소(Railway Bucket)에 **직접 업로드**하고, Worker가 분석할 때 꺼내 씁니다. 저장소·DB를 포함한 모든 단계는 아래 [전체 분석 흐름](#-전체-분석-흐름)에 순서대로 자세히 나와 있습니다.
+
+**핵심은 "책임 분리"입니다.** API 서버는 앱 요청에 **빠르게** 응답하고, 시간이 오래 걸리는 OCR·분석은 **Worker가 뒤에서 비동기로** 처리합니다. 그래서 사용자는 분석이 끝날 때까지 앱이 멈추지 않고, 진행 상태만 실시간으로 확인합니다.
 
 ---
 
@@ -294,6 +289,12 @@ NestJS API Server와 OCR Worker는 배포와 실행 책임이 분리된 두 개�
 ---
 
 ## 🔄 전체 분석 흐름
+
+> **한 줄 요약** — 앱이 이미지를 저장소에 직접 올리고 분석을 요청하면, 서버는 작업을 큐에 넣고 `jobId`를 바로 반환합니다. Worker가 OCR·분석해 DB에 저장하고, 앱은 상태를 조회해 결과를 이미지 위에 하이라이트합니다.
+
+**단계:** ① 촬영·업로드 → ② 분석 요청 → ③ 큐 등록(`jobId` 즉시 반환) → ④ Worker가 OCR(Vision)·위험조항 분석 → ⑤ 결과 DB 저장 → ⑥ 앱이 결과 조회 → Skia 하이라이트
+
+<sub>아래는 위 단계를 시간 순서로 자세히 펼친 다이어그램입니다.</sub>
 
 ```mermaid
 sequenceDiagram
@@ -328,6 +329,10 @@ sequenceDiagram
 ```
 
 ## ♻️ 페이지 이미지 교체 흐름
+
+> **한 줄 요약** — 특정 페이지 이미지를 새로 올리면 그 페이지의 `revision`이 올라가고 **그 페이지만** 다시 분석합니다. 교체 도중 들어온 **오래된(이전 revision) 결과는 버려서** 화면이 옛 이미지와 섞이지 않게 합니다.
+
+<sub>아래는 위 규칙을 시간 순서로 자세히 펼친 다이어그램입니다.</sub>
 
 ```mermaid
 sequenceDiagram
@@ -384,20 +389,17 @@ Worker는 작업에 포함된 `revision`과 DB의 현재 `revision`을 비교합
 ### 상태 결합 및 동기화 흐름
 
 ```mermaid
-flowchart TB
-    Server["서버 기준 상태<br>문서·페이지·revision·분석 결과"]
-    Cache["API 캐시<br>서버 상태의 클라이언트 복사본"]
-    Draft["클라이언트 Draft<br>촬영·미리보기·임시 편집"]
-    View["사용자 화면"]
-    Save["업로드·저장·분석 요청"]
+flowchart TD
+    S["🗄️ 서버 (최종 기준)<br/>문서·revision·분석 결과"]
+    C["📥 API 캐시<br/>서버 상태의 사본"]
+    D["✏️ 클라이언트 Draft<br/>촬영·임시 편집"]
+    V["👁️ 사용자 화면<br/>캐시 + Draft 합성"]
 
-    Server -->|"조회"| Cache
-    Cache -->|"기본 데이터"| View
-    Draft -->|"임시 변경 합성"| View
-    View -->|"확정"| Save
-    Save -->|"서버 반영"| Server
-    Server -->|"최신 결과 재조회"| Cache
-    Cache -->|"동기화 완료"| Draft
+    S -->|"① 서버 상태 조회"| C
+    C -->|"② 기본 데이터"| V
+    D -->|"③ 임시 변경 얹기"| V
+    V -->|"④ 확정 → 업로드·저장·분석"| S
+    S -.->|"⑤ 최신 결과 재조회 → Draft 제거"| C
 ```
 
 - 편집 중에는 `서버 상태 + 클라이언트 Draft`를 합쳐 화면에 표시합니다.
