@@ -30,11 +30,17 @@ echo "════════════════════════�
 # 0) 공유 계약 빌드 (contracts) — api·mobile 타입 해석의 선행(dist 필요)
 run "Build (contracts)" pnpm --filter @clause-lens/contracts build
 
+# 0b) 공유 DB 함수 빌드 (db/analysis) — api·worker가 @clause-lens/db/analysis 를 해석하려면 선행 빌드 필요
+run "Build (db)" pnpm --filter @clause-lens/db build
+
 # 1) 타입 체크 (모바일 앱)
 run "Typecheck (mobile)" pnpm --filter @clause-lens/mobile exec tsc --noEmit
 
 # 1b) 타입 체크 (백엔드 API)
 run "Typecheck (api)" pnpm --filter @clause-lens/api exec tsc --noEmit
+
+# 1b') 타입 체크 (OCR Worker)
+run "Typecheck (worker)" pnpm --filter @clause-lens/worker exec tsc --noEmit
 
 # 1c) Prisma 스키마 검증 (DB 연결 안 함 — env() 해석용 더미 URL만 주입)
 run "Prisma schema validate" bash -c 'DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" pnpm --filter @clause-lens/db exec prisma validate'
@@ -53,6 +59,7 @@ run "Native modules single version" node agents/harness/evals/check-native-singl
 # 5) 유닛 테스트 (백엔드 로직·앱 상태/저장/API). e2e 시나리오는 apps/mobile/.maestro 참조.
 run "Unit tests (contracts)" pnpm --filter @clause-lens/contracts test
 run "Unit tests (api)" pnpm --filter @clause-lens/api test
+run "Unit tests (worker)" pnpm --filter @clause-lens/worker test
 run "Unit tests (mobile)" pnpm --filter @clause-lens/mobile test
 
 # ── 새 검사는 위 형식으로 여기에 한 줄씩 추가 ──

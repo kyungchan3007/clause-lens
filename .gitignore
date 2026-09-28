@@ -45,3 +45,6 @@ app-example
 
 ios
 android
+
+# db 공유 함수 빌드 산출물(@clause-lens/db/analysis)
+packages/db/analysis/

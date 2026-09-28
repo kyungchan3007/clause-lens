@@ -7,6 +7,7 @@
   "scripts": {
     "generate": "prisma generate",
     "postinstall": "prisma generate",
+    "build": "tsc -p tsconfig.json",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "studio": "prisma studio",
@@ -16,6 +17,8 @@
     "@prisma/client": "^6.1.0"
   },
   "devDependencies": {
-    "prisma": "^6.1.0"
+    "@types/node": "^22.10.0",
+    "prisma": "^6.1.0",
+    "typescript": "^5.7.0"
   }
 }

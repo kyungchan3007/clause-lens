@@ -2,7 +2,7 @@
 
 > **관련 태스크**: #15 (TASK-002) · **상태**: in-progress(설계 — Codex 회의 2R 반영) · **유형**: feature (첫 세로 슬라이스)
 > **depends**: 인증 [0008]·[0009] · [backend-architecture.md] · 도메인 [upload-storage]·[document-page]
-> **unblocks**: 프론트 업로드(TASK-002) · 분석 요청(TASK-003, #16)
+> **unblocks**: 프론트 업로드(TASK-002) · 분석 요청(TASK-003, #63)
 > **설계 회의**: Codex 2라운드 리뷰 반영(2026-09-22) — 아래 §회의 반영. product 흐름: Notion 02 §9 3~4단계.
 
 ## PRD (왜/무엇)
@@ -20,7 +20,7 @@
 - G7. 앱: presign → 임시키 직접 PUT(진행률·재시도) → complete. Draft에 서버 ID 보존(복구).
 
 ### 3. 비목표 (다음 태스크)
-- **분석요청·jobId·OCR·전체 이미지 디코딩/픽셀 제한/손상분류**(TASK-003/#16) · **entitlement 차감**(TASK-005) · 위험조항/하이라이트.
+- **분석요청·jobId·OCR·전체 이미지 디코딩/픽셀 제한/손상분류**(TASK-003/#63) · **entitlement 차감**(TASK-005) · 위험조항/하이라이트.
 - **페이지 교체·revision 증가·재분석**(TASK-007) — 단 `revision` 필드는 지금 추가(`=1`).
 - 웹 CORS·고급 병렬/자동재시도 UX · 대규모 정리 시스템/대시보드(운영 배포 전 **최소 정리 실행경로**는 필수).
 

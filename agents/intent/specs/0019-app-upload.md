@@ -2,7 +2,7 @@
 
 > **관련 태스크**: #61 (TASK-002 프론트) · **상태**: 구현·실측 완료 — PR 대기 · **유형**: feature (FE)
 > **depends**: 백엔드 presign [0018](0018-uploads-presign.md)(#15/PR#59 머지) · 계약 `@clause-lens/contracts` · 촬영 Draft [0001](0001-image-capture-and-draft.md) · [frontend-architecture.md]
-> **unblocks**: 분석 요청(TASK-003, #16)
+> **unblocks**: 분석 요청(TASK-003, #63)
 > **product 흐름**: Notion 02 §9 — `분석하기` → presign → 저장소 직접 업로드.
 
 ## PRD (왜/무엇)

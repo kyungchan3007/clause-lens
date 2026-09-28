@@ -22,7 +22,7 @@
 - **게이트**: ✅ ALL PASS(9검사). 단위 mobile upload 10.
 - **실측(iPhone 17 Pro + 로컬 API/MinIO, 카카오 수동)**: 사진→정규화→분석하기→**MinIO 직접 PUT**→"업로드 완료". DB Document=uploaded·finalKey 후보키, **MinIO 객체 size==expectedSize·image/jpeg** 확인.
 - **함정**: 네이티브 의존 추가 후 **prebuild 없이 실행하면 크래시**(모듈 부재) → `expo prebuild --clean` + 재빌드 필수(사용자가 먼저 겪음).
-- **다음/주의**: 취소·동시성·앱 재시작 복구·고아 정리는 후속. 다음 실기능 = 분석 요청(TASK-003/#16). PR 대기.
+- **다음/주의**: 취소·동시성·앱 재시작 복구·고아 정리는 후속. 다음 실기능 = 분석 요청(TASK-003/#63). PR 대기.
 
 ## 2026-09-22 · Claude · #15 업로드 presign 백엔드 슬라이스 (TASK-002)
 - **무엇**: presign 첫 세로 슬라이스 백엔드 — contracts(zod)·Document/Page 모델·documents 도메인 서비스·uploads 모듈(StoragePort+MinioAdapter). Codex 2R 설계(spec 0018) 구현.

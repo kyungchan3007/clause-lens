@@ -7,10 +7,21 @@ import { useImagePicker } from "../model/useImagePicker";
 import { PageItem } from "./PageItem";
 import type { DraftPage } from "../model/types";
 
-// 업로드 제어(서버 개념 없이 로컬 타입) — app 레이어가 주입. feature→feature import 방지.
+// 업로드+분석 제어(서버 개념 없이 로컬 타입) — app 레이어가 조합·주입. feature→feature import 방지.
 export interface AnalyzeControls {
-  phase: "idle" | "presigning" | "uploading" | "confirming" | "uploaded" | "error";
-  sentCount: number;
+  phase:
+    | "idle"
+    | "presigning"
+    | "uploading"
+    | "confirming"
+    | "uploaded"
+    | "requesting"
+    | "analyzing"
+    | "done"
+    | "partial"
+    | "failed"
+    | "error";
+  sentCount: number; // 진행 카운트(업로드=전송, 분석=완료 페이지)
   totalCount: number;
   message?: string;
   onAnalyze: () => void;
@@ -18,7 +29,15 @@ export interface AnalyzeControls {
   onCancel: () => void;
 }
 
-const ACTIVE = ["presigning", "uploading", "confirming"];
+// 진행 중(취소 노출) 단계.
+const ACTIVE = [
+  "presigning",
+  "uploading",
+  "confirming",
+  "uploaded",
+  "requesting",
+  "analyzing",
+];
 
 function statusLabel(a: AnalyzeControls): string | null {
   switch (a.phase) {
@@ -29,9 +48,19 @@ function statusLabel(a: AnalyzeControls): string | null {
     case "confirming":
       return "서버 확인 중…";
     case "uploaded":
-      return "업로드 완료";
+      return "업로드 완료 · 분석 시작…";
+    case "requesting":
+      return "분석 요청 중…";
+    case "analyzing":
+      return `분석 중 ${a.sentCount}/${a.totalCount}`;
+    case "done":
+      return "분석 완료";
+    case "partial":
+      return a.message ?? "일부 페이지 분석 실패";
+    case "failed":
+      return a.message ?? "분석 실패";
     case "error":
-      return a.message ?? "업로드 실패";
+      return a.message ?? "오류가 발생했어요";
     default:
       return null;
   }
@@ -82,15 +111,16 @@ export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
         )}
 
         {analyze?.phase === "error" ? (
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Button label="다시 시도" variant="primary" onPress={analyze.onRetry} />
-            </View>
-          </View>
+          <Button label="다시 시도" variant="primary" onPress={analyze.onRetry} />
         ) : active ? (
           <Button label="취소" variant="secondary" onPress={analyze!.onCancel} />
-        ) : analyze?.phase === "uploaded" ? (
-          <Button label="업로드 완료" variant="secondary" onPress={() => {}} />
+        ) : analyze?.phase === "done" ? (
+          // 결과·하이라이트 화면은 TASK-004에서 연결.
+          <Button label="분석 완료" variant="secondary" onPress={() => {}} />
+        ) : analyze?.phase === "partial" ? (
+          <Button label="일부 완료" variant="secondary" onPress={() => {}} />
+        ) : analyze?.phase === "failed" ? (
+          <Button label="분석 실패" variant="secondary" onPress={() => {}} />
         ) : (
           <Button
             label="분석하기"
