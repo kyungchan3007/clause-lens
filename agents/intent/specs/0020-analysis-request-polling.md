@@ -1,6 +1,6 @@
 # 0020 — 분석 요청·jobId 상태 폴링 (analysis pipeline)
 
-> **관련 태스크**: #63 (TASK-003) · **상태**: approved(설계 — Codex 2R 착수 승인 2026-09-28) · **유형**: feature (세로 슬라이스)
+> **관련 태스크**: #63 (TASK-003) · **상태**: shipped (PR #64 develop 머지, 2026-09-28) · **유형**: feature (세로 슬라이스)
 > **depends**: 업로드 [0018]·[0019] · [backend-architecture.md] · 도메인 [document-page]·[analysis-job]
 > **unblocks**: OCR·위험조항·하이라이트(TASK-004) · 페이지 교체·재분석(TASK-007)
 > **설계 회의**: Codex 2R 토론 반영(2026-09-28) — 아래 §회의 반영. product 흐름: feature `analyze-document`. 지식 베이스: Notion 07 §분석 파이프라인.
@@ -56,15 +56,15 @@ Document(status=uploaded) → [분석하기]
 ```
 
 ### Acceptance (feature analyze-document 기준)
-- [ ] 분석 요청은 중복 탭·POST 재전송에도 **한 번만 접수**(같은 jobId, terminal 이후에도 동일).
-- [ ] API는 **OCR 완료를 기다리지 않고 jobId를 반환**한다.
-- [ ] 앱 종료 후 재진입해도 **서버 job 상태를 복원**(GET = 진실의 기준, stateVersion 병합).
-- [ ] **페이지별 실패/성공 구분**(errorCode·retryable 포함).
-- [ ] 완료 결과가 **현재 page revision과 일치**(커밋 직전 재검사, stale 종결).
+- [x] 분석 요청은 중복 탭·POST 재전송에도 **한 번만 접수**(같은 jobId, terminal 이후에도 동일).
+- [x] API는 **OCR 완료를 기다리지 않고 jobId를 반환**한다.
+- [x] 앱 종료 후 재진입해도 **서버 job 상태를 복원**(GET = 진실의 기준, stateVersion 병합).
+- [x] **페이지별 실패/성공 구분**(errorCode·retryable 포함).
+- [x] 완료 결과가 **현재 page revision과 일치**(커밋 직전 재검사, stale 종결).
 - [ ] 무료 횟수 차감은 **서버 결과와 동기화**(완료·부분실패 정책 + `AnalysisJob.id` 멱등키; 실차감·예약은 TASK-005).
-- [ ] worker 크래시·재시도·enqueue 누락에도 결과·상태 일관(멱등 확정·재집계·재전달) — stub worker로 검증.
-- [ ] SSE 구독 중 push 수신, 연결 끊김·역순 도착에도 stateVersion로 상태 후퇴 없음.
-- [ ] Presigned URL·이미지·토큰·OCR 텍스트 로그 없음 · `checks.sh` PASS.
+- [x] worker 크래시·재시도·enqueue 누락에도 결과·상태 일관(멱등 확정·재집계·재전달) — stub worker로 검증.
+- [x] SSE 구독 중 push 수신, 연결 끊김·역순 도착에도 stateVersion로 상태 후퇴 없음.
+- [x] Presigned URL·이미지·토큰·OCR 텍스트 로그 없음 · `checks.sh` PASS.
 
 ## SDD (어떻게)
 

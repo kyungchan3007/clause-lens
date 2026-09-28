@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-28 · Claude · #63 분석 요청·jobId 상태 폴링 (TASK-003)
+- **무엇**: 분석 파이프라인 세로 슬라이스. contracts(analyze/status zod+stateVersion) · db(AnalysisJob·PageAnalysis + 활성 job 부분 유니크 인덱스 + 공유 `confirmPageAnalysisTx`) · api(analysis 모듈 analyze·GET·SSE + documents.startAnalysis/getAnalysis + QueuePort(BullMQ) + Redis pub/sub 알림 + enqueue 누락 reconciler) · worker(NestJS standalone + BullMQ consumer + 공통 processor + OcrPort/StubOcrAdapter) · mobile(features/analysis: react-native-sse + GET fallback + stateVersion 역순 방어 + app 자동 시작).
+- **설계**: Codex 2R 토론 — B(fan-out) 제안 → **A(resumable 단일 job) 채택**(가역 전환), entitlement 예약·과설계(dispatch 포트·processPage 분리) 철회, reconciler는 enqueue 누락 재전달만. spec 0020.
+- **파일**: `packages/contracts/src/analysis.ts`, `packages/db/{prisma/schema.prisma,src/analysis-ops.ts,tsconfig.json}`, `apps/api/src/{modules/analysis,ports,adapters,modules/documents}`, `apps/worker/**`, `apps/mobile/src/features/analysis/**`, `apps/mobile/app/index.tsx`, `agents/harness/evals/checks.sh`(13검사).
+- **게이트**: PASS (13검사 · 단위 115: contracts 15·api 44·worker 6·mobile 50).
+- **검증**: 백엔드 실측 4/4(done·partial·DB·SSE) + 앱 시뮬레이터 end-to-end 실측(분석하기→MinIO→큐→worker→done). PR #64 머지(Closes #63).
+- **다음/주의**: 실제 Vision OCR·이미지 실검증(TASK-004) · entitlement 실차감(TASK-005). **이슈번호 정정**: 로드맵의 "#16"은 오표기(실제 #16=Expo chore) → #63 신규 생성 후 전 참조 정정.
+
 ## 2026-09-23 · Claude · #61 앱 업로드 연동 (TASK-002 프론트)
 - **무엇**: 앱(RN) `분석하기` → presign→저장소 직접 PUT→complete 오케스트레이션. `features/upload`(uploadApi·useUpload·uploadStore) + capture JPEG 정규화·편집 잠금 + app 레이어 조합.
 - **설계**: Codex 2R 리뷰 반영(spec 0019) — 후보키 계약 소비, 취소/runId 무효화, 스냅샷·편집 잠금, 오류 분기(403 재발급·409 새키 금지), 응답 집합검증, ownerUserId 바인딩, 스코프 축소(세션 내 복구).
