@@ -5,10 +5,16 @@ import {
 } from "@clause-lens/contracts";
 
 import {
+  type AnalysisJobWithPages,
   type DocumentWithPages,
   DocumentsRepository,
   type PageConfirmation,
 } from "./documents.repository";
+
+// P2002 = unique 제약 위반(활성 job 동시 생성 경쟁).
+function isUniqueViolation(e: unknown): boolean {
+  return (e as { code?: string })?.code === "P2002";
+}
 
 // 세션 만료(정리 기준). URL TTL과 분리.
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -83,6 +89,60 @@ export class DocumentsService {
     );
     if (!doc) throw new NotFoundException("문서를 찾을 수 없습니다.");
     return doc;
+  }
+
+  // ── 분석 (#16) ──
+
+  // 분석 접수(멱등). 검사 순서: 소유권 → 기존 분석(활성/terminal) 반환 → (없을 때만) 자격(uploaded).
+  async startAnalysis(
+    userId: string,
+    documentId: string,
+  ): Promise<AnalysisJobWithPages> {
+    const doc = await this.repo.findOwnedSession(userId, documentId);
+    if (!doc) throw new NotFoundException("문서를 찾을 수 없습니다.");
+
+    const existing = await this.repo.findLatestAnalysis(documentId);
+    if (existing) return existing; // terminal 포함 — 재분석은 비목표
+
+    if (doc.status !== "uploaded") {
+      throw new ConflictException(
+        "업로드가 확정된 문서만 분석할 수 있습니다.",
+      );
+    }
+
+    try {
+      return await this.repo.createAnalysisJob(
+        documentId,
+        doc.pages.map((p) => ({ pageId: p.id, revision: p.revision })),
+      );
+    } catch (e) {
+      // 동시 접수 경쟁(부분 유니크 인덱스) → 승자 job 재조회.
+      if (isUniqueViolation(e)) {
+        const winner = await this.repo.findLatestAnalysis(documentId);
+        if (winner) return winner;
+      }
+      throw e;
+    }
+  }
+
+  // 현재 분석 상태 조회(진실의 기준). 소유권 확인 후 최신 job 반환.
+  async getAnalysis(
+    userId: string,
+    documentId: string,
+  ): Promise<AnalysisJobWithPages> {
+    const doc = await this.repo.findOwnedSession(userId, documentId);
+    if (!doc) throw new NotFoundException("문서를 찾을 수 없습니다.");
+    const job = await this.repo.findLatestAnalysis(documentId);
+    if (!job) throw new NotFoundException("분석 요청이 없습니다.");
+    return job;
+  }
+
+  markDispatched(jobId: string): Promise<void> {
+    return this.repo.markDispatched(jobId);
+  }
+
+  findUndispatchedActiveJobIds(before: Date): Promise<string[]> {
+    return this.repo.findUndispatchedActiveJobIds(before);
   }
 }
 

@@ -71,6 +71,7 @@ export const documentStatusSchema = z.enum([
   "uploaded",
   "analyzing",
   "done",
+  "partial", // 분석 일부 성공·일부 실패 (#16)
   "failed",
   "expired",
 ]);

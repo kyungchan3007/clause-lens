@@ -1,0 +1,19 @@
+# S19. 분석 요청·상태 폴링 — 업로드 완료 → 분석 자동 시작 → 분석 완료 (반자동, #63)
+# 사전조건: 로그인 · 로컬 API+worker(stub)+Redis+Postgres 기동 · Draft에 이미지(피커 수동)
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+# 사진 추가(수동: 갤러리에서 선택 → 사진 고르기)
+- tapOn: "갤러리에서 선택"
+- extendedWaitUntil:
+    visible: "분석하기"
+    timeout: 30000
+# 분석하기 → 업로드 → 업로드 완료 후 분석 자동 시작 → 분석 완료 대기
+- tapOn: "분석하기"
+- extendedWaitUntil:
+    visible: "분석 완료"
+    timeout: 90000
