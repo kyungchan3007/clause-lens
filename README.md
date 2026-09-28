@@ -244,35 +244,37 @@ OCR Worker와 Google Cloud Vision은 서로 다른 구성입니다.
 
 ### 서버 아키텍처
 
+> **한 줄 요약** — 앱이 요청하면 → API가 작업을 **큐에 넣고** → **Worker**가 꺼내 OCR·분석 → 결과를 **DB에 저장** → 앱은 진행 상태를 **실시간(SSE)** 으로 받아 화면에 표시합니다.
+
+**동작 순서 (그림의 번호와 동일)**
+
+1. **앱 → API** — 촬영·업로드를 마친 뒤 `분석하기`를 누르면 앱이 API에 분석을 요청합니다.
+2. **API → 큐** — API는 무거운 일을 직접 하지 않고 작업을 큐(Redis·BullMQ)에 넣은 뒤 `jobId`를 **즉시** 돌려줍니다. *(앱은 기다릴 필요 없음)*
+3. **큐 → Worker** — 대기 중인 작업을 OCR Worker가 하나씩 가져갑니다.
+4. **Worker → Google Vision** — 이미지를 Vision에 보내 글자·좌표를 받고, 위험 조항을 분석합니다.
+5. **Worker → DB** — 분석 결과를 PostgreSQL에 저장합니다.
+6. **API → 앱 (실시간)** — 진행 상태가 바뀔 때마다 SSE로 앱에 밀어줍니다. *(연결이 끊기면 앱이 다시 조회해 복원)*
+
 ```mermaid
-flowchart TB
-    App["Expo 모바일 앱"]
+flowchart TD
+    A["📱 앱"]
+    B["🛡️ API 서버"]
+    C["📮 큐 · Redis/BullMQ"]
+    D["⚙️ OCR Worker"]
+    E["🔍 Google Vision · 외부"]
+    F[("💾 PostgreSQL")]
 
-    subgraph Backend["우리 서버 영역 · Railway"]
-        API["NestJS API Server"]
-        Queue["Redis · BullMQ"]
-        Worker["OCR Worker"]
-        DB[("PostgreSQL")]
-        S3[("오브젝트 스토리지 · Railway Bucket")]
-    end
-
-    Vision["Google Cloud Vision API · 외부"]
-
-    App -->|"인증·문서·분석 API"| API
-    API -->|"Presigned URL 발급"| App
-    App -->|"이미지 직접 업로드"| S3
-    API -->|"OCR 작업 등록"| Queue
-    Queue -->|"비동기 작업 전달"| Worker
-    Worker -->|"원본 이미지 조회"| S3
-    Worker -->|"OCR 요청"| Vision
-    Vision -->|"텍스트·좌표 반환"| Worker
-    API -->|"문서·작업 조회/저장"| DB
-    Worker -->|"OCR·분석 결과 저장"| DB
-    Worker -.->|"상태 알림 (pub/sub)"| API
-    API -.->|"SSE 실시간 푸시"| App
+    A -->|"① 분석 요청"| B
+    B -->|"② 작업 등록"| C
+    C -->|"③ 작업 전달"| D
+    D -->|"④ OCR 요청·응답"| E
+    D -->|"⑤ 결과 저장"| F
+    B -.->|"⑥ 실시간 상태 · SSE"| A
 ```
 
-NestJS API Server와 OCR Worker는 배포와 실행 책임이 분리된 두 개의 서버입니다. API Server는 모바일 요청에 빠르게 응답하고, 시간이 오래 걸리는 OCR와 분석은 Worker가 비동기로 처리합니다. 진행 상태는 **Redis pub/sub → SSE** 로 앱에 실시간 전달하고, 끊기면 GET 조회로 복원합니다.
+> 📌 계약서 **원본 이미지**는 앱이 저장소(Railway Bucket)에 **직접 업로드**하고, Worker가 분석할 때 꺼내 씁니다. 저장소·DB를 포함한 모든 단계는 아래 [전체 분석 흐름](#-전체-분석-흐름)에 순서대로 자세히 나와 있습니다.
+
+**핵심은 "책임 분리"입니다.** API 서버는 앱 요청에 **빠르게** 응답하고, 시간이 오래 걸리는 OCR·분석은 **Worker가 뒤에서 비동기로** 처리합니다. 그래서 사용자는 분석이 끝날 때까지 앱이 멈추지 않고, 진행 상태만 실시간으로 확인합니다.
 
 ---
 
