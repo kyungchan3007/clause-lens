@@ -64,6 +64,25 @@ async function githubPaginate(path) {
   return items;
 }
 
+async function githubGraphQL(query, variables) {
+  const response = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: { ...githubHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`GitHub GraphQL ${response.status} ${response.statusText}: ${body}`);
+  }
+
+  const json = await response.json();
+  if (json.errors) {
+    throw new Error(`GitHub GraphQL errors: ${JSON.stringify(json.errors)}`);
+  }
+  return json.data;
+}
+
 function truncate(text, maxChars) {
   if (!text) return "";
   if (text.length <= maxChars) return text;
@@ -128,10 +147,18 @@ function buildReviewPrompt(pr, files, { incremental, rangeCommits = [], priorFin
     .map((c) => `- ${(c.message ?? "").split("\n")[0]}\n${truncate((c.message ?? "").split("\n").slice(1).join("\n").trim(), 1000)}`.trim())
     .join("\n");
 
-  // 이전에 이미 남긴 AI 리뷰 지적 — 반복 방지용.
+  // 이전 리뷰 지적 + 답변 + resolved 여부 — 반복 방지용(답변을 반드시 보게 함).
   const priorLog = priorFindings
     .slice(0, 40)
-    .map((f) => `- [${f.path}:${f.line}] ${truncate(f.body, 500)}`)
+    .map((f) => {
+      const head = `- [${f.path}:${f.line ?? "?"}] (resolved: ${f.resolved ? "yes" : "no"})`;
+      const finding = `  지적: ${truncate(f.finding, 400)}`;
+      const replies =
+        f.replies && f.replies.length > 0
+          ? `  답변: ${truncate(f.replies.join(" / "), 700)}`
+          : "  답변: (없음)";
+      return [head, finding, replies].join("\n");
+    })
     .join("\n");
 
   return [
@@ -142,8 +169,9 @@ function buildReviewPrompt(pr, files, { incremental, rangeCommits = [], priorFin
     incremental
       ? "아래 FILES 는 '직전 리뷰 이후 새로 변경된 부분'이다. 이 증분만 리뷰하라."
       : "",
-    "아래 '이전 리뷰 지적'에서 이미 제기됐거나, '이번 구간 커밋 메시지'에서 근거를 들어 해결/기각·검증한 사항은 다시 지적하지 마라.",
-    "커밋 메시지가 특정 지적을 '의도된 결정' 또는 '사실오류'로 반박했다면 존중하고 반복하지 마라.",
+    "아래 '이미 처리된 지적'을 **반드시 먼저 확인**하라. 각 항목의 '답변'과 'resolved' 상태를 읽고, 이미 제기됐거나 답변/커밋으로 해결·기각·검증된 사항은 **절대 다시 지적하지 마라**.",
+    "resolved: yes 이거나 답변이 달린 항목, 또는 답변/커밋이 '의도된 결정'·'사실오류'·'과설계라 미채택'·'이미 상한/방지됨'이라고 반박한 항목은 재지적 금지. 같은 파일의 같은 성격 유사 지적도 금지.",
+    "이전 답변에 새 근거로 반박하고 싶어도 findings 에 넣지 말고 침묵하라(반복 루프 방지).",
     "P1(실제 버그·회귀·보안 취약점·데이터 손실)에만 집중하라. 스타일·프로세스·문서 정합성·정책 강제 여부 같은 메타 코멘트나 확신이 약한 지적은 findings 에 넣지 마라.",
     "findings 는 최대 6개까지만 반환하라.",
     "액션 가능한 이슈가 없으면 findings 를 빈 배열로 반환하라.",
@@ -155,7 +183,7 @@ function buildReviewPrompt(pr, files, { incremental, rangeCommits = [], priorFin
     "이번 구간 커밋 메시지 (변경·검증·근거):",
     commitLog || "(없음)",
     "",
-    "이전 리뷰 지적 (이미 논의/해결됨 — 반복 금지):",
+    "이미 처리된 지적 (제기·답변·resolved 완료 — 절대 반복 금지, 답변을 먼저 확인하라):",
     priorLog || "(없음)",
     "",
     incremental ? "FILES (직전 리뷰 이후 변경분):" : "FILES:",
@@ -415,15 +443,61 @@ async function main() {
     return;
   }
 
-  // 이전 AI 리뷰가 남긴 인라인 코멘트(반복 방지용 맥락).
+  // 이전 리뷰 스레드 — 지적 + **답변(반박·근거) + resolved 여부**까지 읽어 반복 지적 방지(핵심).
+  // (기존엔 지적 본문만 넣어 답변을 못 봐서 같은 지적을 계속 반복했음.)
+  const isBot = (author) =>
+    author?.__typename === "Bot" ||
+    /\[bot\]$/i.test(author?.login ?? "") ||
+    (author?.login ?? "").toLowerCase() === "github-actions";
   let priorFindings = [];
   try {
-    const priorComments = await githubPaginate(`/repos/${owner}/${repo}/pulls/${prNumber}/comments`);
-    priorFindings = priorComments
-      .filter((c) => typeof c.body === "string" && /\*\*P[123]\s/.test(c.body))
-      .map((c) => ({ path: c.path, line: c.line ?? c.original_line, body: c.body }));
+    // reviewThreads·comments 페이지네이션으로 완전 수집(누락 시 반복 지적 발생).
+    const threads = [];
+    let cursor = null;
+    for (let i = 0; i < 20; i += 1) {
+      const data = await githubGraphQL(
+        `query($owner:String!,$repo:String!,$pr:Int!,$cursor:String){
+          repository(owner:$owner,name:$repo){
+            pullRequest(number:$pr){
+              reviewThreads(first:100, after:$cursor){
+                pageInfo{ hasNextPage endCursor }
+                nodes{
+                  isResolved
+                  path
+                  line
+                  comments(first:100){ nodes{ body author{ login __typename } } }
+                }
+              }
+            }
+          }
+        }`,
+        { owner, repo, pr: prNumber, cursor },
+      );
+      const conn = data?.repository?.pullRequest?.reviewThreads;
+      threads.push(...(conn?.nodes ?? []));
+      if (!conn?.pageInfo?.hasNextPage) break;
+      cursor = conn.pageInfo.endCursor;
+    }
+    priorFindings = threads
+      .map((t) => {
+        const comments = t.comments?.nodes ?? [];
+        // 원본 지적은 반드시 봇(액션) 작성 코멘트 기준으로 선택(답변을 지적으로 오인 방지).
+        const botComments = comments.filter((c) => isBot(c.author));
+        const finding =
+          botComments.find((c) => /\*\*P[123]\s/.test(c.body ?? ""))?.body ??
+          botComments[0]?.body ??
+          comments[0]?.body ??
+          "";
+        // 봇이 아닌 코멘트 = 유지보수자 답변(반박·근거).
+        const replies = comments
+          .filter((c) => !isBot(c.author))
+          .map((c) => (c.body ?? "").replace(/_🤖 Addressed by[\s\S]*$/i, "").trim())
+          .filter(Boolean);
+        return { path: t.path, line: t.line, resolved: !!t.isResolved, finding, replies };
+      })
+      .filter((f) => f.finding);
   } catch (e) {
-    console.log(`이전 코멘트 조회 실패(${e.message}) — 맥락 없이 진행.`);
+    console.log(`이전 스레드(답변/resolved) 조회 실패(${e.message}) — 맥락 없이 진행.`);
   }
 
   const prompt = buildReviewPrompt(pr, reviewFiles, { incremental, rangeCommits, priorFindings });
