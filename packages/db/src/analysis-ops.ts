@@ -1,7 +1,7 @@
 import { PrismaClient, Prisma } from "../generated/client";
 
 // 분석 파이프라인의 교차 테이블 상태 전이 — api·worker 공유 단일 소스.
-// 설계: agents/intent/specs/0020-analysis-request-polling.md §③·§⑤
+// 설계: agents/intent/specs/0020-analysis-request-polling.md §③·§⑤, 0021-ocr-risk-analysis.md §③·§⑤
 // 규칙: 문서 상태 전이는 여기(도메인 전이 계약)로만. worker→api import 금지를 이 함수로 대체.
 
 // 큐·pub/sub 이름(api·worker 공유). 채널은 공유 Redis 대비 env prefix.
@@ -21,7 +21,57 @@ export interface ConfirmResult {
   stateVersion: number;
 }
 
-// 직렬화 실패(40001) 재시도 — Serializable 하에서 동시 confirm 경쟁 흡수.
+// ── OCR·분석 결과 타입 (0021) ──
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export interface OcrBlock {
+  id: string;
+  text: string;
+  box: Box;
+  confidence?: number;
+}
+export interface PageOcrInput {
+  pageId: string;
+  revision: number;
+  engine: string;
+  normalizationVersion: string;
+  inputFingerprint: string;
+  orientation: string;
+  imageWidth: number;
+  imageHeight: number;
+  blocks: OcrBlock[];
+}
+// 저장된 승자 OCR(경합 시 이 값으로 분석 진행 — 저장 OCR과 조항 근거 일치 보장, 0021 R2-3).
+export interface PersistedOcr {
+  imageWidth: number;
+  imageHeight: number;
+  orientation: string;
+  blocks: OcrBlock[];
+}
+export type ClauseRisk = "high" | "medium" | "low";
+export interface ClauseInput {
+  order: number;
+  type: string;
+  title: string;
+  description: string;
+  riskLevel: ClauseRisk;
+  sourceText: string;
+  boxes: Box[];
+}
+export interface AnalysisResultInput {
+  pageId: string;
+  revision: number; // 처리 스냅샷 revision(커밋 직전 재검사 기준)
+  model: string;
+  promptVersion: string;
+  schemaVersion: string;
+  clauses: ClauseInput[];
+}
+
+// 직렬화 실패(40001/P2034) 재시도 — Serializable 하에서 동시 confirm 경쟁 흡수.
 async function withSerializableRetry<T>(
   fn: () => Promise<T>,
   retries = 4,
@@ -32,7 +82,6 @@ async function withSerializableRetry<T>(
     } catch (e) {
       const code = (e as { code?: string }).code;
       if (code === "P2034" && attempt < retries) {
-        // write conflict / deadlock → 짧은 백오프 후 재시도
         await new Promise((r) => setTimeout(r, 10 * (attempt + 1)));
         continue;
       }
@@ -41,10 +90,52 @@ async function withSerializableRetry<T>(
   }
 }
 
-// 페이지 1개 결과를 원자적으로 확정 + 문서/job 재집계 + stateVersion++.
-// - revision 커밋 직전 재검사(stale는 비재시도 오류로 종결)
-// - terminal 중복완료 no-op(멱등)
-// - 잠금 하 재집계(증분 카운터 대신 전량 재계산 → 드리프트 없음)
+// 잠금 하 전량 재집계 + job/document 전이 + stateVersion++ (성공·실패 함수 공유, 0021 R2-1).
+type JobRow = { id: string; documentId: string; stateVersion: number };
+async function reaggregateAndBump(
+  tx: Prisma.TransactionClient,
+  job: JobRow,
+): Promise<{ jobStatus: ConfirmResult["jobStatus"]; documentStatus: string; stateVersion: number }> {
+  const pages = await tx.pageAnalysis.findMany({ where: { jobId: job.id } });
+  const total = pages.length;
+  const done = pages.filter((p) => p.status === "done").length;
+  const failed = pages.filter((p) => p.status === "failed").length;
+  const allTerminal = total > 0 && done + failed === total;
+
+  let jobStatus: ConfirmResult["jobStatus"];
+  let documentStatus: string;
+  if (allTerminal) {
+    if (failed === 0) {
+      jobStatus = "done";
+      documentStatus = "done";
+    } else if (done === 0) {
+      jobStatus = "failed";
+      documentStatus = "failed";
+    } else {
+      jobStatus = "partial";
+      documentStatus = "partial";
+    }
+    // 무료횟수 차감 훅 지점(완료·부분실패). 실차감·예약은 TASK-005 — 여기선 전이만.
+  } else {
+    jobStatus = "processing";
+    documentStatus = "analyzing";
+  }
+
+  const nextVersion = job.stateVersion + 1;
+  await tx.analysisJob.update({
+    where: { id: job.id },
+    data: { status: jobStatus, stateVersion: nextVersion },
+  });
+  await tx.document.update({
+    where: { id: job.documentId },
+    data: { status: documentStatus as Prisma.DocumentUpdateInput["status"] },
+  });
+  return { jobStatus, documentStatus, stateVersion: nextVersion };
+}
+
+// 페이지 1개 상태 전이(실패·stale 종결 전용, 0021 R2-1).
+// 성공(done)은 결과 없이 종결하지 않는다 → confirmAnalysisResultTx 사용(완료 마커 필수).
+// - terminal 중복 no-op(멱등) · revision 커밋 직전 재검사(stale는 비재시도 종결)
 export function confirmPageAnalysisTx(
   prisma: PrismaClient,
   args: { jobId: string; outcome: PageOutcome },
@@ -54,21 +145,20 @@ export function confirmPageAnalysisTx(
     prisma.$transaction(
       async (tx) => {
         const job = await tx.analysisJob.findUnique({ where: { id: jobId } });
-        if (!job) {
-          throw new Error(`AnalysisJob not found: ${jobId}`);
-        }
+        if (!job) throw new Error(`AnalysisJob not found: ${jobId}`);
 
-        const snapshot = (): ConfirmResult => ({
-          applied: false,
-          jobStatus: job.status,
-          documentStatus: "",
-          stateVersion: job.stateVersion,
-        });
-
-        // job 자체가 이미 종결 → no-op(멱등)
-        if (job.status === "done" || job.status === "partial" || job.status === "failed") {
+        const noop = async (): Promise<ConfirmResult> => {
           const doc = await tx.document.findUnique({ where: { id: job.documentId } });
-          return { ...snapshot(), documentStatus: doc?.status ?? "" };
+          return {
+            applied: false,
+            jobStatus: job.status,
+            documentStatus: doc?.status ?? "",
+            stateVersion: job.stateVersion,
+          };
+        };
+
+        if (job.status === "done" || job.status === "partial" || job.status === "failed") {
+          return noop();
         }
 
         const page = await tx.pageAnalysis.findUnique({
@@ -77,91 +167,199 @@ export function confirmPageAnalysisTx(
         if (!page) {
           throw new Error(`PageAnalysis not found: job=${jobId} page=${outcome.pageId}`);
         }
+        if (page.status === "done" || page.status === "failed") return noop();
 
-        // 이 페이지가 이미 종결 → no-op(재실행 안전)
-        const pageTerminal = page.status === "done" || page.status === "failed";
+        const currentPage = await tx.page.findUnique({ where: { id: outcome.pageId } });
+        const stale = !currentPage || currentPage.revision !== page.revision;
 
-        if (!pageTerminal) {
-          // revision 커밋 직전 재검사: 처리 대상 스냅샷과 현재 Page.revision 불일치면 stale 폐기.
-          const currentPage = await tx.page.findUnique({ where: { id: outcome.pageId } });
-          const stale = !currentPage || currentPage.revision !== page.revision;
-
-          if (stale) {
-            await tx.pageAnalysis.update({
-              where: { id: page.id },
-              data: {
-                status: "failed",
-                errorCode: "stale_revision",
-                retryable: false,
-                attempts: { increment: 1 },
-                confirmedAt: new Date(),
-              },
-            });
-          } else if (outcome.ok) {
-            await tx.pageAnalysis.update({
-              where: { id: page.id },
-              data: {
-                status: "done",
-                errorCode: null,
-                retryable: false,
-                attempts: { increment: 1 },
-                confirmedAt: new Date(),
-              },
-            });
-          } else {
-            await tx.pageAnalysis.update({
-              where: { id: page.id },
-              data: {
-                status: "failed",
-                errorCode: outcome.errorCode,
-                retryable: outcome.retryable,
-                attempts: { increment: 1 },
-                confirmedAt: new Date(),
-              },
-            });
-          }
-        }
-
-        // 잠금 하 재집계: 전체 페이지 상태로 job·document 종합.
-        const pages = await tx.pageAnalysis.findMany({ where: { jobId } });
-        const total = pages.length;
-        const done = pages.filter((p) => p.status === "done").length;
-        const failed = pages.filter((p) => p.status === "failed").length;
-        const terminalCount = done + failed;
-        const allTerminal = total > 0 && terminalCount === total;
-
-        let jobStatus: ConfirmResult["jobStatus"];
-        let documentStatus: string;
-        if (allTerminal) {
-          if (failed === 0) {
-            jobStatus = "done";
-            documentStatus = "done";
-          } else if (done === 0) {
-            jobStatus = "failed";
-            documentStatus = "failed";
-          } else {
-            jobStatus = "partial";
-            documentStatus = "partial";
-          }
-          // 무료횟수 차감 훅 지점(완료·부분실패). 실차감·예약은 TASK-005 — 여기선 전이만.
+        if (stale) {
+          await tx.pageAnalysis.update({
+            where: { id: page.id },
+            data: {
+              status: "failed",
+              errorCode: "stale_revision",
+              retryable: false,
+              attempts: { increment: 1 },
+              confirmedAt: new Date(),
+            },
+          });
+        } else if (outcome.ok) {
+          // 성공을 결과 없이 done 처리하는 우회 차단(0021 R2-1). 성공은 confirmAnalysisResultTx로.
+          throw new Error(
+            "confirmPageAnalysisTx는 실패/stale 종결 전용 — 성공은 confirmAnalysisResultTx 사용",
+          );
         } else {
-          jobStatus = "processing";
-          documentStatus = "analyzing";
+          await tx.pageAnalysis.update({
+            where: { id: page.id },
+            data: {
+              status: "failed",
+              errorCode: outcome.errorCode,
+              retryable: outcome.retryable,
+              attempts: { increment: 1 },
+              confirmedAt: new Date(),
+            },
+          });
         }
 
-        const applied = !pageTerminal; // 이번에 실제 페이지 전이를 수행했는지
+        const agg = await reaggregateAndBump(tx, job);
+        return { applied: true, ...agg };
+      },
+      { isolationLevel: "Serializable" },
+    ),
+  );
+}
 
-        const nextVersion = job.stateVersion + 1;
-        await tx.analysisJob.update({
-          where: { id: jobId },
-          data: { status: jobStatus, stateVersion: nextVersion },
-        });
-        await tx.document.update({
-          where: { id: job.documentId },
-          data: { status: documentStatus as Prisma.DocumentUpdateInput["status"] },
-        });
+// OCR 결과를 불변 체크포인트로 저장하고 **저장된 승자 행**을 반환(0021 R2-3).
+// 경합(stalled 재큐로 실행자 2개)에서도 이후 분석은 반환값(승자 블록)만 사용 → 저장 OCR과 조항 근거 일치.
+export async function upsertPageOcr(
+  prisma: PrismaClient,
+  input: PageOcrInput,
+): Promise<PersistedOcr> {
+  const toPersisted = (row: {
+    imageWidth: number;
+    imageHeight: number;
+    orientation: string;
+    blocks: Prisma.JsonValue;
+  }): PersistedOcr => ({
+    imageWidth: row.imageWidth,
+    imageHeight: row.imageHeight,
+    orientation: row.orientation,
+    blocks: row.blocks as unknown as OcrBlock[],
+  });
 
-        return { applied, jobStatus, documentStatus, stateVersion: nextVersion };
+  try {
+    const row = await prisma.pageOcr.create({
+      data: {
+        pageId: input.pageId,
+        revision: input.revision,
+        engine: input.engine,
+        normalizationVersion: input.normalizationVersion,
+        inputFingerprint: input.inputFingerprint,
+        orientation: input.orientation,
+        imageWidth: input.imageWidth,
+        imageHeight: input.imageHeight,
+        blocks: input.blocks as unknown as Prisma.InputJsonValue,
+      },
+    });
+    return toPersisted(row);
+  } catch (e) {
+    if ((e as { code?: string }).code === "P2002") {
+      // 경합 패자 → 저장된 승자 행 사용(불변).
+      const existing = await prisma.pageOcr.findUnique({
+        where: { pageId_revision: { pageId: input.pageId, revision: input.revision } },
+      });
+      if (existing) return toPersisted(existing);
+    }
+    throw e;
+  }
+}
+
+// 분석 성공을 원자적으로 확정(0021 §③·R2-1): guard 3갈래
+//  (a) terminal 중복 → no-op  (b) stale → 결과 없이 failed(stale_revision) 종결  (c) 정상 → 결과+done
+// 정상: PageAnalysisResult(완료 마커) upsert + Clause 교체 + PageAnalysis done + 재집계 + stateVersion++.
+export function confirmAnalysisResultTx(
+  prisma: PrismaClient,
+  args: { jobId: string; input: AnalysisResultInput },
+): Promise<ConfirmResult> {
+  const { jobId, input } = args;
+  return withSerializableRetry(() =>
+    prisma.$transaction(
+      async (tx) => {
+        const job = await tx.analysisJob.findUnique({ where: { id: jobId } });
+        if (!job) throw new Error(`AnalysisJob not found: ${jobId}`);
+
+        const noop = async (): Promise<ConfirmResult> => {
+          const doc = await tx.document.findUnique({ where: { id: job.documentId } });
+          return {
+            applied: false,
+            jobStatus: job.status,
+            documentStatus: doc?.status ?? "",
+            stateVersion: job.stateVersion,
+          };
+        };
+
+        // (a) job terminal → no-op(결과 쓰기 금지)
+        if (job.status === "done" || job.status === "partial" || job.status === "failed") {
+          return noop();
+        }
+
+        const page = await tx.pageAnalysis.findUnique({
+          where: { jobId_pageId: { jobId, pageId: input.pageId } },
+        });
+        if (!page) {
+          throw new Error(`PageAnalysis not found: job=${jobId} page=${input.pageId}`);
+        }
+        // (a) page terminal → no-op
+        if (page.status === "done" || page.status === "failed") return noop();
+
+        const currentPage = await tx.page.findUnique({ where: { id: input.pageId } });
+        const stale =
+          !currentPage ||
+          currentPage.revision !== page.revision ||
+          input.revision !== page.revision;
+
+        if (stale) {
+          // (b) stale → 결과 저장 없이 종결(갇힘 방지)
+          await tx.pageAnalysis.update({
+            where: { id: page.id },
+            data: {
+              status: "failed",
+              errorCode: "stale_revision",
+              retryable: false,
+              attempts: { increment: 1 },
+              confirmedAt: new Date(),
+            },
+          });
+        } else {
+          // (c) 정상 → 완료 마커 + Clause 교체 + done (단일 tx 무결성 경계)
+          const result = await tx.pageAnalysisResult.upsert({
+            where: { pageId_revision: { pageId: input.pageId, revision: input.revision } },
+            create: {
+              pageId: input.pageId,
+              revision: input.revision,
+              model: input.model,
+              promptVersion: input.promptVersion,
+              schemaVersion: input.schemaVersion,
+            },
+            update: {
+              model: input.model,
+              promptVersion: input.promptVersion,
+              schemaVersion: input.schemaVersion,
+            },
+          });
+          await tx.clause.deleteMany({
+            where: { pageId: input.pageId, revision: input.revision },
+          });
+          if (input.clauses.length > 0) {
+            await tx.clause.createMany({
+              data: input.clauses.map((c) => ({
+                resultId: result.id,
+                pageId: input.pageId,
+                revision: input.revision,
+                order: c.order,
+                type: c.type,
+                title: c.title,
+                description: c.description,
+                riskLevel: c.riskLevel,
+                sourceText: c.sourceText,
+                boxes: c.boxes as unknown as Prisma.InputJsonValue,
+              })),
+            });
+          }
+          await tx.pageAnalysis.update({
+            where: { id: page.id },
+            data: {
+              status: "done",
+              errorCode: null,
+              retryable: false,
+              attempts: { increment: 1 },
+              confirmedAt: new Date(),
+            },
+          });
+        }
+
+        const agg = await reaggregateAndBump(tx, job);
+        return { applied: true, ...agg };
       },
       { isolationLevel: "Serializable" },
     ),

@@ -1,16 +1,19 @@
-// OCR 공급자 경계(포트). 실제 Vision 연동은 TASK-004에서 VisionOcrAdapter로 교체.
-// 위험조항 판정은 여기 넣지 않는다(Clause Result 도메인, TASK-004).
+import type { OcrBlock } from "@clause-lens/db/analysis";
 
-export interface OcrPageInput {
-  pageId: string;
-  finalKey: string; // 확정 저장소 키(DB에서 읽은 값). 클라 경로·치수는 신뢰 안 함
-  revision: number;
+// OCR 공급자 경계(포트). 구현 = Vision(실) / Stub(개발·단위).
+// 좌표만 담당(위험 판정은 ClauseAnalyzerPort). 입력은 검증·정규화된 upright 바이트+치수.
+
+export interface OcrInput {
+  imageBytes: Uint8Array; // EXIF 정규화된 upright 이미지(image-validator 출력)
+  imageWidth: number; // upright 실측 치수(Vision 반환 치수와 교차검증 기준)
+  imageHeight: number;
 }
 
-// TASK-004: 정규화된 텍스트·boxes·실측 이미지 치수·신뢰도. 이번 stub은 상태만 검증.
-export type OcrPageResult = Record<string, never>;
+export interface OcrResult {
+  blocks: OcrBlock[]; // 문단 단위, upright 원본 픽셀 box, 읽기 순서(b0..)
+}
 
-// 일시 오류(자동 재시도 대상) — attempts 예산 내에서 BullMQ 재시도.
+// 일시 오류(자동 재시도 대상) — attempts 예산 내 BullMQ 재시도.
 export class OcrTransientError extends Error {
   constructor(public readonly code = "ocr_timeout") {
     super(code);
@@ -18,7 +21,7 @@ export class OcrTransientError extends Error {
   }
 }
 
-// 영구 오류(비재시도 종결) — invalid_image·ocr_failed 등.
+// 영구 오류(비재시도 종결) — ocr_failed(거부·디코딩·치수 불일치) 등.
 export class OcrPermanentError extends Error {
   constructor(public readonly code = "ocr_failed") {
     super(code);
@@ -27,5 +30,5 @@ export class OcrPermanentError extends Error {
 }
 
 export abstract class OcrPort {
-  abstract analyzePage(input: OcrPageInput): Promise<OcrPageResult>;
+  abstract recognize(input: OcrInput): Promise<OcrResult>;
 }

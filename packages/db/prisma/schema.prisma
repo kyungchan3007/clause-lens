@@ -20,13 +20,13 @@ enum AuthProvider {
 }
 
 model User {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   provider       AuthProvider
   providerUserId String // provider 내 고유 id (카카오 회원번호)
   email          String?
   displayName    String?
-  createdAt      DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
   refreshTokens RefreshToken[]
   documents     Document[]
@@ -99,8 +99,10 @@ model Page {
   confirmedAt  DateTime?  @db.Timestamptz(3)
   createdAt    DateTime   @default(now()) @db.Timestamptz(3)
 
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  analyses PageAnalysis[]
+  document        Document             @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  analyses        PageAnalysis[]
+  ocrResults      PageOcr[]
+  analysisResults PageAnalysisResult[]
 
   @@unique([documentId, order])
 }
@@ -137,9 +139,9 @@ model AnalysisJob {
 
   document Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
   pages    PageAnalysis[]
+  // 활성 job(queued|processing) 문서당 1개 = 부분 유니크 인덱스(마이그레이션 SQL로 추가).
 
   @@index([documentId, status])
-  // 활성 job(queued|processing) 문서당 1개 = 부분 유니크 인덱스(마이그레이션 SQL로 추가).
 }
 
 // 페이지별 분석 상태·결과. 결과 본문(OCR 텍스트·boxes·조항)은 TASK-004에서 별 테이블.
@@ -160,4 +162,69 @@ model PageAnalysis {
 
   @@unique([jobId, pageId]) // 멱등 upsert 키
   @@index([pageId])
+}
+
+// ── OCR·위험조항 결과 (#68 / TASK-004 4a) ──
+// 설계: agents/intent/specs/0021-ocr-risk-analysis.md
+// 결과는 pageId+revision 귀속(재분석·다른 job에서도 동일). OCR=Vision 좌표, 분석=Claude 판단.
+
+enum ClauseRiskLevel {
+  high
+  medium
+  low
+}
+
+// OCR 정규화 결과 = 불변 체크포인트(pageId+revision). 재시도·재분석에서 재사용 → Vision 재호출 없음.
+model PageOcr {
+  id                   String   @id @default(cuid())
+  pageId               String
+  revision             Int
+  engine               String // "gcv" (google cloud vision)
+  normalizationVersion String // OCR 정규화 로직 버전(회귀 추적)
+  inputFingerprint     String // finalKey + normalizationVersion (동일 입력 판정)
+  orientation          String // "exif-normalized" — 좌표계 명시
+  imageWidth           Int // upright 실측(EXIF 적용 후). 클라 제공 Page.width/height는 비신뢰
+  imageHeight          Int
+  blocks               Json // [{id,text,box:{x,y,width,height},confidence}] upright 픽셀, 읽기순
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, revision]) // 페이지·리비전당 1개(멱등 upsert 키)
+}
+
+// 분석 완료 마커 + provenance. 이 행 존재 = "이 revision 분석 완료"(정상 0건 vs 미저장 구분).
+model PageAnalysisResult {
+  id            String   @id @default(cuid())
+  pageId        String
+  revision      Int
+  model         String // 실제 사용 모델 id
+  promptVersion String
+  schemaVersion String
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  page    Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  clauses Clause[]
+
+  @@unique([pageId, revision])
+}
+
+// 위험 조항(Clause Result) — pageId+revision 귀속. PageAnalysisResult 단위로 교체.
+model Clause {
+  id          String          @id @default(cuid())
+  resultId    String
+  pageId      String
+  revision    Int
+  order       Int // 표시 순서(문서 위→아래)
+  type        String // 분류 코드(auto_renewal 등), 미분류=other
+  title       String
+  description String
+  riskLevel   ClauseRiskLevel
+  sourceText  String // 판단 근거 원문(02 정책 "근거 원문 표시")
+  boxes       Json // [{x,y,width,height}] upright 원본 픽셀(여러 블록 span 가능)
+  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
+
+  result PageAnalysisResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, revision])
 }
