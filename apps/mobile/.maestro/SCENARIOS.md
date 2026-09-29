@@ -130,7 +130,7 @@ maestro test apps/mobile/.maestro/profile.yaml   # 개별
 ## S18. 업로드 (upload) — 반자동 (#61)
 - **Given** 로그인된 상태 · 로컬 백엔드(API)+MinIO 기동 · Draft에 이미지 1장 이상(피커 수동)
 - **When** "분석하기"를 탭한다
-- **Then** presign→저장소 직접 PUT→complete 진행: "전송 중 n/N" → "서버 확인 중…" → **"업로드 완료"**
+- **Then** presign→저장소 직접 PUT→complete 진행: "전송 중 n% (n/N)" → "서버 확인 중…" → **"업로드 완료"**
 - **And** (백엔드 확인) Document.status=uploaded, Page.finalKey 채택
 - **Edge** 부분 실패 시 "다시 시도" 버튼으로 미확정 페이지만 재발급→재전송→complete(멱등)
 - **Note** 로그인(카카오)·사진 선택 수동. 오케스트레이션 로직은 단위(`upload/*.test.ts`)로 커버. 서버 계약은 백엔드 MinIO 실측(#15)로 확정
@@ -138,7 +138,7 @@ maestro test apps/mobile/.maestro/profile.yaml   # 개별
 ## S19. 분석 요청·상태 폴링 (analysis) — 반자동 (#63)
 - **Given** 로그인된 상태 · 로컬 API+worker+Redis+Postgres 기동 · Draft 이미지 업로드까지 완료
 - **When** 업로드가 확정되면 분석이 **자동 시작**된다(별도 탭 불필요)
-- **Then** "업로드 완료 · 분석 시작…" → "분석 요청 중…" → "분석 중 n/N" → **"분석 완료"**
+- **Then** "업로드 완료 · 분석 시작…" → "분석 요청 중…" → "분석 중 n% (n/N)" → **"분석 완료"**
 - **And** (백엔드 확인) Document.status=done, AnalysisJob.status=done, PageAnalysis 전부 done
 - **And** 상태는 SSE로 실시간 반영되며, 앱 재진입 시 GET로 복원된다(진실의 기준)
 - **Edge** 일부 페이지 분석 실패 시 **"일부 페이지 분석 실패"** 문구 + "일부 완료"(partial). 전체 실패면 "분석 실패"(failed)
