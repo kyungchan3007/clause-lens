@@ -443,36 +443,54 @@ async function main() {
     return;
   }
 
-  // 이전 리뷰 스레드 — 지적 본문 + **답변(반박·근거) + resolved 여부**까지 읽어 반복 지적 방지(핵심).
+  // 이전 리뷰 스레드 — 지적 + **답변(반박·근거) + resolved 여부**까지 읽어 반복 지적 방지(핵심).
   // (기존엔 지적 본문만 넣어 답변을 못 봐서 같은 지적을 계속 반복했음.)
+  const isBot = (author) =>
+    author?.__typename === "Bot" ||
+    /\[bot\]$/i.test(author?.login ?? "") ||
+    (author?.login ?? "").toLowerCase() === "github-actions";
   let priorFindings = [];
   try {
-    const data = await githubGraphQL(
-      `query($owner:String!,$repo:String!,$pr:Int!){
-        repository(owner:$owner,name:$repo){
-          pullRequest(number:$pr){
-            reviewThreads(first:100){ nodes{
-              isResolved
-              path
-              line
-              comments(first:20){ nodes{ body author{ login } } }
-            } }
+    // reviewThreads·comments 페이지네이션으로 완전 수집(누락 시 반복 지적 발생).
+    const threads = [];
+    let cursor = null;
+    for (let i = 0; i < 20; i += 1) {
+      const data = await githubGraphQL(
+        `query($owner:String!,$repo:String!,$pr:Int!,$cursor:String){
+          repository(owner:$owner,name:$repo){
+            pullRequest(number:$pr){
+              reviewThreads(first:100, after:$cursor){
+                pageInfo{ hasNextPage endCursor }
+                nodes{
+                  isResolved
+                  path
+                  line
+                  comments(first:100){ nodes{ body author{ login __typename } } }
+                }
+              }
+            }
           }
-        }
-      }`,
-      { owner, repo, pr: prNumber },
-    );
-    const threads = data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
+        }`,
+        { owner, repo, pr: prNumber, cursor },
+      );
+      const conn = data?.repository?.pullRequest?.reviewThreads;
+      threads.push(...(conn?.nodes ?? []));
+      if (!conn?.pageInfo?.hasNextPage) break;
+      cursor = conn.pageInfo.endCursor;
+    }
     priorFindings = threads
       .map((t) => {
         const comments = t.comments?.nodes ?? [];
+        // 원본 지적은 반드시 봇(액션) 작성 코멘트 기준으로 선택(답변을 지적으로 오인 방지).
+        const botComments = comments.filter((c) => isBot(c.author));
         const finding =
-          comments.find((c) => /\*\*P[123]\s/.test(c.body ?? ""))?.body ??
+          botComments.find((c) => /\*\*P[123]\s/.test(c.body ?? ""))?.body ??
+          botComments[0]?.body ??
           comments[0]?.body ??
           "";
-        // 지적 작성자(github-actions) 외의 코멘트 = 유지보수자 답변(반박·근거).
+        // 봇이 아닌 코멘트 = 유지보수자 답변(반박·근거).
         const replies = comments
-          .filter((c) => (c.author?.login ?? "").toLowerCase() !== "github-actions")
+          .filter((c) => !isBot(c.author))
           .map((c) => (c.body ?? "").replace(/_🤖 Addressed by[\s\S]*$/i, "").trim())
           .filter(Boolean);
         return { path: t.path, line: t.line, resolved: !!t.isResolved, finding, replies };
