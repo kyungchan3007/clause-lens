@@ -39,12 +39,20 @@ const ACTIVE = [
   "analyzing",
 ];
 
+// 진행률(%) — 카운트 기반 단계(업로드·분석)에서 사용.
+function pct(a: AnalyzeControls): number {
+  return a.totalCount > 0 ? Math.round((a.sentCount / a.totalCount) * 100) : 0;
+}
+
+// 진행 바를 보여줄 단계(카운트가 의미 있는 구간).
+const PROGRESS_PHASES = ["uploading", "analyzing"];
+
 function statusLabel(a: AnalyzeControls): string | null {
   switch (a.phase) {
     case "presigning":
       return "업로드 준비 중…";
     case "uploading":
-      return `전송 중 ${a.sentCount}/${a.totalCount}`;
+      return `전송 중 ${pct(a)}% (${a.sentCount}/${a.totalCount})`;
     case "confirming":
       return "서버 확인 중…";
     case "uploaded":
@@ -52,7 +60,7 @@ function statusLabel(a: AnalyzeControls): string | null {
     case "requesting":
       return "분석 요청 중…";
     case "analyzing":
-      return `분석 중 ${a.sentCount}/${a.totalCount}`;
+      return `분석 중 ${pct(a)}% (${a.sentCount}/${a.totalCount})`;
     case "done":
       return "분석 완료";
     case "partial":
@@ -109,6 +117,18 @@ export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
             끌어서 순서 변경 · 탭해서 교체
           </Text>
         )}
+
+        {analyze && PROGRESS_PHASES.includes(analyze.phase) && analyze.totalCount > 0 ? (
+          <View
+            className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-border"
+            accessibilityRole="progressbar"
+          >
+            <View
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${pct(analyze)}%` }}
+            />
+          </View>
+        ) : null}
 
         {analyze?.phase === "error" ? (
           <Button label="다시 시도" variant="primary" onPress={analyze.onRetry} />
