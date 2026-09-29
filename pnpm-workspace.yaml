@@ -16,6 +16,8 @@ allowBuilds:
   '@prisma/engines': true
   # bullmq(msgpackr) 선택적 네이티브 가속기 — 순수 JS 폴백 있어 빌드 불필요.
   msgpackr-extract: false
+  # @google-cloud/vision(protobufjs) postinstall은 배너/버전확인뿐 — 순수 JS 동작, 빌드 불필요.
+  protobufjs: false
 minimumReleaseAgeExclude:
   - '@expo/cli@57.0.16 || 57.0.26'
   - '@expo/config@57.0.8'
@@ -29,3 +31,5 @@ minimumReleaseAgeExclude:
   - expo-router@57.0.14 || 57.0.22
   - '@expo/ui@57.0.19'
   - expo-image-picker@57.0.19
+  - '@anthropic-ai/sdk@0.129.0'
+  - '@google-cloud/vision@6.1.1'

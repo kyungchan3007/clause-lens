@@ -30,7 +30,7 @@
 | TASK-001 | 이미지 촬영·선택과 페이지 Draft 관리 | [capture-import](../intent/features/capture-import.md) | [0001](../intent/specs/0001-image-capture-and-draft.md) | Claude | **done** | TASK-F3 |
 | TASK-002 | S3 Presigned URL 연동·직접 업로드 | [capture-import](../intent/features/capture-import.md) | [0018](../intent/specs/0018-uploads-presign.md)·[0019](../intent/specs/0019-app-upload.md) | Claude | **done** (백엔드 #15/PR#59·MinIO 실측 + 앱 #61/PR#62·시뮬레이터 실측, 2026-09-23) | TASK-001 |
 | TASK-003 | 분석 요청·jobId 상태 폴링 | [analyze-document](../intent/features/analyze-document.md) | [0020](../intent/specs/0020-analysis-request-polling.md) | Claude | **done** (#63·PR#64 — 게이트 13검사·백엔드 실측 4/4·앱 시뮬 실측, 2026-09-28) | TASK-002 |
-| TASK-004 | OCR·위험 조항 결과 + Skia 하이라이트 표시 | [view-highlights](../intent/features/view-highlights.md) | – | – | todo | TASK-003 |
+| TASK-004 | OCR·위험 조항 결과 + Skia 하이라이트 표시 | [view-highlights](../intent/features/view-highlights.md) | [0021](../intent/specs/0021-ocr-risk-analysis.md) | Claude | **in-progress** (4a 백엔드 #68 — Vision OCR+Claude 분석; spec 0021 Codex 2R 검증. 4b 하이라이트는 후속) | TASK-003 |
 | TASK-005 | 로그인·무료 분석 횟수 | [login-entitlement](../intent/features/login-entitlement.md) | [0009](../intent/specs/0009-app-kakao-login.md)(앱 로그인) | Claude | **in-progress** (#36 앱 카카오 로그인; entitlement는 후속 분리) | #32 |
 | TASK-006 | 구독·문서 저장 | [save-retain](../intent/features/save-retain.md) | – | – | todo | TASK-005 |
 | TASK-007 | 특정 페이지 이미지 교체·재분석 | [replace-page](../intent/features/replace-page.md) | – | – | todo | TASK-003 |

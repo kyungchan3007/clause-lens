@@ -4,11 +4,23 @@ import { Prisma } from "@clause-lens/db";
 
 import { PrismaService } from "../../db/prisma.service";
 
-// 분석 job 조회 시 문서 상태 + 페이지 order/revision(현재값)까지 포함.
+// 분석 job 조회 시 문서 상태 + 페이지 order/revision + (0021) 결과 치수·조항까지 포함.
+// OCR blocks는 select에서 제외(응답·쿼리 최소화, N+1 방지). 조항은 order순 일괄 조회.
 const analysisInclude = {
   document: { select: { id: true, status: true } },
   pages: {
-    include: { page: { select: { order: true, revision: true } } },
+    include: {
+      page: {
+        select: {
+          order: true,
+          revision: true,
+          ocrResults: { select: { revision: true, imageWidth: true, imageHeight: true } },
+          analysisResults: {
+            select: { revision: true, clauses: { orderBy: { order: "asc" } } },
+          },
+        },
+      },
+    },
     orderBy: { page: { order: "asc" } },
   },
 } satisfies Prisma.AnalysisJobInclude;

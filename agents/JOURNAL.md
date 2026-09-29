@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-09-29 · Claude · #68 실제 OCR·위험조항 분석 백엔드 (TASK-004 4a)
+- **무엇**: worker stub → 실제. **Vision OCR**(DOCUMENT_TEXT_DETECTION·EXIF 정규화·문단 블록·upright 좌표) + **Claude**(opus-5·구조화 JSON·근거 blockId) 위험조항 분석 + 이미지 검증(sharp) + blockId→box 매핑 + 결과 영속(`PageOcr`·`PageAnalysisResult`·`Clause`, pageId+revision 귀속).
+- **무결성(Codex 2R 반영)**: `confirmAnalysisResultTx`(결과+done+stateVersion 단일 tx·terminal no-op·stale 종결)·`upsertPageOcr`(승자 반환)·OCR 영속 재사용(Vision 재호출 없음)·failed 리스너+reconciler(stuck 복구)·검증실패 0건 ≠ 정상 0건.
+- **설계**: spec 0021 · Codex 2R(R1 11 P1 → v2 → R2 6 정제 → v3). ADR-05(Vision+Claude B안, Notion 13·07 기록).
+- **파일**: `packages/db`(모델·마이그레이션 20260929050822·confirmAnalysisResultTx·upsertPageOcr), `packages/contracts`(clause/box·결과 스키마·오류코드), `apps/worker`(storage·image-validator·vision·claude·box-mapper·processor·main·config + 단위 35), `apps/api`(mapper/repository join).
+- **게이트**: ✅ PASS(13검사 · 단위 worker 35·api 44·contracts 15·mobile 50).
+- **실측(실 Vision+Claude)**: 한국어 계약(자동연장·위약금·책임제한) → OCR 9블록·1240×1754 upright 정확 → 조항 3건 정확 추출(box·근거) → done. Vision=API키(REST) 인증.
+- **다음/주의**: **개인정보 전송·보존·고지·삭제 정책 확정(배포 차단)** · 4b Skia 하이라이트(spec 0022) · entitlement 실차감(TASK-005). effort 배선·실 PG 동시성/EXIF/평가셋 후속. **docker minio 유령 컨테이너(126a55…) 지속** — compose down으로도 안 지워져 standalone(cl-minio-adhoc) 우회.
+
 ## 2026-09-28 · Claude · #63 분석 요청·jobId 상태 폴링 (TASK-003)
 - **무엇**: 분석 파이프라인 세로 슬라이스. contracts(analyze/status zod+stateVersion) · db(AnalysisJob·PageAnalysis + 활성 job 부분 유니크 인덱스 + 공유 `confirmPageAnalysisTx`) · api(analysis 모듈 analyze·GET·SSE + documents.startAnalysis/getAnalysis + QueuePort(BullMQ) + Redis pub/sub 알림 + enqueue 누락 reconciler) · worker(NestJS standalone + BullMQ consumer + 공통 processor + OcrPort/StubOcrAdapter) · mobile(features/analysis: react-native-sse + GET fallback + stateVersion 역순 방어 + app 자동 시작).
 - **설계**: Codex 2R 토론 — B(fan-out) 제안 → **A(resumable 단일 job) 채택**(가역 전환), entitlement 예약·과설계(dispatch 포트·processPage 분리) 철회, reconciler는 enqueue 누락 재전달만. spec 0020.
