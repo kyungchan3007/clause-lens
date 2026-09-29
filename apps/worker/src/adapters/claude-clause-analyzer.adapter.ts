@@ -47,11 +47,13 @@ export class ClaudeClauseAnalyzer extends ClauseAnalyzerPort {
         messages: [{ role: "user", content: payload }],
       });
     } catch (e) {
-      if (e instanceof Anthropic.APIError && typeof e.status === "number" && e.status >= 400 && e.status < 500 && e.status !== 429) {
-        // 4xx(설정·요청 오류, 429 제외) → 재시도 무의미. 영구 처리(상위에서 알림 대상).
+      // instanceof에 의존하지 않고 numeric status 필드로 분류(래핑·SDK 버전차 대비, PR #69 리뷰 반영).
+      const status = (e as { status?: number })?.status;
+      if (typeof status === "number" && status >= 400 && status < 500 && status !== 429) {
+        // 4xx(설정·요청 오류, 429 제외) → 재시도 무의미. 영구 처리(상위 알림 대상).
         throw new AnalysisPermanentError("analysis_failed");
       }
-      // 429·5xx·타임아웃·네트워크 → 일시(재시도 예산).
+      // 429·5xx·타임아웃·네트워크(status 없음) → 일시(재시도 예산).
       throw new AnalysisTransientError("analysis_timeout");
     }
 
