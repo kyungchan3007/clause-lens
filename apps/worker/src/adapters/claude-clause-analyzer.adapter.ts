@@ -47,13 +47,20 @@ export class ClaudeClauseAnalyzer extends ClauseAnalyzerPort {
         messages: [{ role: "user", content: payload }],
       });
     } catch (e) {
-      // instanceof에 의존하지 않고 numeric status 필드로 분류(래핑·SDK 버전차 대비, PR #69 리뷰 반영).
-      const status = (e as { status?: number })?.status;
-      if (typeof status === "number" && status >= 400 && status < 500 && status !== 429) {
+      // status를 여러 위치에서 추출 + 문자열 강제변환(래핑·SDK 버전차 대비, PR #69 리뷰 반영).
+      const err = e as {
+        status?: unknown;
+        statusCode?: unknown;
+        response?: { status?: unknown };
+      };
+      const raw = err?.status ?? err?.statusCode ?? err?.response?.status;
+      const status = typeof raw === "string" ? Number(raw) : typeof raw === "number" ? raw : NaN;
+      if (Number.isFinite(status) && status >= 400 && status < 500 && status !== 429) {
         // 4xx(설정·요청 오류, 429 제외) → 재시도 무의미. 영구 처리(상위 알림 대상).
         throw new AnalysisPermanentError("analysis_failed");
       }
-      // 429·5xx·타임아웃·네트워크(status 없음) → 일시(재시도 예산).
+      // 429·5xx·타임아웃·네트워크(status 없음) → 일시. 재시도는 BullMQ attempts로 상한,
+      // 소진 시 processor가 analysis_timeout(retryable)로 종결 → 무한 재시도 없음.
       throw new AnalysisTransientError("analysis_timeout");
     }
 
