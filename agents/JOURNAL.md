@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-30 · Claude · 복기 자동 주입 + 측정 — 하네스 이식 4/4 (TASK-H4, #85, 마지막)
+- **무엇**: 대화 시작·날짜/브랜치 변경 첫 요청에 **미처리 커밋 `[보완]`**(이후 언급 제외)·최근 JOURNAL·작업 상태를 AI 컨텍스트로 **자동 주입**(session-context·recall-hook, stdout·비차단·반복 억제·1500자). `metrics.mjs`로 복기 참조율·체크박스 방치율 측정(`pnpm metrics`, 기준선 33%).
+- **적응**: ClauseLens JOURNAL은 표가 아닌 `## 날짜 · Claude · 제목` 섹션 → `recentJournal` 파서 재작성. 커밋 `[보완]`(#83부터)·`agents/JOURNAL.md`만(Notion은 hook이 못 읽음). base=develop.
+- **검증**: node:test 10개 + **recall-hook에 UserPromptSubmit JSON 주입**(실데이터)으로 미처리 `[보완]`·JOURNAL·상태 주입 + 재요청 억제 실측. `pnpm metrics` = 참조율 35%(기준선 33% 대비 +2%) 출력. 전체 checks.sh는 Expo Doctor만 FAIL(#22).
+- **후속(측정)**: 주입=전달이지 반영 아님 → **효과(참조율 변화)는 1~2주 데이터 축적 후 `pnpm metrics`로 비교**(Acceptance에 후속으로 남김).
+- **파일**: `agents/harness/metrics/{lib,metrics}.mjs`(+lib.test), `agents/harness/hooks/{session-context,recall-hook}.mjs`·`lib/recall.mjs`(+test), `.claude/settings.json`(recall·session-context 배선), `.gitignore`(.recall-state.json), package.json(metrics), spec 폴더 `0026-.../`, loop.md, TASKS(H4·H3 done).
+- **다음/주의**: **하네스 이식 1~4/4 완료**(#82·#83·#84·#85). Notion 10. Harness Engineering 갱신 기록에 4개 항목 정리(머지 후). `pnpm metrics`로 주기적 효과 추적.
+
 ## 2026-09-30 · Claude · 작업 과정 기록·강제 — 하네스 이식 3/4 (TASK-H3, #84)
 - **무엇**: **폴더형 spec**(0025부터 prd·sdd·trace, 기존 0001~0024 면제) + Claude Code hook 3종 — `trace`(도구 사용 자동 기록·비밀값 가림) · `guard`(이슈 브랜치·prd·sdd 없이 코드 수정 차단, PreToolUse exit 2) · `stop-check`(코드 바꾸고 trace 없이 종료 돌려보냄). `records.mjs`에 폴더 함수·`decideEdit`·`checkBeforeStop` 추가, `check-task-records` 게이트, `.claude/settings.json` 배선.
 - **적응**: 브랜치 이슈번호→spec(파일/폴더) 매핑([0023] 재사용), 역할 분리 미이식(Claude/Codex 분리 이미 있음), base=develop. Codex는 hook 미적용→checks.sh로만.

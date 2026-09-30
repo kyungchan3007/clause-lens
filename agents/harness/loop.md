@@ -34,6 +34,8 @@
 - **Claude Code hook**(`.claude/settings.json`): 도구 사용 **자동 기록**(trace) · 이슈 브랜치·prd·sdd 없이 코드 수정 **차단**(guard) · 코드 바꾸고 trace 없이 종료 **돌려보냄**(stop-check). 게이트: `check-task-records`.
 - **Codex는 Claude hook 미적용** → 완료 검사(`checks.sh`)로만 강제. 훅 시험은 **복사본에서**(라이브 기록 오염 방지).
 
+**복기 주입·측정(#85):** 대화 시작·날짜/브랜치 변경 첫 요청에 미처리 커밋 `[보완]`·최근 JOURNAL·작업 상태를 컨텍스트로 자동 주입(session-context·recall-hook, 반복 억제). `pnpm metrics`로 복기 참조율(기준선 33%)·체크박스 방치율 측정. Notion 복기는 hook이 못 읽으므로 저장소 원본만.
+
 ## §4. 구현 전 게이트 — SDD/PRD 필수 (코드보다 먼저)
 
 **모든 태스크는 착수 시 spec 문서(`intent/specs/NNNN-슬러그.md`)를 남긴다. 문서 없이는 BUILD 금지.** — [guardrails](guardrails.md)로 강제.

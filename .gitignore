@@ -52,3 +52,4 @@ packages/db/analysis/
 # 하네스 자동 기록(미배정 — 태스크 폴더 없을 때)
 agents/harness/hooks/.unassigned.jsonl
 agents/intent/specs/**/trace.auto.jsonl
+agents/harness/hooks/.recall-state.json*
