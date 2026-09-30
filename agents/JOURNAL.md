@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-30 · Claude · 작업 과정 기록·강제 — 하네스 이식 3/4 (TASK-H3, #84)
+- **무엇**: **폴더형 spec**(0025부터 prd·sdd·trace, 기존 0001~0024 면제) + Claude Code hook 3종 — `trace`(도구 사용 자동 기록·비밀값 가림) · `guard`(이슈 브랜치·prd·sdd 없이 코드 수정 차단, PreToolUse exit 2) · `stop-check`(코드 바꾸고 trace 없이 종료 돌려보냄). `records.mjs`에 폴더 함수·`decideEdit`·`checkBeforeStop` 추가, `check-task-records` 게이트, `.claude/settings.json` 배선.
+- **적응**: 브랜치 이슈번호→spec(파일/폴더) 매핑([0023] 재사용), 역할 분리 미이식(Claude/Codex 분리 이미 있음), base=develop. Codex는 hook 미적용→checks.sh로만.
+- **검증**: node:test 12개 + **임시 git 복사본에 hook JSON 주입**으로 guard 차단(exit 2)·자동기록(redact)·stop-check 돌려보냄 실측(라이브 오염 방지). 전체 checks.sh는 Expo Doctor만 FAIL(#22).
+- **허점/결정**: `.claude/settings.json` 훅이 **라이브 세션에 hot-reload**돼 부트스트랩 활동이 `trace.auto.jsonl`에 섞임 → **trace.auto.jsonl gitignore**(커밋 기록은 사람이 쓰는 trace.md). #82 파일 spec만 보던 issue-sync/link는 폴더 spec 미지원(후속).
+- **파일**: `agents/harness/lib/records.mjs`, `agents/harness/hooks/{trace,guard,stop-check}.mjs`·`lib/io.mjs`(+trace.test·records.folder.test), `agents/harness/evals/check-task-records.mjs`·checks.sh, `.claude/settings.json`, `.gitignore`, spec 폴더 `0025-.../`, `templates/trace.md`, loop.md, TASKS(H3·H2 done).
+- **다음/주의**: 이식 4/4(#85 복기 자동 주입+효과 측정). 훅은 새 세션/`pnpm`설치 저장소에서 활성 · 시험은 반드시 복사본.
+
 ## 2026-09-30 · Claude · 커밋 기록 규칙 — 하네스 이식 2/4 (TASK-H2, #83)
 - **무엇**: 커밋 세 섹션(`[허점]`·`[보완]`·`[컨텍스트·토큰]`) 강제 + 토큰 실측 자동 기입. git hook(**셸 심→`.mjs`**, 루트 `type:module` 회피) + `usage.mjs`(Claude transcript 브랜치 누적·message.id 중복 제거) + `prepare`(core.hooksPath) + 이슈/PR 템플릿 + 지침서·AGENTS.md.
 - **왜**: 코드 diff만으론 허점·보완·비용이 안 남음. git hook이라 Claude·Codex 커밋 모두 적용(Codex는 토큰 "집계 불가"·검사는 적용).

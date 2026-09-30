@@ -22,8 +22,8 @@ AI 작업 과정이 블랙박스다. PRD·SDD는 있어도 **무엇을 읽고 �
 - base=develop · 코드 경로 `apps/**`·`packages/**`·`agents/harness/**` · 기록 경로 `agents/intent/`·`agents/orchestration/`·JOURNAL.
 
 ## Acceptance
-- [ ] 도입 번호(0025) 이후 작업은 spec 폴더(prd·sdd·trace) 필수, 이전 단일 파일 spec은 면제.
-- [ ] 자동 기록이 작업 폴더에 남음 (비밀값 가림, 도구 결과는 저장 안 함).
-- [ ] 이슈 브랜치·TASKS·prd·sdd 없이 코드 수정 → 차단, trace 없이 종료 → 돌려보냄.
-- [ ] `checks.sh`에 기록 검사 추가, 기존 spec 24개(0001~0024) 통과.
-- [ ] 단위 테스트 + 훅 스크립트에 실제 hook 입력을 넣어 차단·돌려보냄·자동 기록 확인(복사본/직접 실행).
+- [x] 도입 번호(0025) 이후 작업은 spec 폴더(prd·sdd·trace) 필수, 이전 단일 파일 spec은 면제. (`check-task-records` · `FOLDER_REQUIRED_FROM`)
+- [x] 자동 기록이 작업 폴더에 남음 (비밀값 가림, 도구 결과는 저장 안 함). (`trace.mjs` · redact/sanitize 단위·실측. 단, 커밋은 안 함 → gitignore, 커밋 기록은 trace.md)
+- [x] 이슈 브랜치·TASKS·prd·sdd 없이 코드 수정 → 차단, trace 없이 종료 → 돌려보냄. (guard exit 2 · stop-check `{decision:block}` 실측)
+- [x] `checks.sh`에 기록 검사 추가, 기존 spec 24개(0001~0024) 통과. (Task records(folder) PASS · 전체 게이트 Expo Doctor만 FAIL #22)
+- [x] 단위 테스트 + 훅 스크립트에 실제 hook 입력을 넣어 차단·돌려보냄·자동 기록 확인(복사본/직접 실행). (node:test 12개 + 임시 git 복사본 통합 검증)
