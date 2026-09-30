@@ -166,3 +166,146 @@ export function inspectIssueRecords(projectDir) {
 
   return problems;
 }
+
+// ── 폴더형 spec (하네스 이식 3/4, #84) ─────────────────────────
+// 새 작업(FOLDER_REQUIRED_FROM 이상)은 폴더(prd.md·sdd.md·trace.md)로. 0001~0024 단일 파일은 면제.
+
+export const FOLDER_REQUIRED_FROM = "0025";
+
+// 코드 수정 전에도 항상 허용하는 기록 경로
+export const RECORD_PREFIXES = ["agents/intent/", "agents/orchestration/", "agents/JOURNAL.md", "LEARNINGS.md"];
+
+export function isRecordPath(relPath) {
+  return RECORD_PREFIXES.some((prefix) => relPath === prefix || relPath.startsWith(prefix));
+}
+
+export function listTaskFolders(projectDir) {
+  const dir = join(projectDir, SPECS_DIR);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && /^\d{4}-/.test(d.name))
+    .map((d) => d.name)
+    .sort();
+}
+
+export function readFolderFile(projectDir, folder, name) {
+  const p = join(projectDir, SPECS_DIR, folder, name);
+  return existsSync(p) ? readFileSync(p, "utf8") : undefined;
+}
+
+/** 이슈 번호로 폴더 spec 찾기 (prd.md의 이슈 번호 기준) */
+export function folderForIssue(projectDir, issue) {
+  return listTaskFolders(projectDir).find((f) => issueNumberOf(readFolderFile(projectDir, f, "prd.md")) === String(issue));
+}
+
+const SDD_KEYWORDS = ["접근", "대안", "검증"];
+
+export function checkFolderPrd(text, id) {
+  const problems = [];
+  if (/NNNN|<태스크 제목>|— 제목 —|<기능 이름>/.test(text.split("\n")[0] ?? "")) problems.push("제목을 실제 태스크명으로 채우세요");
+  if (!/^\s*[-*] \[[ xX]\] \S/m.test(acceptanceSection(text))) problems.push("Acceptance에 내용 있는 체크박스를 1개 이상 쓰세요");
+  if (id >= FOLDER_REQUIRED_FROM && !issueNumberOf(text)) problems.push('"- **이슈:** #번호"(또는 "관련 태스크: #번호")가 없습니다');
+  return problems;
+}
+
+export function checkFolderSdd(text) {
+  return SDD_KEYWORDS.filter((k) => !(text ?? "").includes(k)).map((k) => `SDD에 "${k}" 관련 내용을 채우세요`);
+}
+
+export function checkFolderTrace(text) {
+  const body = (text ?? "").split("\n").filter((l) => l.trim() && !l.startsWith("#") && !l.trim().startsWith(">")).join("").trim();
+  return body.length > 10 ? [] : ["trace.md에 판단·막힘·되돌림 등 실제 과정을 기록하세요(템플릿만 있으면 안 됨)"];
+}
+
+/** 폴더 spec 하나의 기록 상태. requireTrace=false면 trace 검사 생략(코드 수정 전 게이트용). */
+export function inspectTaskFolder(projectDir, folder, { requireTrace = true } = {}) {
+  const id = specId(folder);
+  const problems = [];
+  const prd = readFolderFile(projectDir, folder, "prd.md");
+  if (prd === undefined) problems.push(`${SPECS_DIR}/${folder}/prd.md 가 없습니다 (템플릿: agents/intent/templates/prd.md)`);
+  else problems.push(...checkFolderPrd(prd, id).map((p) => `prd.md: ${p}`));
+  const sdd = readFolderFile(projectDir, folder, "sdd.md");
+  if (sdd === undefined) problems.push(`${SPECS_DIR}/${folder}/sdd.md 가 없습니다 (템플릿: agents/intent/templates/sdd.md)`);
+  else problems.push(...checkFolderSdd(sdd).map((p) => `sdd.md: ${p}`));
+  if (requireTrace) {
+    const trace = readFolderFile(projectDir, folder, "trace.md");
+    if (trace === undefined) problems.push(`${SPECS_DIR}/${folder}/trace.md 가 없습니다`);
+    else problems.push(...checkFolderTrace(trace).map((p) => `trace.md: ${p}`));
+  }
+  // done 태스크면 완료 조건 미체크(사유無) 금지
+  const tasks = existsSync(join(projectDir, TASKS_FILE)) ? readFileSync(join(projectDir, TASKS_FILE), "utf8") : "";
+  if (prd !== undefined && doneSpecIds(tasks).includes(id)) {
+    for (const item of parseChecklist(acceptanceSection(prd)).filter((i) => !i.checked && !i.reasoned)) {
+      problems.push(`prd.md: done 태스크인데 사유 없이 미체크된 완료 조건 — "${item.text.slice(0, 60)}"`);
+    }
+  }
+  return problems;
+}
+
+// ── PreToolUse / Stop 판정 ─────────────────────────────────────
+
+function branchGuideMessage(relPath, branch) {
+  return [
+    `[기록 강제] ${relPath} 수정 차단: 현재 브랜치(${branch || "알 수 없음"})가 이슈 브랜치가 아닙니다.`,
+    "먼저: gh issue create → gh issue develop <이슈> --base develop --name <접두사>/<이슈번호>-슬러그 --checkout",
+  ].join("\n");
+}
+
+/** 코드 수정 허용 여부(PreToolUse). 차단이면 이유를 돌려준다. */
+export function decideEdit(projectDir, relPath) {
+  if (relPath.startsWith("..") || relPath.startsWith("/")) return { allow: true };
+  if (isRecordPath(relPath)) return { allow: true };
+
+  const branch = currentBranch(projectDir);
+  const issue = branchIssueNumber(branch);
+  if (!issue) return { allow: false, reason: branchGuideMessage(relPath, branch) };
+
+  // 도입 전 단일 파일 spec 태스크는 폴더 요구에서 면제
+  if (specForIssue(projectDir, issue)) return { allow: true };
+
+  const folder = folderForIssue(projectDir, issue);
+  if (!folder) {
+    return {
+      allow: false,
+      reason: `[기록 강제] ${relPath} 수정 차단: 이슈 #${issue}의 spec 폴더가 없습니다.\n${SPECS_DIR}/<번호>-슬러그/ 에 prd.md·sdd.md·trace.md를 먼저 작성하세요 (agents/intent/templates/).`,
+    };
+  }
+  const problems = inspectTaskFolder(projectDir, folder, { requireTrace: false });
+  if (problems.length > 0) {
+    return { allow: false, reason: `[기록 강제] ${relPath} 수정 차단: 코드보다 PRD·SDD·TASKS가 먼저입니다.\n${problems.map((p) => `- ${p}`).join("\n")}` };
+  }
+  return { allow: true };
+}
+
+export function changedFiles(projectDir) {
+  const base =
+    git(projectDir, ["merge-base", "HEAD", "develop"]) ||
+    git(projectDir, ["merge-base", "HEAD", "chan/develop"]) ||
+    git(projectDir, ["merge-base", "HEAD", "origin/develop"]);
+  const committed = base ? git(projectDir, ["diff", "--name-only", `${base}...HEAD`]) : "";
+  const working = git(projectDir, ["diff", "--name-only", "HEAD"]);
+  const staged = git(projectDir, ["diff", "--name-only", "--cached"]);
+  const untracked = git(projectDir, ["ls-files", "--others", "--exclude-standard"]);
+  return [...new Set([committed, working, staged, untracked].join("\n").split("\n").filter(Boolean))];
+}
+
+/** 응답 종료 전 기록 점검(Stop). 문제가 있으면 problems를 돌려준다. */
+export function checkBeforeStop(projectDir) {
+  const changed = changedFiles(projectDir);
+  const codeChanged = changed.filter((f) => !isRecordPath(f));
+  if (codeChanged.length === 0) return [];
+
+  const branch = currentBranch(projectDir);
+  const issue = branchIssueNumber(branch);
+  if (!issue) return [`이슈 브랜치가 아닌 ${branch || "알 수 없는 브랜치"}에서 코드가 바뀌었습니다: ${codeChanged.slice(0, 5).join(", ")}`];
+  if (specForIssue(projectDir, issue)) return []; // 단일 파일 spec 태스크(도입 전)는 trace 면제
+
+  const folder = folderForIssue(projectDir, issue);
+  if (!folder) return [`이슈 #${issue}의 spec 폴더(${SPECS_DIR}/<번호>-슬러그/)가 없습니다`];
+
+  const problems = inspectTaskFolder(projectDir, folder);
+  if (!changed.includes(`${SPECS_DIR}/${folder}/trace.md`)) {
+    problems.push("trace.md가 이번 태스크에서 갱신되지 않았습니다. 판단·이유·막힘·되돌림을 기록하세요");
+  }
+  return problems;
+}

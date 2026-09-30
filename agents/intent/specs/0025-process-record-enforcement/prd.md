@@ -1,0 +1,29 @@
+# 0025 — 작업 과정 기록·강제 (하네스 이식 3/4) — PRD
+
+> **이슈:** #84 · **관련 태스크**: #84 (chore) · **상태**: in-progress · **유형**: chore (하네스/거버넌스)
+
+## 1. 문제
+AI 작업 과정이 블랙박스다. PRD·SDD는 있어도 **무엇을 읽고 어디서 헤맸는지**가 남지 않고, 기록 규칙은 건너뛰어도 막는 게 없다. harness-lab에서 검증한 **과정 기록 + 기록 강제**를 옮긴다.
+
+## 2. 목표
+- G1. 새 작업(0025부터)은 **폴더 spec**(prd·sdd·trace)으로. 기존 0001~0024 단일 파일은 면제.
+- G2. **자동 기록**(`trace.auto.jsonl`) — 대화 시작·프롬프트·도구 사용·실패·차단·종료를 작업 폴더에(비밀값 가림, 도구 결과는 저장 안 함).
+- G3. **수정 전 차단**(PreToolUse) — 이슈 브랜치·spec 폴더(prd·sdd) 없이 코드 수정 → 차단.
+- G4. **종료 시 돌려보냄**(Stop) — 코드를 바꿨는데 trace 미갱신 → 한 번 돌려보냄.
+- G5. **완료 검사**(checks.sh)에 폴더 기록 검사 추가, 기존 spec 통과.
+
+## 3. 목표가 아닌 것 (Non-goals)
+- N1. 복기 자동 주입·효과 측정 — 이식 4/4(#85).
+- N2. 역할 분리(설계자/구현자/검사자) 권한 — ClauseLens는 Claude(화면)·Codex(로직) 분리가 이미 있어 이식하지 않음.
+- N3. 터미널로 쓰는 파일의 사전 차단(사후 종료·게이트에서 잡음) · 기록 내용 품질 검사.
+
+## 4. 제약 (Constraints)
+- **Codex엔 Claude hooks 미적용** → Codex 작업은 완료 검사(checks.sh)로만 강제.
+- base=develop · 코드 경로 `apps/**`·`packages/**`·`agents/harness/**` · 기록 경로 `agents/intent/`·`agents/orchestration/`·JOURNAL.
+
+## Acceptance
+- [x] 도입 번호(0025) 이후 작업은 spec 폴더(prd·sdd·trace) 필수, 이전 단일 파일 spec은 면제. (`check-task-records` · `FOLDER_REQUIRED_FROM`)
+- [x] 자동 기록이 작업 폴더에 남음 (비밀값 가림, 도구 결과는 저장 안 함). (`trace.mjs` · redact/sanitize 단위·실측. 단, 커밋은 안 함 → gitignore, 커밋 기록은 trace.md)
+- [x] 이슈 브랜치·TASKS·prd·sdd 없이 코드 수정 → 차단, trace 없이 종료 → 돌려보냄. (guard exit 2 · stop-check `{decision:block}` 실측)
+- [x] `checks.sh`에 기록 검사 추가, 기존 spec 24개(0001~0024) 통과. (Task records(folder) PASS · 전체 게이트 Expo Doctor만 FAIL #22)
+- [x] 단위 테스트 + 훅 스크립트에 실제 hook 입력을 넣어 차단·돌려보냄·자동 기록 확인(복사본/직접 실행). (node:test 12개 + 임시 git 복사본 통합 검증)

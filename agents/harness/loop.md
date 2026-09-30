@@ -29,6 +29,11 @@
 - PR 전: `pnpm issue-link`(브랜치↔이슈 연결) · `pnpm issue-sync`(이슈 체크박스를 spec `### Acceptance`에 맞춤) · `--check`(어긋남 검사).
 - 머지 후: `pnpm issue-sync --close`(`Closes #N`이 못 닫은 이슈 닫기). 완료 조건의 **단일 원본 = spec의 ### Acceptance**, 이슈는 복사본.
 
+**과정 기록·강제(#84):** 규칙 상세는 [commit-and-issue.md](commit-and-issue.md).
+- **spec 형식: 0025부터 폴더** `agents/intent/specs/NNNN-슬러그/{prd,sdd,trace}.md` (+ 자동 기록 `trace.auto.jsonl`). 0001~0024 단일 파일은 면제.
+- **Claude Code hook**(`.claude/settings.json`): 도구 사용 **자동 기록**(trace) · 이슈 브랜치·prd·sdd 없이 코드 수정 **차단**(guard) · 코드 바꾸고 trace 없이 종료 **돌려보냄**(stop-check). 게이트: `check-task-records`.
+- **Codex는 Claude hook 미적용** → 완료 검사(`checks.sh`)로만 강제. 훅 시험은 **복사본에서**(라이브 기록 오염 방지).
+
 ## §4. 구현 전 게이트 — SDD/PRD 필수 (코드보다 먼저)
 
 **모든 태스크는 착수 시 spec 문서(`intent/specs/NNNN-슬러그.md`)를 남긴다. 문서 없이는 BUILD 금지.** — [guardrails](guardrails.md)로 강제.
