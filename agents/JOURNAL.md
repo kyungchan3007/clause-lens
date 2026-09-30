@@ -14,6 +14,28 @@
 
 ---
 
+## 2026-09-30 · Claude · #73 결과 화면 e2e 실측 (TASK-004 4b · 5단계)
+- **무엇**: 결과 화면 시나리오 **S20** + Maestro 플로우(`result.yaml`) 추가. 시뮬레이터에서 **실제 Vision+Claude로 end-to-end 완주**.
+- **실측(iPhone 17 Pro · 실 Vision+Claude)**: 계약서 이미지 → 분석 완료 → 결과 보기 → **원본 위 하이라이트**(제2·3조·제4조·"불리" 문구 좌표 정확 정합) + **조항 목록**(높음/보통 배지·설명·근거 원문) + **조항 탭 선택 강조**(위험도 색과 별도 테두리·해당 조항 박스만). 좌표 변환·EXIF upright 일치 확인.
+- **파일**: `apps/mobile/.maestro/{SCENARIOS.md(S20), result.yaml}`.
+- **게이트**: 코드 변경 없음(시나리오만). 앞선 단위(모바일 68)·타입 유지.
+- **다음/주의**: **4b 기능 완료**. 남은 심화 검증 = EXIF 방향 1~8 비대칭 fixture 실측(후속). Maestro는 사진 선택 수동(반자동). 앱 재시작 후 재열람은 TASK-006.
+
+## 2026-09-30 · Claude · #73 결과 화면 연결 (TASK-004 4b · 4단계)
+- **무엇**: 결과 화면을 앱 흐름에 연결. **업로드 시점 이미지 스냅샷**(uploadStore.image — 초안 교체와 무관, Codex P1#3) + **결과 라우트**(app/result) + **결과 격리**(요청 문서 = 분석/업로드 문서 · 현재 사용자 = 업로드 소유자) + PageList 완료/부분완료 **"결과 보기"** 버튼 + 라우트 등록.
+- **흐름**: 분석 완료 → "결과 보기" → `/result?documentId` → 이미지 위 하이라이트 + 조항 목록.
+- **파일**: `apps/mobile/src/features/upload/model/{uploadStore,useUpload}.ts`(image 스냅샷), `apps/mobile/src/features/capture/ui/PageList.tsx`(onViewResult), `apps/mobile/app/{index.tsx,_layout.tsx,result.tsx}`.
+- **게이트**: 타입체크(전 패키지)·단위(모바일 68) ✅ / Expo Doctor는 기존 드리프트(4b 무관)로 FAIL.
+- **다음/주의**: 5단계 — 시나리오 S20 + 시뮬레이터 실측 + **EXIF 1~8 오버레이 일치**(비대칭 fixture). 앱 재시작 후 결과 재열람은 TASK-006(서버 이미지 다운로드) 후속.
+
+## 2026-09-30 · Claude · #73 결과·위험조항 하이라이트 (TASK-004 4b) — 설계 + 부분 구현
+- **무엇**: 4b 설계(spec 0022) 확정 + 결과 화면 핵심 구현 착수. 좌표 변환 순수함수(contain-fit·교집합 클램프·로컬↔서버 크기 정합) + 공용 `Badge` + 위험도/조항종류 매핑 + 결과 UI(SVG 하이라이트 오버레이·조항 카드/목록·결과 화면·선택 상태 훅).
+- **왜**: 4a 백엔드가 조항·좌표를 주지만 이를 보여줄 화면이 없어 제품 핵심 가치가 화면으로 안 닫혀 있었음.
+- **설계(Codex 2R)**: R1(P1 8건) → 반영 → R2(결과 격리·조회 수명주기·선택키·좌표 오차 합격기준 보완) → 착수 승인. 확정: 오버레이=react-native-svg, 이미지=업로드 시점 세션 스냅샷(재조회는 TASK-006), 좌표=서버 upright 기준·불일치 시 오버레이 중단.
+- **파일**: `apps/mobile/src/features/result/**`(신규: lib/coordinateTransform+test·lib/clausePresentation·model/{types,useResultData}·ui/{HighlightOverlay,ClauseCard,ClauseList,ResultScreen}·index), `packages/ui/src/badge.tsx`(+index), `agents/intent/specs/0022-app-result-highlight.md`.
+- **게이트**: 타입체크(모바일·api·워커)·단위(전 패키지, 모바일 68 — 좌표변환 18 포함) ✅ / **Expo Doctor는 기존 드리프트**(expo-constants 57.0.19↔57.0.20, 4b와 무관·의존성 변경 0, #22 CI 소관)로 FAIL.
+- **다음/주의**: 4단계 연결(결과 라우트 등록 + PageList 완료버튼→결과화면 + **업로드 시점 이미지 스냅샷**(uploadStore) + 사용자·문서 격리) · 5단계 시나리오 S20 e2e + **EXIF 1~8 실측**(비대칭 fixture·오차 임계). 이슈 #73.
+
 ## 2026-09-29 · Claude · #68 실제 OCR·위험조항 분석 백엔드 (TASK-004 4a)
 - **무엇**: worker stub → 실제. **Vision OCR**(DOCUMENT_TEXT_DETECTION·EXIF 정규화·문단 블록·upright 좌표) + **Claude**(opus-5·구조화 JSON·근거 blockId) 위험조항 분석 + 이미지 검증(sharp) + blockId→box 매핑 + 결과 영속(`PageOcr`·`PageAnalysisResult`·`Clause`, pageId+revision 귀속).
 - **무결성(Codex 2R 반영)**: `confirmAnalysisResultTx`(결과+done+stateVersion 단일 tx·terminal no-op·stale 종결)·`upsertPageOcr`(승자 반환)·OCR 영속 재사용(Vision 재호출 없음)·failed 리스너+reconciler(stuck 복구)·검증실패 0건 ≠ 정상 0건.

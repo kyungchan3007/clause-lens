@@ -27,6 +27,7 @@ export interface AnalyzeControls {
   onAnalyze: () => void;
   onRetry: () => void;
   onCancel: () => void;
+  onViewResult?: () => void; // 완료·부분완료 시 결과 화면으로
 }
 
 // 진행 중(취소 노출) 단계.
@@ -135,10 +136,9 @@ export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
         ) : active ? (
           <Button label="취소" variant="secondary" onPress={analyze!.onCancel} />
         ) : analyze?.phase === "done" ? (
-          // 결과·하이라이트 화면은 TASK-004에서 연결.
-          <Button label="분석 완료" variant="secondary" onPress={() => {}} />
+          <Button label="결과 보기" variant="primary" onPress={() => analyze?.onViewResult?.()} />
         ) : analyze?.phase === "partial" ? (
-          <Button label="일부 완료" variant="secondary" onPress={() => {}} />
+          <Button label="결과 보기 (일부 완료)" variant="primary" onPress={() => analyze?.onViewResult?.()} />
         ) : analyze?.phase === "failed" ? (
           <Button label="분석 실패" variant="secondary" onPress={() => {}} />
         ) : (
