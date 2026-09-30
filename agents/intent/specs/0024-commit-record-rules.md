@@ -27,12 +27,12 @@
 - 의존성 추가 없이 Node 내장(node:test). base=develop.
 
 ### Acceptance
-- [ ] 작업 브랜치 커밋에 세 섹션이 없거나 비면 거부, 머지·fixup·revert 제외.
-- [ ] `[컨텍스트·토큰]` 자동 기입 (Claude 실측, 같은 message.id 중복 제거).
-- [ ] 새로 받은 저장소에서 `pnpm install`만으로 git hook 설정(`prepare`).
-- [ ] 이슈 템플릿(*.yml) + PR 템플릿에 세 섹션.
-- [ ] 지침서(commit-and-issue.md) + AGENTS.md 규칙 등록.
-- [ ] 단위 테스트 + 실제 git commit으로 거부·자동 기입 확인.
+- [x] 작업 브랜치 커밋에 세 섹션이 없거나 비면 거부, 머지·fixup·revert 제외. (commit-msg 훅 · 직접 실측 exit 1)
+- [x] `[컨텍스트·토큰]` 자동 기입 (Claude 실측, 같은 message.id 중복 제거). (이 태스크 커밋에서 자동 기입 확인)
+- [x] 새로 받은 저장소에서 `pnpm install`만으로 git hook 설정(`prepare`). (`prepare`=`git config core.hooksPath .githooks`)
+- [x] 이슈 템플릿(*.yml) + PR 템플릿에 세 섹션. (6개 폼 + pull_request_template.md)
+- [x] 지침서(commit-and-issue.md) + AGENTS.md 규칙 등록. (§1 규칙 5)
+- [x] 단위 테스트 + 실제 git commit으로 거부·자동 기입 확인. (node:test 14개 + 실측)
 
 ## SDD (어떻게)
 

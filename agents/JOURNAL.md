@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-30 · Claude · 커밋 기록 규칙 — 하네스 이식 2/4 (TASK-H2, #83)
+- **무엇**: 커밋 세 섹션(`[허점]`·`[보완]`·`[컨텍스트·토큰]`) 강제 + 토큰 실측 자동 기입. git hook(**셸 심→`.mjs`**, 루트 `type:module` 회피) + `usage.mjs`(Claude transcript 브랜치 누적·message.id 중복 제거) + `prepare`(core.hooksPath) + 이슈/PR 템플릿 + 지침서·AGENTS.md.
+- **왜**: 코드 diff만으론 허점·보완·비용이 안 남음. git hook이라 Claude·Codex 커밋 모두 적용(Codex는 토큰 "집계 불가"·검사는 적용).
+- **적응**: [0023] `records.mjs`의 `isWorkBranch` 재사용, trace/folder 의존부 제외(→ #84), base=develop.
+- **파일**: `agents/harness/commit/{message,commit-msg,prepare-commit-msg}.mjs(+message.test)`, `agents/harness/usage/usage.mjs(+test)`, `.githooks/{commit-msg,prepare-commit-msg}`, `records.mjs`(isWorkBranch), `package.json`(prepare·usage), `.github/ISSUE_TEMPLATE/*.yml`·`pull_request_template.md`, `commit-and-issue.md`, `AGENTS.md`, spec 0024, TASKS(H2·H1 done), checks.sh.
+- **게이트**: node:test 14개(+기존)·check-issue-records ✅ · **실측**: 섹션 누락 커밋 거부(exit 1) + 이 태스크 커밋에서 `[컨텍스트·토큰]` 자동 기입 확인 · 전체 checks.sh는 Expo Doctor만 FAIL(기존 #22, 무관).
+- **다음/주의**: 이식 3/4(#84 과정 기록+수정 전 차단), 4/4(#85 복기 주입). 훅은 `pnpm run prepare`/`pnpm install`로 켜짐(이미 받은 폴더는 prepare 한 번). `--no-verify`로 우회 가능(로컬 한계).
+
 ## 2026-09-30 · Claude · 이슈·체크박스 강제 장치 — 하네스 이식 1/4 (TASK-H1, #82)
 - **무엇**: 이슈·브랜치 규칙(#77)을 **장치로 강제**. harness-lab에서 발췌·적응(폴더형·역할·trace 제외, 단일 파일 spec·base=develop). `records.mjs`(파서) + `check-issue-records`(게이트: 0023+ 이슈번호 필수·done spec 사유 없는 미체크 차단) + `issue-link`/`issue-sync`(+`--check`/`--close`) + `branch-and-issue.md`·loop.md 연결.
 - **왜**: 규칙 문서만으론 안 지켜짐(#77 자신도 완료조건 0/2로 닫힘). 완료 조건 단일 원본=spec `### Acceptance`, 이슈는 복사본.
