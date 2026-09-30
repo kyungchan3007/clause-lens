@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-30 · Claude · 이슈·체크박스 강제 장치 — 하네스 이식 1/4 (TASK-H1, #82)
+- **무엇**: 이슈·브랜치 규칙(#77)을 **장치로 강제**. harness-lab에서 발췌·적응(폴더형·역할·trace 제외, 단일 파일 spec·base=develop). `records.mjs`(파서) + `check-issue-records`(게이트: 0023+ 이슈번호 필수·done spec 사유 없는 미체크 차단) + `issue-link`/`issue-sync`(+`--check`/`--close`) + `branch-and-issue.md`·loop.md 연결.
+- **왜**: 규칙 문서만으론 안 지켜짐(#77 자신도 완료조건 0/2로 닫힘). 완료 조건 단일 원본=spec `### Acceptance`, 이슈는 복사본.
+- **정리**: 기존 done spec 0001·0021·0022 체크박스를 실제 상태로 갱신(구현·실측분 체크, EXIF fixture·Android·정책구현은 사유 #74).
+- **파일**: `agents/harness/lib/records.mjs(+test)`, `evals/{check-issue-records,issue-link,issue-sync(+test)}.mjs`, `evals/checks.sh`, `package.json`, `loop.md`, `branch-and-issue.md`, spec 0023(신규)·0001·0021·0022, TASKS.md(TASK-H1).
+- **게이트**: node:test 15개 ✅ · check-issue-records ✅ · issue-link/issue-sync/--check를 #82로 실측(6/6) ✅ · 전체 checks.sh는 Expo Doctor만 FAIL(기존 드리프트 #22, 무관).
+- **다음/주의**: 하네스 이식 2·3·4는 후속 이슈. `--close`는 이 PR 머지 후 실행. TASK-004 done 반영은 #81(별도).
+
 ## 2026-09-30 · Claude · 무료 횟수 차감 정책 확정 (TASK-005 선결·[0020] 미결 해소, #79)
 - **무엇**: [0020] Acceptance에 유일하게 미체크였던 **무료 차감 정책** 확정. **`done`만 1회 차감 · `partial`·`failed`·`invalid_image` 무차감 · 차감 시점=완료(terminal) 확정 · 멱등키=`AnalysisJob.id`(최대 1회)**. 실차감·원자적 예약·한도 집행은 TASK-005 구현.
 - **왜**: "서버 결과와 동기화" 원칙 미확정으로 남아 있던 정책. 사용자 결정: partial은 온전한 결과가 아니므로 **무차감**(방어적·사용자 친화).

@@ -7,7 +7,10 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "build": "turbo run build",
-    "mobile": "pnpm --filter @clause-lens/mobile"
+    "mobile": "pnpm --filter @clause-lens/mobile",
+    "check": "bash agents/harness/evals/checks.sh",
+    "issue-link": "node agents/harness/evals/issue-link.mjs",
+    "issue-sync": "node agents/harness/evals/issue-sync.mjs"
   },
   "devDependencies": {
     "turbo": "^2.0.0"
