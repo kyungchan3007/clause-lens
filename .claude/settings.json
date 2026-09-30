@@ -6,14 +6,16 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/agents/harness/hooks/trace.mjs\"" }
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/agents/harness/hooks/trace.mjs\"" },
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/agents/harness/hooks/session-context.mjs\"" }
         ]
       }
     ],
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/agents/harness/hooks/trace.mjs\"" }
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/agents/harness/hooks/trace.mjs\"" },
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/agents/harness/hooks/recall-hook.mjs\"" }
         ]
       }
     ],

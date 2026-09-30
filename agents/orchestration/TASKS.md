@@ -45,7 +45,8 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | TASK-H1 | 이슈·체크박스 강제 장치 (하네스 이식 1/4) | [loop.md](../harness/loop.md) §브랜치·이슈 | [0023](../intent/specs/0023-issue-checkbox-enforcement.md) | Claude | **done** (#82/PR#86 머지 — records·issue-link·issue-sync·done 미체크 차단) | #77 |
 | TASK-H2 | 커밋 기록 규칙 (하네스 이식 2/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0024](../intent/specs/0024-commit-record-rules.md) | Claude | **done** (#83/PR#87 머지 — 커밋 세 섹션 hook·토큰 자동 기입) | #82 |
-| TASK-H3 | 작업 과정 기록·강제 (하네스 이식 3/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0025](../intent/specs/0025-process-record-enforcement/) | Claude | **in-progress** (#84 — 폴더 spec·자동기록·수정전 차단·종료 돌려보냄) | #82 |
+| TASK-H3 | 작업 과정 기록·강제 (하네스 이식 3/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0025](../intent/specs/0025-process-record-enforcement/) | Claude | **done** (#84/PR#88 머지 — 폴더 spec·자동기록·수정전 차단·종료 돌려보냄) | #82 |
+| TASK-H4 | 복기 자동 주입 + 효과 측정 (하네스 이식 4/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0026](../intent/specs/0026-recall-injection/) | Claude | **in-progress** (#85 — 복기 주입·pnpm metrics · 효과 측정은 후속) | #83·#84 |
 
 ## 백로그 (아직 태스크화 안 됨)
 - TanStack Query 도입 (서버 상태 캐시)
