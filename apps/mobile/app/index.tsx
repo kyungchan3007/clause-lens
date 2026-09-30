@@ -178,6 +178,11 @@ export default function Page() {
           onAnalyze: () => void start(snapshots(), getAuth),
           onRetry,
           onCancel,
+          onViewResult: () => {
+            if (documentId) {
+              router.push({ pathname: "/result", params: { documentId } });
+            }
+          },
         }}
       />
     </SafeAreaView>

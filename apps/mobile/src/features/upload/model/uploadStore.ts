@@ -17,6 +17,8 @@ export interface UploadPageState {
   server: "pending" | "uploaded"; // 서버 확정 여부
   error?: string;
   retryable?: boolean;
+  // 업로드 시점 불변 이미지 스냅샷(결과 화면 미리보기용, 세션 한정). 이후 초안 교체에 영향받지 않음.
+  image?: { localUri: string; width: number; height: number };
 }
 
 interface UploadStore {

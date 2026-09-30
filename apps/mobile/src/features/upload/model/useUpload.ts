@@ -87,6 +87,8 @@ export function useUpload() {
             pageId: byOrder.get(s.order)!.pageId,
             put: false,
             server: "pending" as const,
+            // 업로드 시점 스냅샷 고정(결과 화면용). 초안 교체와 무관.
+            image: { localUri: s.localUri, width: s.width, height: s.height },
           })),
         });
 

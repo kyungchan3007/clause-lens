@@ -50,6 +50,7 @@ function AuthGate() {
           name="profile"
           options={{ headerShown: true, title: "마이페이지", headerBackTitle: "뒤로" }}
         />
+        <Stack.Screen name="result" />
       </Stack.Protected>
       <Stack.Protected guard={status === "unauthenticated"}>
         <Stack.Screen name="login" />

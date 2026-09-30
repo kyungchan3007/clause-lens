@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-09-30 · Claude · #73 결과 화면 연결 (TASK-004 4b · 4단계)
+- **무엇**: 결과 화면을 앱 흐름에 연결. **업로드 시점 이미지 스냅샷**(uploadStore.image — 초안 교체와 무관, Codex P1#3) + **결과 라우트**(app/result) + **결과 격리**(요청 문서 = 분석/업로드 문서 · 현재 사용자 = 업로드 소유자) + PageList 완료/부분완료 **"결과 보기"** 버튼 + 라우트 등록.
+- **흐름**: 분석 완료 → "결과 보기" → `/result?documentId` → 이미지 위 하이라이트 + 조항 목록.
+- **파일**: `apps/mobile/src/features/upload/model/{uploadStore,useUpload}.ts`(image 스냅샷), `apps/mobile/src/features/capture/ui/PageList.tsx`(onViewResult), `apps/mobile/app/{index.tsx,_layout.tsx,result.tsx}`.
+- **게이트**: 타입체크(전 패키지)·단위(모바일 68) ✅ / Expo Doctor는 기존 드리프트(4b 무관)로 FAIL.
+- **다음/주의**: 5단계 — 시나리오 S20 + 시뮬레이터 실측 + **EXIF 1~8 오버레이 일치**(비대칭 fixture). 앱 재시작 후 결과 재열람은 TASK-006(서버 이미지 다운로드) 후속.
+
 ## 2026-09-30 · Claude · #73 결과·위험조항 하이라이트 (TASK-004 4b) — 설계 + 부분 구현
 - **무엇**: 4b 설계(spec 0022) 확정 + 결과 화면 핵심 구현 착수. 좌표 변환 순수함수(contain-fit·교집합 클램프·로컬↔서버 크기 정합) + 공용 `Badge` + 위험도/조항종류 매핑 + 결과 UI(SVG 하이라이트 오버레이·조항 카드/목록·결과 화면·선택 상태 훅).
 - **왜**: 4a 백엔드가 조항·좌표를 주지만 이를 보여줄 화면이 없어 제품 핵심 가치가 화면으로 안 닫혀 있었음.
