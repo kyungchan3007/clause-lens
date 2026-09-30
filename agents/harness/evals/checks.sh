@@ -65,8 +65,10 @@ run "Unit tests (mobile)" pnpm --filter @clause-lens/mobile test
 # 6) 이슈·체크박스 기록 (하네스 이식 1/4, #82) — 파서 단위 테스트 + 오프라인 판정
 #    (0023+ spec 이슈번호 필수 · done 태스크 spec의 사유 없는 미체크 차단)
 #    브랜치↔이슈 연결·체크박스 동기화는 네트워크 필요 → pnpm issue-link / issue-sync (게이트 밖, PR 전후).
-run "Harness unit tests" node --test agents/harness/lib/records.test.mjs agents/harness/evals/issue-sync.test.mjs agents/harness/commit/message.test.mjs agents/harness/usage/usage.test.mjs
+run "Harness unit tests" node --test agents/harness/lib/records.test.mjs agents/harness/lib/records.folder.test.mjs agents/harness/evals/issue-sync.test.mjs agents/harness/commit/message.test.mjs agents/harness/usage/usage.test.mjs agents/harness/hooks/trace.test.mjs
 run "Issue·checkbox records" node agents/harness/evals/check-issue-records.mjs
+# 폴더형 spec 기록(하네스 이식 3/4, #84): 0025+ 폴더 필수·prd/sdd/trace·done 미체크 차단
+run "Task records (folder)" node agents/harness/evals/check-task-records.mjs
 
 # ── 새 검사는 위 형식으로 여기에 한 줄씩 추가 ──
 # run "Lint" pnpm exec eslint .
