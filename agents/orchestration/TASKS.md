@@ -39,6 +39,12 @@
 > 각 태스크의 **무엇/행동**은 연결된 feature 정의를 따르고, 별도 설계 판단이 필요하면
 > [intent/specs/](../intent/specs/)에 spec을 추가합니다(TASK-001은 spec 0001 존재).
 
+## 하네스·거버넌스 태스크
+
+| id | 제목 | 정의 | spec | owner | status | depends |
+| --- | --- | --- | --- | --- | --- | --- |
+| TASK-H1 | 이슈·체크박스 강제 장치 (하네스 이식 1/4) | [loop.md](../harness/loop.md) §브랜치·이슈 | [0023](../intent/specs/0023-issue-checkbox-enforcement.md) | Claude | **in-progress** (#82 — records·issue-link·issue-sync·done 미체크 차단) | #77 |
+
 ## 백로그 (아직 태스크화 안 됨)
 - TanStack Query 도입 (서버 상태 캐시)
 - Zustand store 구조 확정

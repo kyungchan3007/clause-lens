@@ -50,18 +50,18 @@
 - OCR 성공·분석 영구실패 → 페이지 failed(`analysis_failed`), **OCR 체크포인트 보존**. 검증실패 0건(전부 무효 blockId)은 **정상 0건과 구분**해 `analysis_failed`.
 
 ### Acceptance (analyze-document·view-highlights 백엔드)
-- [ ] 실 이미지에서 Vision OCR **텍스트·upright 원본 픽셀 좌표·실측 치수** 추출·정규화(EXIF 회전/반전 fixtures 통과).
-- [ ] 이미지 검증(바이트/픽셀 상한·손상·MIME·매직·contentType 교차) 위반은 **`invalid_image` 비재시도 종결**, Vision 미호출.
-- [ ] **커밋된 PageOcr 있으면 Vision 재호출 없음**(카운터로 확인). 자동 재시도는 OCR 재사용.
-- [ ] Claude는 **제공 블록에서만** 추출, 근거 blockIds 검증. **검증실패 0건 ≠ 정상 0건**(전자는 analysis_failed).
-- [ ] 조항 = `{type,title,description,riskLevel,sourceText,boxes[]}` upright 원본 픽셀. box는 `x+w≤W, y+h≤H` clamp.
-- [ ] 결과는 pageId+revision 귀속. **결과+done+stateVersion 단일 tx**, terminal이면 결과 쓰기 no-op(동일 stateVersion 내용 불변).
-- [ ] **신규 done 페이지 응답엔 dims+clauses(완료 마커) 필수**. GET/SSE는 소유권 확인 집합을 일괄 조회(OCR blocks 제외).
-- [ ] 분석 영구실패 → `analysis_failed`로 페이지 failed, OCR 보존. DB/Redis/Vision·Claude 5xx·429·타임아웃은 **transient(재시도)**, `analysis_failed`로 확정 금지.
-- [ ] **잡 최종 실패/stall 시 미종결 페이지가 종결**된다(processing에 갇히지 않음).
-- [ ] 이미지 바이트·OCR/조항 텍스트·프롬프트·키·URL이 **어떤 로그에도 없음**(BullMQ failedReason 포함, canary 검증) · `checks.sh` PASS.
-- [ ] (배포 차단) 개인정보 전송·보존·고지·삭제 정책 확정 + 필수 env 부팅 검증.
-- [ ] (이관) Skia 하이라이트·좌표 변환·목록 연동은 **4b(0022)**.
+- [ ] 실 이미지에서 Vision OCR **텍스트·upright 원본 픽셀 좌표·실측 치수** 추출·정규화(EXIF 회전/반전 fixtures 통과). (OCR 추출·정규화 구현·단위 검증 · EXIF 회전/반전 fixture 실측은 후속 #82 이후 0022와 함께)
+- [x] 이미지 검증(바이트/픽셀 상한·손상·MIME·매직·contentType 교차) 위반은 **`invalid_image` 비재시도 종결**, Vision 미호출.
+- [x] **커밋된 PageOcr 있으면 Vision 재호출 없음**(카운터로 확인). 자동 재시도는 OCR 재사용.
+- [x] Claude는 **제공 블록에서만** 추출, 근거 blockIds 검증. **검증실패 0건 ≠ 정상 0건**(전자는 analysis_failed).
+- [x] 조항 = `{type,title,description,riskLevel,sourceText,boxes[]}` upright 원본 픽셀. box는 `x+w≤W, y+h≤H` clamp.
+- [x] 결과는 pageId+revision 귀속. **결과+done+stateVersion 단일 tx**, terminal이면 결과 쓰기 no-op(동일 stateVersion 내용 불변).
+- [x] **신규 done 페이지 응답엔 dims+clauses(완료 마커) 필수**. GET/SSE는 소유권 확인 집합을 일괄 조회(OCR blocks 제외).
+- [x] 분석 영구실패 → `analysis_failed`로 페이지 failed, OCR 보존. DB/Redis/Vision·Claude 5xx·429·타임아웃은 **transient(재시도)**, `analysis_failed`로 확정 금지.
+- [x] **잡 최종 실패/stall 시 미종결 페이지가 종결**된다(processing에 갇히지 않음).
+- [x] 이미지 바이트·OCR/조항 텍스트·프롬프트·키·URL이 **어떤 로그에도 없음**(BullMQ failedReason 포함, canary 검증) · `checks.sh` PASS.
+- [ ] (배포 차단) 개인정보 전송·보존·고지·삭제 정책 확정 + 필수 env 부팅 검증. (정책 확정 #79·#74 · 삭제 잡·env 부팅검증 구현은 후속 #74)
+- [ ] (이관) Skia 하이라이트·좌표 변환·목록 연동은 **4b(0022)**. (→ 0022로 이관, react-native-svg로 구현 완료 #73)
 
 ## SDD (어떻게)
 

@@ -74,15 +74,15 @@
 ## Acceptance Criteria
 
 ### 기능
-- [ ] **AC1** — Given 빈 홈, When 촬영 완료, Then 페이지 목록에 1개 항목이 order=0으로 추가된다.
-- [ ] **AC2** — Given 3개 페이지, When 2번째를 삭제, Then 남은 항목의 order가 0,1로 재정렬된다.
-- [ ] **AC3** — Given 특정 페이지, When 교체 선택, Then 해당 항목의 localUri만 바뀌고 order·id는 유지된다.
-- [ ] **AC4** — Draft 상태는 앱을 다른 탭으로 옮겼다 돌아와도 유지된다.
+- [x] **AC1** — Given 빈 홈, When 촬영 완료, Then 페이지 목록에 1개 항목이 order=0으로 추가된다.
+- [x] **AC2** — Given 3개 페이지, When 2번째를 삭제, Then 남은 항목의 order가 0,1로 재정렬된다.
+- [x] **AC3** — Given 특정 페이지, When 교체 선택, Then 해당 항목의 localUri만 바뀌고 order·id는 유지된다.
+- [x] **AC4** — Draft 상태는 앱을 다른 탭으로 옮겼다 돌아와도 유지된다.
 
 ### 비기능
-- [ ] `bash agents/harness/evals/checks.sh` PASS
-- [ ] iOS·Android 시뮬레이터에서 크래시 없음
-- [ ] 서버 통신 코드 없음(이 스펙 범위)
+- [x] `bash agents/harness/evals/checks.sh` PASS
+- [ ] iOS·Android 시뮬레이터에서 크래시 없음 (iOS 실측 완료 · Android는 미검증, 후속)
+- [x] 서버 통신 코드 없음(이 스펙 범위)
 
 ### 범위 밖
 - S3 업로드, Presigned URL, OCR 요청/결과.

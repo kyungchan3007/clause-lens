@@ -24,6 +24,11 @@
 - **목적**: 이슈 하나 = 브랜치 하나 = 성격 하나 → 기록 추적·PR 리뷰가 쉬워진다. 성격이 섞인 브랜치/PR은 리뷰 스코프가 흐려진다.
 - **리뷰 중 발견한 별개 건**(리뷰어 지적이라도, §7)은 원 PR에 섞지 말고 **후속 이슈로 분리** + 원 스레드에 링크. 예: PR #75 리뷰의 결과 격리 세션 하드닝 → 별도 이슈 #76.
 
+**장치로 강제(#82):** 판단 흐름·명령·강제 장치 상세는 [branch-and-issue.md](branch-and-issue.md).
+- 완료 게이트: **0023부터** spec에 이슈 번호(`> **관련 태스크**: #번호`)가 없으면 FAIL · **done** 태스크의 연결 spec에 **사유 없는 미체크**가 있으면 FAIL (0001~0022 면제).
+- PR 전: `pnpm issue-link`(브랜치↔이슈 연결) · `pnpm issue-sync`(이슈 체크박스를 spec `### Acceptance`에 맞춤) · `--check`(어긋남 검사).
+- 머지 후: `pnpm issue-sync --close`(`Closes #N`이 못 닫은 이슈 닫기). 완료 조건의 **단일 원본 = spec의 ### Acceptance**, 이슈는 복사본.
+
 ## §4. 구현 전 게이트 — SDD/PRD 필수 (코드보다 먼저)
 
 **모든 태스크는 착수 시 spec 문서(`intent/specs/NNNN-슬러그.md`)를 남긴다. 문서 없이는 BUILD 금지.** — [guardrails](guardrails.md)로 강제.
