@@ -34,7 +34,8 @@ export default function ResultRoute() {
 
   const imageByPageId = useMemo(() => {
     const map: Record<string, ResultImage | undefined> = {};
-    for (const p of uploadPages) {
+    // 스토어 초기화 전 등 방어: pages가 배열이 아닐 수 있으므로 기본값 보장.
+    for (const p of uploadPages ?? []) {
       if (p.pageId && p.image) {
         map[p.pageId] = {
           uri: p.image.localUri,
