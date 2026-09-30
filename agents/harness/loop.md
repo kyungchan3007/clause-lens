@@ -4,7 +4,7 @@
 **이 루프는 선형이 아니라 순환입니다** — 마지막 `REFLECT`가 결과를 Intent·Context로 되먹여 다음 루프를 개선합니다. REFLECT가 빠지면 "한 번 세팅으로 끝나는 죽은 구조"로 회귀합니다.
 
 ```
-1. CLAIM      TASKS.md에서 owner=나, status=in-progress
+1. CLAIM      TASKS.md에서 owner=나, status=in-progress · **이슈에서 브랜치 생성·연결**(§브랜치·이슈)
 2. DEFINE ★   spec 파일 `intent/specs/NNNN-슬러그.md` 생성 → PRD 섹션(왜/무엇 + Acceptance) 작성. 연결된 intent/features·기존 specs 확인.
 3. CONTEXT    architecture → domain-map → 관련 도메인 문서 + frontend-architecture. (UI면 **shared/domain 위치 먼저 판단**[§공유 UI 승격, shared-first] + ui-ux-pro-max 스킬 조회) 관련 코드만.
 4. PLAN ★     같은 spec 파일에 SDD 섹션 작성(**무조건**): 접근·**대안·트레이드오프**·파일계획·검증계획. → 구현 전 게이트(아래 §4). 위험한 작업이면 사용자 승인.
@@ -14,6 +14,15 @@
 8. RECORD     JOURNAL.md append(무엇/왜/파일/게이트/**이번에 드러난 공백**/다음), TASKS.md status=done. **Acceptance 체크박스 갱신**(아래 §Acceptance 갱신).
 9. REFLECT ★  이번 태스크가 드러낸 규칙·스펙·문서 공백을 Intent(spec/feature)·Context(문서)에 반영 → 루프를 닫는다(§9).
 ```
+
+## §브랜치·이슈 — 1이슈 = 1브랜치 = 1성격 (기록·리뷰 가독성)
+
+작업은 **이슈에서 브랜치를 만들어** 시작한다. 브랜치는 항상 이슈에 연결되어 이력이 한 줄로 이어지게 한다.
+
+- **이슈 → 브랜치**: 이슈 관련 작업(기능·fix·refactor 등)은 그 이슈에서 브랜치를 생성·연결한다 (GitHub "Create a branch" 또는 브랜치명에 이슈번호 포함 + PR 본문 `Closes #NN`). 관련 브랜치는 **모두** 해당 이슈에 연결.
+- **성격이 다르면 이슈부터 분리**: 브랜치 작업이 원 이슈 내용과 어긋나거나(다른 기능·도메인), 여러 곳에 걸치는 **공통·공유 fix** 성격이면 — 원 이슈/브랜치에 섞지 말고 **별도 이슈 + 별도 브랜치**로 처리한다.
+- **목적**: 이슈 하나 = 브랜치 하나 = 성격 하나 → 기록 추적·PR 리뷰가 쉬워진다. 성격이 섞인 브랜치/PR은 리뷰 스코프가 흐려진다.
+- **리뷰 중 발견한 별개 건**(리뷰어 지적이라도, §7)은 원 PR에 섞지 말고 **후속 이슈로 분리** + 원 스레드에 링크. 예: PR #75 리뷰의 결과 격리 세션 하드닝 → 별도 이슈 #76.
 
 ## §4. 구현 전 게이트 — SDD/PRD 필수 (코드보다 먼저)
 
@@ -104,6 +113,7 @@ RECORD로 끝이 아니다. 이번 태스크에서 **게이트·검증·구현�
 
 ## 자기 점검 (완료 전 체크)
 
+- [ ] **이슈에서 브랜치를 만들어 연결**했나? 성격이 다르거나 공통 fix면 **별도 이슈+브랜치**로 분리했나? (§브랜치·이슈)
 - [ ] **§4 spec 문서(SDD/PRD)** 를 코드 전에 파일로 남겼나? (대안·검증 포함)
 - [ ] Acceptance(feature Checklist / spec AC) 전부 충족?
 - [ ] `checks.sh` PASS? (실패면 `blocked` 처리했나?)
