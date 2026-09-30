@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-30 · Claude · 무료 횟수 차감 정책 확정 (TASK-005 선결·[0020] 미결 해소, #79)
+- **무엇**: [0020] Acceptance에 유일하게 미체크였던 **무료 차감 정책** 확정. **`done`만 1회 차감 · `partial`·`failed`·`invalid_image` 무차감 · 차감 시점=완료(terminal) 확정 · 멱등키=`AnalysisJob.id`(최대 1회)**. 실차감·원자적 예약·한도 집행은 TASK-005 구현.
+- **왜**: "서버 결과와 동기화" 원칙 미확정으로 남아 있던 정책. 사용자 결정: partial은 온전한 결과가 아니므로 **무차감**(방어적·사용자 친화).
+- **주의(정정)**: 기존 Notion 02 무료 분석 **권장 초안**은 partial을 사실상 1회 차감(예약 유지)으로 뒀는데, 이번 확정이 이를 **뒤집음**(partial 무차감). Notion 02 권장초안→확정 승격·오류/재시도 표·확정 체크리스트 정정.
+- **파일**: `agents/intent/specs/0020-analysis-request-polling.md`(핵심결정·Acceptance[x]·리스크표), `agents/intent/features/login-entitlement.md`(차감 정책 섹션·Acceptance 사유), `agents/intent/features/analyze-document.md`(Acceptance 사유), Notion 02.
+- **게이트**: 문서(마크다운)·정책만 — 코드/의존성 미변경, typecheck/expo-doctor 영향 없음.
+- **다음/주의**: 실제 차감·원자적 예약·잔량 집행은 **TASK-005**에서 구현·검증(login-entitlement Acceptance는 그때 체크).
+
 ## 2026-09-30 · Claude · #73 결과 화면 e2e 실측 (TASK-004 4b · 5단계)
 - **무엇**: 결과 화면 시나리오 **S20** + Maestro 플로우(`result.yaml`) 추가. 시뮬레이터에서 **실제 Vision+Claude로 end-to-end 완주**.
 - **실측(iPhone 17 Pro · 실 Vision+Claude)**: 계약서 이미지 → 분석 완료 → 결과 보기 → **원본 위 하이라이트**(제2·3조·제4조·"불리" 문구 좌표 정확 정합) + **조항 목록**(높음/보통 배지·설명·근거 원문) + **조항 탭 선택 강조**(위험도 색과 별도 테두리·해당 조항 박스만). 좌표 변환·EXIF upright 일치 확인.

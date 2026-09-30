@@ -42,5 +42,5 @@
 - [ ] 앱 종료 후 재진입해도 서버 job 상태를 복원한다.
 - [ ] 페이지별 실패와 성공을 구분해서 표시한다.
 - [ ] 완료 결과가 현재 page revision과 일치한다.
-- [ ] 무료 횟수 차감은 서버 결과와 동기화된다.
+- [ ] 무료 횟수 차감은 서버 결과와 동기화된다. *(정책 확정 2026-09-30: `done`만 1회 차감·partial/실패 무차감·완료 시점·멱등키 `AnalysisJob.id` — 상세 [login-entitlement](login-entitlement.md)·[0020 spec](../specs/0020-analysis-request-polling.md). 실차감 구현은 TASK-005)*
 
