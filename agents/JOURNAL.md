@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-09-30 · Claude · #73 결과·위험조항 하이라이트 (TASK-004 4b) — 설계 + 부분 구현
+- **무엇**: 4b 설계(spec 0022) 확정 + 결과 화면 핵심 구현 착수. 좌표 변환 순수함수(contain-fit·교집합 클램프·로컬↔서버 크기 정합) + 공용 `Badge` + 위험도/조항종류 매핑 + 결과 UI(SVG 하이라이트 오버레이·조항 카드/목록·결과 화면·선택 상태 훅).
+- **왜**: 4a 백엔드가 조항·좌표를 주지만 이를 보여줄 화면이 없어 제품 핵심 가치가 화면으로 안 닫혀 있었음.
+- **설계(Codex 2R)**: R1(P1 8건) → 반영 → R2(결과 격리·조회 수명주기·선택키·좌표 오차 합격기준 보완) → 착수 승인. 확정: 오버레이=react-native-svg, 이미지=업로드 시점 세션 스냅샷(재조회는 TASK-006), 좌표=서버 upright 기준·불일치 시 오버레이 중단.
+- **파일**: `apps/mobile/src/features/result/**`(신규: lib/coordinateTransform+test·lib/clausePresentation·model/{types,useResultData}·ui/{HighlightOverlay,ClauseCard,ClauseList,ResultScreen}·index), `packages/ui/src/badge.tsx`(+index), `agents/intent/specs/0022-app-result-highlight.md`.
+- **게이트**: 타입체크(모바일·api·워커)·단위(전 패키지, 모바일 68 — 좌표변환 18 포함) ✅ / **Expo Doctor는 기존 드리프트**(expo-constants 57.0.19↔57.0.20, 4b와 무관·의존성 변경 0, #22 CI 소관)로 FAIL.
+- **다음/주의**: 4단계 연결(결과 라우트 등록 + PageList 완료버튼→결과화면 + **업로드 시점 이미지 스냅샷**(uploadStore) + 사용자·문서 격리) · 5단계 시나리오 S20 e2e + **EXIF 1~8 실측**(비대칭 fixture·오차 임계). 이슈 #73.
+
 ## 2026-09-29 · Claude · #68 실제 OCR·위험조항 분석 백엔드 (TASK-004 4a)
 - **무엇**: worker stub → 실제. **Vision OCR**(DOCUMENT_TEXT_DETECTION·EXIF 정규화·문단 블록·upright 좌표) + **Claude**(opus-5·구조화 JSON·근거 blockId) 위험조항 분석 + 이미지 검증(sharp) + blockId→box 매핑 + 결과 영속(`PageOcr`·`PageAnalysisResult`·`Clause`, pageId+revision 귀속).
 - **무결성(Codex 2R 반영)**: `confirmAnalysisResultTx`(결과+done+stateVersion 단일 tx·terminal no-op·stale 종결)·`upsertPageOcr`(승자 반환)·OCR 영속 재사용(Vision 재호출 없음)·failed 리스너+reconciler(stuck 복구)·검증실패 0건 ≠ 정상 0건.
