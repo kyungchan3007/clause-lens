@@ -1,6 +1,6 @@
 // 복기 주입 — 지난 작업에서 남긴 것(미처리 [보완], 최근 작업 일지)을 다음 작업의 AI 컨텍스트로 넣는다.
 // 원본은 저장소 안(커밋 [보완], agents/JOURNAL.md). Notion은 게시용이라 여기서 읽지 않는다. 하네스 이식 4/4(#85).
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { extractFollowups, followupMentioned } from "../../metrics/lib.mjs";
 import { git, TASKS_FILE } from "../../lib/records.mjs";
@@ -95,7 +95,11 @@ export function readState(projectDir) {
 
 export function writeState(projectDir, state) {
   const entries = Object.entries(state).slice(-50); // 최근 50개 대화만 유지
-  writeFileSync(join(projectDir, RECALL_STATE_FILE), JSON.stringify(Object.fromEntries(entries)));
+  // 원자적 교체(temp + rename) — SessionStart·UserPromptSubmit 훅이 겹쳐도 부분 쓰기/손상 방지
+  const file = join(projectDir, RECALL_STATE_FILE);
+  const tmp = `${file}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify(Object.fromEntries(entries)));
+  renameSync(tmp, file);
 }
 
 export function today() {

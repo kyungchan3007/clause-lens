@@ -61,8 +61,11 @@ export function toEvents(lines) {
       events.push({ kind: "prompt", ts: d.timestamp, branch: d.gitBranch ?? "", text: m.content });
     } else if (d.type === "assistant" && Array.isArray(m?.content)) {
       for (const c of m.content) {
-        if (c?.type !== "tool_use" || seenTools.has(c.id)) continue;
-        seenTools.add(c.id);
+        if (c?.type !== "tool_use") continue;
+        // id가 없을 수 있으니 대체 키(name+input)로 중복 판정 — undefined 하나에 전부 막히는 것 방지
+        const key = c.id ?? `${c.name}:${JSON.stringify(c.input ?? {})}`;
+        if (seenTools.has(key)) continue;
+        seenTools.add(key);
         events.push({ kind: "tool", ts: d.timestamp, branch: d.gitBranch ?? "", name: c.name, input: c.input });
       }
     }
