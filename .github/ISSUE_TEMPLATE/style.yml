@@ -37,3 +37,16 @@ body:
         - Other
     validations:
       required: true
+
+  - type: textarea
+    id: retrospective
+    attributes:
+      label: 완료 회고 (닫을 때 작성 · 커밋 세 섹션과 동일)
+      description: "커밋 규칙과 같은 세 섹션. 지침서: agents/harness/commit-and-issue.md"
+      placeholder: |
+        [허점]
+        - 발견 못 함: <확인한 범위>
+        [보완]
+        - 후속 #번호
+        [컨텍스트·토큰]
+        - pnpm usage --commit 결과 (Claude 기록 기준)

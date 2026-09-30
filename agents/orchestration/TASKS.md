@@ -43,7 +43,8 @@
 
 | id | 제목 | 정의 | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-H1 | 이슈·체크박스 강제 장치 (하네스 이식 1/4) | [loop.md](../harness/loop.md) §브랜치·이슈 | [0023](../intent/specs/0023-issue-checkbox-enforcement.md) | Claude | **in-progress** (#82 — records·issue-link·issue-sync·done 미체크 차단) | #77 |
+| TASK-H1 | 이슈·체크박스 강제 장치 (하네스 이식 1/4) | [loop.md](../harness/loop.md) §브랜치·이슈 | [0023](../intent/specs/0023-issue-checkbox-enforcement.md) | Claude | **done** (#82/PR#86 머지 — records·issue-link·issue-sync·done 미체크 차단) | #77 |
+| TASK-H2 | 커밋 기록 규칙 (하네스 이식 2/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0024](../intent/specs/0024-commit-record-rules.md) | Claude | **in-progress** (#83 — 커밋 세 섹션 hook·토큰 자동 기입) | #82 |
 
 ## 백로그 (아직 태스크화 안 됨)
 - TanStack Query 도입 (서버 상태 캐시)

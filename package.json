@@ -10,7 +10,9 @@
     "mobile": "pnpm --filter @clause-lens/mobile",
     "check": "bash agents/harness/evals/checks.sh",
     "issue-link": "node agents/harness/evals/issue-link.mjs",
-    "issue-sync": "node agents/harness/evals/issue-sync.mjs"
+    "issue-sync": "node agents/harness/evals/issue-sync.mjs",
+    "usage": "node agents/harness/usage/usage.mjs",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {
     "turbo": "^2.0.0"
