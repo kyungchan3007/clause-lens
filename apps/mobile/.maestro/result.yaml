@@ -1,0 +1,25 @@
+# S20. 결과·위험조항 하이라이트 — 분석 완료 → 결과 보기 → 결과 화면 (반자동, #73)
+# 사전조건: 로그인 · 로컬 API+worker(실제 Vision+Claude)+Redis+Postgres+MinIO 기동 · Draft에 이미지(피커 수동)
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+# 사진 추가(수동: 갤러리에서 선택 → 사진 고르기)
+- tapOn: "갤러리에서 선택"
+- extendedWaitUntil:
+    visible: "분석하기"
+    timeout: 30000
+# 분석하기 → 업로드 → 분석 자동 시작 → 완료 시 "결과 보기" 노출
+- tapOn: "분석하기"
+- extendedWaitUntil:
+    visible: ".*결과 보기.*"
+    timeout: 90000
+- tapOn: ".*결과 보기.*"
+# 결과 화면 진입 확인(헤더). 하이라이트·조항 내용은 실제 데이터 의존 → 육안 확인
+- extendedWaitUntil:
+    visible: "분석 결과"
+    timeout: 15000
+- assertVisible: "분석 결과"
