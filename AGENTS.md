@@ -14,6 +14,7 @@
 2. **서버가 진실의 기준이다.** 프론트는 OCR을 실행하거나 위험 조항을 판단하지 않는다. 서버 결과를 화면에 표현만 한다.
 3. **완료 선언 전 게이트 통과 필수:** `bash agents/harness/evals/checks.sh` 가 PASS여야 "done"이라고 말할 수 있다.
 4. **작업 전 클레임, 작업 후 기록:** [작업 보드](agents/orchestration/TASKS.md)에서 태스크를 점유하고, 끝나면 [저널](agents/JOURNAL.md)에 남긴다.
+5. **이슈에서 브랜치, 커밋엔 세 섹션.** 브랜치는 이슈에서 만들어 연결(1이슈=1브랜치=1성격). 작업 브랜치 커밋은 `[허점]`·`[보완]`·`[컨텍스트·토큰]` 세 섹션 필수(git hook이 강제, `[컨텍스트·토큰]`은 자동 기입). 규칙: [branch-and-issue](agents/harness/branch-and-issue.md) · [commit-and-issue](agents/harness/commit-and-issue.md).
 
 ## 2. 에이전틱 엔지니어링 아키텍처
 

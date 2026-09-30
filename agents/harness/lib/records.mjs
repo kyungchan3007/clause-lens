@@ -43,6 +43,11 @@ export function branchIssueNumber(branch) {
   return BRANCH_ISSUE.exec(branch ?? "")?.[1];
 }
 
+/** 작업 브랜치인지(접두사/이슈번호- 규칙). 커밋 규칙·토큰 집계가 적용될 브랜치. */
+export function isWorkBranch(branch) {
+  return branchIssueNumber(branch) !== undefined;
+}
+
 // ── spec (단일 파일 NNNN-슬러그.md) ─────────────────────────────
 
 export function listSpecs(projectDir) {

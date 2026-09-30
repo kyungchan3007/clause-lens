@@ -1,0 +1,3 @@
+#!/bin/sh
+# 작업 브랜치 커밋의 세 섹션 검사 (ESM 로직은 .mjs로 분리 — 노드 버전 견고).
+exec node agents/harness/commit/commit-msg.mjs "$@"
