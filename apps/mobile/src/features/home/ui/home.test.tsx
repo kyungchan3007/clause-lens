@@ -17,12 +17,24 @@ const texts = (r: ReturnType<typeof render>) =>
   r.findAllByType(Text).map((t) => t.props.children);
 
 describe("홈 전용 컴포넌트", () => {
-  it("BrandHeader: 브랜드명 + 프로필 버튼(a11y)", () => {
+  it("BrandHeader: 브랜드명 + 프로필 버튼(a11y). onHome 없으면 '홈으로' 미표시", () => {
     const onProfile = jest.fn();
     const root = render(<BrandHeader onProfile={onProfile} />);
     expect(texts(root)).toContain("ClauseLens");
-    const btn = root.find((n) => n.props.accessibilityRole === "button");
-    expect(btn.props.accessibilityLabel).toBe("마이페이지");
+    const btns = root.findAll((n) => n.props.accessibilityRole === "button");
+    expect(btns.some((b) => b.props.accessibilityLabel === "마이페이지")).toBe(true);
+    expect(btns.some((b) => b.props.accessibilityLabel === "홈으로")).toBe(false);
+  });
+
+  it("BrandHeader: onHome 있으면 '홈으로' 버튼 표시·탭 시 onHome 호출", () => {
+    const onHome = jest.fn();
+    const root = render(<BrandHeader onProfile={jest.fn()} onHome={onHome} />);
+    const home = root
+      .findAll((n) => n.props.accessibilityRole === "button" && n.props.accessibilityLabel === "홈으로")
+      .find((n) => typeof n.props.onPress === "function");
+    expect(home).toBeTruthy();
+    act(() => home!.props.onPress());
+    expect(onHome).toHaveBeenCalledTimes(1);
   });
 
   it("Hero: 온보딩 제목·부제", () => {
