@@ -12,6 +12,11 @@ CREATE TABLE "Entitlement" (
     CONSTRAINT "Entitlement_pkey" PRIMARY KEY ("userId")
 );
 
+-- 무결성(코덱스 리뷰): 카운터 음수·부여 초과 방지 — 원장↔카운터 드리프트를 DB가 거부(차감 버그 시 커밋 차단).
+-- Prisma 스키마로 표현 불가(복합 CHECK) → 마이그레이션 SQL로만(활성 유니크 인덱스와 동일 패턴).
+ALTER TABLE "Entitlement" ADD CONSTRAINT "Entitlement_counters_check"
+  CHECK ("freeConsumed" >= 0 AND "freeReserved" >= 0 AND "freeConsumed" + "freeReserved" <= "freeGranted");
+
 -- CreateTable
 CREATE TABLE "EntitlementCharge" (
     "jobId" TEXT NOT NULL,

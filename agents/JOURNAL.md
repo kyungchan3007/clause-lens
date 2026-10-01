@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-10-01 · Claude · entitlement 설계 토론(Codex) + 실 Postgres 실측 보완 (#90)
+- **무엇**: 착수 전 못 한 설계 토론을 사후에 Codex와(`codex exec`) 진행. 로컬 Postgres 기동 → 통합 테스트 13/13 PASS로 증거를 대고, Codex 적대 리뷰 + PR #91 AI 봇(P1 3건) 교차 검토해 **보완 4건 적용**.
+- **보완**: ① settle 멱등 계약 깨짐(실측 consumed=2) → **원자적 조건부 전이**(`UPDATE … WHERE status='reserved' RETURNING`)로 1회만. ② terminal 후 재분석 경쟁(2차 job→2차 차감, Codex 발견) → `createAnalysisJob`에 **문서 FOR UPDATE 잠금+기존 job 재확인**. ③ 무결성 CHECK(음수·초과 거부). ④ 과장 주석 교정.
+- **검증**: `packages/db/test/entitlement.integration.mjs` — T6(동시 settle→consumed 1), T7(동시 접수→job 1·charge 1) 포함 13/13. api 유닛 57 PASS. CHECK 위반 거부 실측.
+- **합의 현행 유지**: job.create→reserve 순서, 조건부 예약 READ COMMITTED 정확성, 원장+카운터 같은 tx.
+- **다음/주의**: 통합 테스트는 로컬 Postgres 필요(오프라인 게이트 밖). 하네스 결함 — `trace.auto.jsonl`이 spec 폴더라 브랜치 전환 시 폴더 게이트 오탐(별도 이슈). job 삭제 시 카운터 보정은 삭제 경로 생기면.
+
 ## 2026-10-01 · Claude · 무료 분석 횟수 서버 집행 — 예약·확정·해제 (TASK-005 백엔드, #90)
 - **무엇**: 확정된 정책(#79 — done만 1회 차감·partial/failed/invalid 무차감·멱등키 `AnalysisJob.id`·3회)을 서버가 집행. **예약→확정|해제 2단계 원장**: 분석 접수(새 job 생성 tx) 시 `reserveFreeAnalysis`로 원자 예약(조건부 단일 UPDATE, 가용 없으면 `ForbiddenException` 403), terminal 전이와 같은 tx에서 `settleFreeAnalysis`로 done=확정 차감·그 외=해제. `GET /me/entitlement`로 서버 잔량 조회.
 - **왜**: done만 terminal에서 차감하면 1회 남은 사용자의 동시 접수 2건이 모두 done→음수. 접수 시 원자 예약으로 선점해 한도 초과를 막고, terminal에서 확정/해제. 멱등은 `EntitlementCharge`(jobId PK)로 — 재연결·중복 완료 이벤트에 job당 최대 1회.

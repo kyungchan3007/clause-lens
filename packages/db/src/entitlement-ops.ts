@@ -53,7 +53,8 @@ export async function getEntitlement(
  * - 같은 jobId charge가 이미 있으면 멱등 통과(true).
  * - 가용(freeGranted-freeConsumed-freeReserved>=1)이면 freeReserved++ & charge(reserved) 생성 → true.
  * - 가용 없으면 false(호출측이 거부로 매핑).
- * 계산식 조건은 updateMany where로 표현 불가 → 조건부 raw UPDATE(원자, 격리수준 무관).
+ * 계산식 조건은 updateMany where로 표현 불가 → 조건부 raw UPDATE로 초과 예약을 막는다(실측: 가용1·동시8→1건).
+ * (READ COMMITTED에서 대기 UPDATE가 갱신 행에 조건 재평가 → false. 더 높은 격리수준에선 직렬화 실패로 나타날 수 있음.)
  */
 export async function reserveFreeAnalysis(
   tx: Prisma.TransactionClient,
@@ -77,33 +78,30 @@ export async function reserveFreeAnalysis(
 
 /**
  * terminal 정산: done=확정 차감(consume), 그 외=예약 해제(release). terminal 전이와 같은 tx.
- * charge가 reserved일 때만 작동 → 중복 완료 이벤트·재연결에 no-op(멱등).
+ * 멱등: `reserved→target` 전이를 **원자적 조건부 UPDATE**로 단 한 호출만 획득(RETURNING 행이 있을 때만 카운터 변경).
+ * findUnique+update로 나누면 READ COMMITTED 동시 호출이 둘 다 reserved를 읽어 이중 차감(실측 consumed=2) → 금지.
+ * 현실 경로(reaggregate Serializable + job-terminal 가드)와 무관하게 함수 자체가 격리수준·호출자에 안전.
  */
 export async function settleFreeAnalysis(
   tx: Prisma.TransactionClient,
   jobId: string,
   outcome: "done" | "partial" | "failed",
 ): Promise<void> {
-  const charge = await tx.entitlementCharge.findUnique({ where: { jobId } });
-  if (!charge || charge.status !== "reserved") return; // 멱등 가드
+  const target = outcome === "done" ? "consumed" : "released";
+  // 정산 권한을 원자적으로 획득: reserved인 charge만 전이. 반환 행이 없으면 이미 정산됨/예약 없음 → no-op.
+  const rows = await tx.$queryRaw<{ userId: string }[]>`
+    UPDATE "EntitlementCharge"
+       SET status = ${target}::"EntitlementChargeStatus", "settledAt" = now()
+     WHERE "jobId" = ${jobId} AND status = 'reserved'
+    RETURNING "userId"`;
+  if (rows.length === 0) return; // 멱등 no-op
 
-  if (outcome === "done") {
-    await tx.entitlement.update({
-      where: { userId: charge.userId },
-      data: { freeReserved: { decrement: 1 }, freeConsumed: { increment: 1 } },
-    });
-    await tx.entitlementCharge.update({
-      where: { jobId },
-      data: { status: "consumed", settledAt: new Date() },
-    });
-  } else {
-    await tx.entitlement.update({
-      where: { userId: charge.userId },
-      data: { freeReserved: { decrement: 1 } },
-    });
-    await tx.entitlementCharge.update({
-      where: { jobId },
-      data: { status: "released", settledAt: new Date() },
-    });
-  }
+  const { userId } = rows[0];
+  await tx.entitlement.update({
+    where: { userId },
+    data:
+      outcome === "done"
+        ? { freeReserved: { decrement: 1 }, freeConsumed: { increment: 1 } }
+        : { freeReserved: { decrement: 1 } },
+  });
 }

@@ -164,7 +164,9 @@ export class DocumentsRepository {
   }
 
   // 접수: 무료 1회 예약 + job + 페이지별 PageAnalysis 생성 + Document=analyzing (한 트랜잭션).
-  // 활성 job 유일성은 부분 유니크 인덱스가 강제 → 동시 생성은 P2002.
+  // 문서 행을 잠그고 기존 job(terminal 포함)을 재확인 → 동시 접수를 직렬화한다:
+  //  활성 유니크 인덱스는 queued|processing만 막아, 먼저 접수가 terminal까지 끝나면 지연된 2차 접수가
+  //  새 job을 만들어 재분석·2차 차감이 될 수 있다. 잠금 하 재확인으로 문서당 1 job을 보장(#90, 코덱스 리뷰).
   // 가용 없으면 QuotaExceededError → 트랜잭션 롤백(job 미생성). 실차감은 terminal(#90).
   createAnalysisJob(
     documentId: string,
@@ -172,6 +174,16 @@ export class DocumentsRepository {
     pages: NewAnalysisPage[],
   ): Promise<AnalysisJobWithPages> {
     return this.prisma.$transaction(async (tx) => {
+      // 문서 행 잠금 — 같은 문서 동시 접수 직렬화(terminal 후 재분석 경쟁 차단).
+      await tx.$executeRaw`SELECT 1 FROM "Document" WHERE "id" = ${documentId} FOR UPDATE`;
+      // 잠금 하 기존 job 재확인(terminal 포함) → 있으면 재사용(새 job·예약 금지, 멱등).
+      const existing = await tx.analysisJob.findFirst({
+        where: { documentId },
+        orderBy: { createdAt: "desc" },
+        include: analysisInclude,
+      });
+      if (existing) return existing;
+
       const job = await tx.analysisJob.create({
         data: {
           documentId,

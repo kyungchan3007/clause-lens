@@ -53,6 +53,15 @@ function makeTx(granted = 3) {
       }
       return 0;
     },
+    // settle의 원자적 조건부 전이: reserved인 charge만 target으로 바꾸고 [{userId}] 반환, 아니면 [].
+    // 태그드 템플릿 인자 순서: values = [target, jobId].
+    $queryRaw: async (_strings: TemplateStringsArray, target: Charge["status"], jobId: string) => {
+      const row = charges.get(jobId);
+      if (!row || row.status !== "reserved") return [];
+      row.status = target;
+      row.settledAt = new Date();
+      return [{ userId: row.userId }];
+    },
   };
   return { tx: tx as unknown as Prisma.TransactionClient, ent, charges };
 }
