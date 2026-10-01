@@ -25,7 +25,8 @@ const RISK_LABEL: Record<ClauseRiskLevel, string> = {
   low: "낮음",
 };
 export function riskLabel(level: ClauseRiskLevel): string {
-  return RISK_LABEL[level];
+  // 서버가 예기치 않은 값(또는 undefined)을 보내도 UI에 'undefined' 노출 방지.
+  return RISK_LABEL[level] ?? "알 수 없음";
 }
 
 const RISK_ICON: Record<ClauseRiskLevel, string> = {
@@ -34,7 +35,8 @@ const RISK_ICON: Record<ClauseRiskLevel, string> = {
   low: "Info",
 };
 export function riskIcon(level: ClauseRiskLevel): string {
-  return RISK_ICON[level];
+  // 미지의 위험도는 중립 아이콘으로 폴백(아이콘 미해석 시 Icon이 null 처리).
+  return RISK_ICON[level] ?? "CircleHelp";
 }
 
 // 조항 종류(분류 코드) → 한국어 라벨. 도메인 어휘라 entities에 둔다.

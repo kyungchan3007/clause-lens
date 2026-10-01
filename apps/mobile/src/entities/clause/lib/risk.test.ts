@@ -23,6 +23,19 @@ describe("riskLabel / riskIcon", () => {
   });
 });
 
+describe("예기치 않은 입력 방어", () => {
+  // 서버 계약(zod)으로 걸러지지만, 런타임 미지 값에도 undefined를 노출하지 않는다.
+  const unknown = "critical" as unknown as "high";
+  it("riskTone unknown → neutral", () => {
+    expect(riskTone(unknown)).toBe("neutral");
+  });
+  it("riskLabel/riskIcon unknown → 안전 기본값(undefined 아님)", () => {
+    expect(riskLabel(unknown)).toBe("알 수 없음");
+    expect(riskIcon(unknown)).toBe("CircleHelp");
+    expect(riskLabel(undefined as unknown as "high")).toBeTruthy();
+  });
+});
+
 describe("clauseTypeLabel", () => {
   it("분류 코드 라벨(미분류 포함)", () => {
     expect(clauseTypeLabel.auto_renewal).toBe("자동연장");
