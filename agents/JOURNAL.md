@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-02 · Claude · 프로필 화면 로직 커스텀 훅 분리 (#120)
+- **무엇**: `features/profile/ui/ProfileScreen.tsx`의 로직(포커스 시 잔량 재조회·로그아웃 확인 Alert·1:1 문의 안내·로그인 수단 라벨)을 `features/profile/model/useProfile()` + 순수 함수 `lib/providerLabelOf()`로 추출. ProfileScreen은 렌더 전용. **동작 불변**.
+- **위치 판단**: #118·#119와 달리 widgets 불가 — ProfileScreen이 features 레이어라 widgets 훅 import는 역방향. 같은 슬라이스 model로(기존 ui의 auth·entitlement 교차 import는 model로 이동, 신규 아님).
+- **검증**: 단위 9 추가 · 타입체크 PASS · e2e profile·logout-cancel PASS(로그인 상태 시뮬, 홈 대기 문구만 바꾼 임시 사본). 게이트는 처음에 Task records만 FAIL(브랜치 전환 잔재 0042 폴더, git 미추적) → 사용자 정리 후 **ALL PASS**.
+- **이번에 드러난 공백**: 브랜치 전환 시 git 미추적 `trace.auto.jsonl`이 남아 다음 브랜치 게이트를 깨뜨림(0039에 이어 재발) — 하네스에서 미추적 자동 기록만 있는 폴더 처리 규칙 필요. jest가 타입 검사를 안 해 `null` 타입 불일치는 tsc에서만 잡힘.
+- **파일**: `features/profile/{lib/providerLabel*,model/useProfile*,ui/ProfileScreen.tsx}` · spec 0043 · TASKS(R3).
+- **다음/주의**: 리팩토링 시리즈(R1~R3) 완료 후 frontend-architecture에 widgets 사용 사례·"features 화면 훅은 같은 슬라이스 model" 규칙 반영. ProfileScreen 상위 레이어 이동은 후속 판단. Notion 미기록(사용자 직접 정리).
+
 ## 2026-10-02 · Claude · Maestro 시나리오 문구 홈 리디자인 이후 UI로 동기화 (TASK-E1, #123)
 - **무엇**: `.maestro` yaml 17개 중 16개가 의존하던 옛 홈 앵커 `계약서를 담아주세요`를 Hero `계약서, 찍기만 하세요`로 교체 + 바뀐 문구 동기화(`촬영하기`→`계약서 촬영`, `1페이지`→`담은 페이지 1장`/`1페이지 삭제`, `업로드 완료`·`분석 완료`→ProcessingScreen 문구, 홈 최근 섹션→`최근 분석 N건` 버튼). recent.yaml은 기록 유무 `runFlow.when` 분기. SCENARIOS.md 동기화. 앱 코드 불변.
 - **왜**: 홈 리디자인(#106·#107·#112) 때 시나리오 트리거 누락으로 로그인 이후 시나리오 전부 깨져 있었음(#119 중 발견).
