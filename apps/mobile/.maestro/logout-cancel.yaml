@@ -5,7 +5,7 @@ appId: com.chan.clauselens
 - launchApp:
     clearState: false
 - extendedWaitUntil:
-    visible: "계약서를 담아주세요"
+    visible: "계약서, 찍기만 하세요"
     timeout: 15000
 - tapOn: "마이페이지"
 - tapOn: "로그아웃"

@@ -10,6 +10,6 @@ appId: com.chan.clauselens
 - extendedWaitUntil:
     visible: "네트워크 연결을 확인해주세요"
     timeout: 60000
-# 실패해도 Capture 미진입, 로그인 화면 유지(재시도 가능)
+# 실패해도 홈 미진입, 로그인 화면 유지(재시도 가능)
 - assertVisible: "카카오로 시작하기"
-- assertNotVisible: "계약서를 담아주세요"
+- assertNotVisible: "계약서, 찍기만 하세요"

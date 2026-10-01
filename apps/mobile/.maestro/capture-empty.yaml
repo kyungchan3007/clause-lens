@@ -1,13 +1,18 @@
-# S9. 촬영 빈 상태 UI — 담긴 페이지 없을 때 빈 상태 노출
+# S9. 홈 빈 상태 UI — 담긴 페이지 없을 때 홈(Hero + 촬영 CTA) 노출
 # 사전조건: 로그인된 상태(login.yaml 선행). 재실행 시 draft store 초기화됨.
+# 홈 리디자인(#106·#112) 이후: "계약서를 담아주세요"는 홈에 없음 → Hero·CaptureCTA로 확인.
 appId: com.chan.clauselens
 ---
 - launchApp:
     clearState: false
-# 세션 복원 후 Capture 빈 상태
+# 세션 복원 후 홈 빈 상태(온보딩·최근있음 공통 Hero)
 - extendedWaitUntil:
-    visible: "계약서를 담아주세요"
+    visible: "계약서, 찍기만 하세요"
     timeout: 15000
-- assertVisible: "촬영하거나 갤러리에서 불러올 수 있어요"
-- assertVisible: "촬영하기"
+- assertVisible: "불리할 수 있는 조항을 찾아 사진 위에 표시해 드려요."
+- assertVisible: "계약서 촬영"
 - assertVisible: "갤러리에서 선택"
+# 무료 잔량 칩(서버 값) — 로딩 후 "무료 분석 N회 남음"
+- extendedWaitUntil:
+    visible: "무료 분석 \\d+회 남음"
+    timeout: 10000
