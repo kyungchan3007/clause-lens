@@ -1,69 +1,37 @@
-import { useMemo } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "@clause-lens/ui";
 
-import { useAnalysisStore } from "../src/features/analysis";
-import { useAuthStore } from "../src/features/auth";
 import { useDocumentReview } from "../src/features/documents";
-import { ResultScreen, type ResultImage } from "../src/features/result";
-import { useUploadStore } from "../src/features/upload";
+import { ResultScreen } from "../src/features/result";
+import { useResultSource } from "../src/widgets/result-source";
 
-// app 레이어: 두 경로를 조합한다.
-//  (a) 방금 분석한 문서 = 메모리 스냅샷(이미지 포함) 결과(기존 격리 경로).
-//  (b) 그 외(최근 목록에서 재열람) = 서버에서 조항을 다시 받아 표시(조항 재열람, 이미지=후속).
+// 라우트는 얇게 — 경로 판정은 widgets/result-source 훅, 여기선 렌더·네비게이션만.
+//  (a) live = 방금 분석한 문서(메모리 스냅샷·이미지 포함, 격리 경로)
+//  (b) review = 그 외(최근 목록에서 재열람, 서버에서 조항 재조회·이미지=후속)
 export default function ResultRoute() {
   const router = useRouter();
   const params = useLocalSearchParams<{ documentId?: string }>();
   const requestedDocId =
     typeof params.documentId === "string" ? params.documentId : undefined;
+  const source = useResultSource(requestedDocId);
 
-  const userId = useAuthStore((s) => s.user?.id);
-  const analysisDocId = useAnalysisStore((s) => s.documentId);
-  const pages = useAnalysisStore((s) => s.pages);
-  const uploadDocId = useUploadStore((s) => s.documentId);
-  const uploadOwner = useUploadStore((s) => s.ownerUserId);
-  const uploadPages = useUploadStore((s) => s.pages);
-
-  // 방금 분석한 문서인가(메모리 스냅샷 + 소유자 일치) — 이미지 포함 결과.
-  const isLive =
-    !!requestedDocId &&
-    analysisDocId === requestedDocId &&
-    uploadDocId === requestedDocId &&
-    !!userId &&
-    userId === uploadOwner &&
-    pages.length > 0;
-
-  const imageByPageId = useMemo(() => {
-    const map: Record<string, ResultImage | undefined> = {};
-    for (const p of uploadPages ?? []) {
-      if (p.pageId && p.image) {
-        map[p.pageId] = {
-          uri: p.image.localUri,
-          width: p.image.width,
-          height: p.image.height,
-        };
-      }
-    }
-    return map;
-  }, [uploadPages]);
-
-  if (isLive) {
+  if (source.kind === "live") {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
         <ResultScreen
-          documentId={requestedDocId}
-          pages={pages}
-          imageByPageId={imageByPageId}
+          documentId={source.documentId}
+          pages={source.pages}
+          imageByPageId={source.imageByPageId}
           onClose={() => router.back()}
         />
       </SafeAreaView>
     );
   }
 
-  if (requestedDocId) {
-    return <ReviewResult documentId={requestedDocId} onClose={() => router.back()} />;
+  if (source.kind === "review") {
+    return <ReviewResult documentId={source.documentId} onClose={() => router.back()} />;
   }
 
   return (

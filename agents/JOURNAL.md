@@ -22,6 +22,14 @@
 - **파일**: `features/profile/{lib/providerLabel*,model/useProfile*,ui/ProfileScreen.tsx}` · spec 0043 · TASKS(R3).
 - **다음/주의**: 리팩토링 시리즈(R1~R3) 완료 후 frontend-architecture에 widgets 사용 사례·"features 화면 훅은 같은 슬라이스 model" 규칙 반영. ProfileScreen 상위 레이어 이동은 후속 판단. Notion 미기록(사용자 직접 정리).
 
+## 2026-10-02 · Claude · 결과 route 판정 로직 커스텀 훅 분리 (#119)
+- **무엇**: `app/result.tsx`의 경로 판정(스토어 6개 구독·`isLive`·`imageByPageId`)을 `src/widgets/result-source/`로 추출. `useResultSource(documentId)` → 판별 유니온 `{ kind: "live" | "review" | "none" }` · 순수 함수 `isLiveResult`·`toImageByPageId`. route는 `kind` 분기 렌더 + 네비게이션만. **동작 불변**.
+- **왜**: #118과 같은 "마크업·로직 분리" 시리즈(사용자 지시). 결과 격리(소유자 일치) 판정이 테스트 불가였음.
+- **검증**: 단위 14 + 게이트 **ALL PASS**. 시뮬 실측: 최근 목록 → 결과(review 경로) → 닫기 정상. live 경로는 무료 0회라 단위로 커버.
+- **이번에 드러난 공백**: 기존 Maestro 홈·결과 시나리오(capture-empty·recent·result 등)가 홈 리디자인 전 문구라 깨져 있음 — 리디자인 태스크에서 시나리오 트리거(문구 변경→yaml 동기화)가 누락됨.
+- **파일**: `apps/mobile/src/widgets/result-source/**`(신규) · `apps/mobile/app/result.tsx` · spec 0042 · TASKS(R2).
+- **다음/주의**: #120 ProfileScreen. Maestro 시나리오 문구 동기화 별도 이슈 필요. Notion 미기록(사용자 직접 정리).
+
 ## 2026-10-02 · Claude · Maestro 시나리오 문구 홈 리디자인 이후 UI로 동기화 (TASK-E1, #123)
 - **무엇**: `.maestro` yaml 17개 중 16개가 의존하던 옛 홈 앵커 `계약서를 담아주세요`를 Hero `계약서, 찍기만 하세요`로 교체 + 바뀐 문구 동기화(`촬영하기`→`계약서 촬영`, `1페이지`→`담은 페이지 1장`/`1페이지 삭제`, `업로드 완료`·`분석 완료`→ProcessingScreen 문구, 홈 최근 섹션→`최근 분석 N건` 버튼). recent.yaml은 기록 유무 `runFlow.when` 분기. SCENARIOS.md 동기화. 앱 코드 불변.
 - **왜**: 홈 리디자인(#106·#107·#112) 때 시나리오 트리거 누락으로 로그인 이후 시나리오 전부 깨져 있었음(#119 중 발견).
