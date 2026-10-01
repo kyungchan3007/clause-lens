@@ -46,3 +46,5 @@ bash agents/harness/evals/checks.sh   # 완료 전 게이트 (typecheck + expo-d
 상세: [agents/harness/loop.md](agents/harness/loop.md)
 
 이슈 초안 자동 정리 규칙: [agents/harness/github-issue-templates.md](agents/harness/github-issue-templates.md)
+
+**Notion 기록**(완료·변경 시 **01에만 말고 영향 섹션 전체** 갱신 — 섹션 맵): [agents/harness/notion-recording.md](agents/harness/notion-recording.md)
