@@ -1,15 +1,10 @@
-import { useCallback } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Icon, IconBadge, ListRow, SectionHeader } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
-import { useAuthStore } from "../../auth";
-import { FreeQuotaRow, useEntitlementStore } from "../../entitlement";
+import { FreeQuotaRow } from "../../entitlement";
+import { useProfile } from "../model/useProfile";
 import { FaqSection } from "./FaqSection";
-
-// provider 코드 → 사용자에게 보일 라벨.
-const PROVIDER_LABEL: Record<string, string> = { KAKAO: "카카오" };
 
 function MenuRow({
   icon,
@@ -31,24 +26,9 @@ function MenuRow({
   );
 }
 
+// 렌더 전용 — 로직은 model/useProfile.
 export function ProfileScreen() {
-  const user = useAuthStore((s) => s.user);
-  const signOut = useAuthStore((s) => s.signOut);
-  const providerLabel = PROVIDER_LABEL[user?.provider ?? ""] ?? user?.provider ?? "";
-
-  // 프로필 포커스마다 서버 잔량 재조회(접수·완료로 바뀌었을 수 있음).
-  useFocusEffect(
-    useCallback(() => {
-      void useEntitlementStore.getState().refresh();
-    }, []),
-  );
-
-  const confirmSignOut = () => {
-    Alert.alert("로그아웃", "로그아웃 하시겠어요?", [
-      { text: "취소", style: "cancel" },
-      { text: "로그아웃", style: "destructive", onPress: () => void signOut() },
-    ]);
-  };
+  const { displayName, providerLabel, confirmSignOut, openInquiry } = useProfile();
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="pb-10">
@@ -57,7 +37,7 @@ export function ProfileScreen() {
         <IconBadge name="User" size={40} />
         <View className="items-center gap-1">
           <Text className="text-xl font-bold text-foreground">
-            {user?.displayName ?? "사용자"}
+            {displayName ?? "사용자"}
           </Text>
           {providerLabel ? (
             <Text className="text-sm text-foreground-muted">
@@ -80,9 +60,7 @@ export function ProfileScreen() {
         <MenuRow
           icon="MessageCircleQuestion"
           label="1:1 문의"
-          onPress={() =>
-            Alert.alert("준비 중", "1:1 문의는 곧 제공될 예정이에요.")
-          }
+          onPress={openInquiry}
         />
       </View>
 

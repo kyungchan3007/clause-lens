@@ -64,7 +64,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | TASK-R1 | 홈 분석 세션 로직 커스텀 훅 분리 (app/index.tsx) | 라우트 얇게(frontend-architecture) | [0041](../intent/specs/0041-home-session-hook/) | Claude | **in-progress** (#118 — widgets/home-session · 단위·게이트 PASS · 로그인 후 e2e 확인 남음) | – |
 | TASK-R2 | 결과 route 판정 로직 커스텀 훅 분리 (app/result.tsx) | 〃 | – | – | todo (#119) | TASK-R1 |
-| TASK-R3 | 프로필 화면 로직 커스텀 훅 분리 (ProfileScreen) | 〃 | – | – | todo (#120) | – |
+| TASK-R3 | 프로필 화면 로직 커스텀 훅 분리 (ProfileScreen) | 〃 | [0043](../intent/specs/0043-profile-hook/) | Claude | **in-progress** (#120 — features/profile/model · 단위·타입·e2e PASS · 게이트 잔재 폴더 정리 대기) | – |
 
 ## 하네스·거버넌스 태스크
 
