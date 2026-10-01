@@ -31,9 +31,12 @@ export function DocumentRow({
     .filter(Boolean)
     .join(", ");
 
+  // 썸네일 자리 — 연한 가로 라인 플레이스홀더(문서 느낌). 실제 이미지 썸네일은 후속.
   const leading = (
-    <View className="h-[60px] w-12 items-center justify-center rounded-xl border border-border bg-surface-alt">
-      <Icon name="FileText" size={22} color={color("textMuted")} />
+    <View className="h-[60px] w-12 justify-center gap-[4px] rounded-xl border border-border bg-surface-alt px-2">
+      <View className="h-[3px] w-full rounded-full bg-border" />
+      <View className="h-[3px] w-4/5 rounded-full bg-border" />
+      <View className="h-[3px] w-3/5 rounded-full bg-border" />
     </View>
   );
 

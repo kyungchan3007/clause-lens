@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-01 · Claude · 홈 리디자인 보정 (TASK-U1b, #112)
+- **무엇**: 순서1(홈) 시안 보정. ① 온보딩 Hero 아이콘 ScanLine→**ShieldCheck**(네이비 `color("text")`). ② 홈 '최근있음' 인라인 카드 → **「최근 분석 N건 >」 진입 버튼**(RecentEntryButton)→기존 /recent 전체 화면. ③ DocumentRow 날짜 "오늘 HH:MM"→**상대일(오늘/어제/M·D)**·좌측 문서 아이콘→**라인 플레이스홀더**(썸네일 느낌).
+- **설계=사용자 Q&A 확정**(Codex 생략): "최근은 원할 때 인터랙션으로"→진입 버튼→/recent · 날짜 상대일 · 라인 플레이스홀더 · Hero는 사용자가 보낸 Main 시안(ShieldCheck).
+- **구현**: `RecentAnalysisSection` 제거(홈 인라인) → `RecentEntryButton`(loading/error/0=null/N건·onSeeAll). `completedAtLabel` today→"오늘"(시간·pad 제거). DocumentRow leading 라인 플레이스홀더. Hero ShieldCheck. app/index 배선.
+- **검증**: retentionBadge·documentsStore·RecentEntryButton(4) 단위·게이트 **ALL PASS**. **시뮬레이터 실측**: 홈 진입 버튼("최근 분석 6건 >")→/recent 이동, /recent 카드 라인 플레이스홀더·"오늘/어제/9/29"(시간 없음) 확인. 온보딩 Hero(ShieldCheck)는 0건 상태 필요 → 코드 반영·육안 후속. (파일 삭제 후 fast refresh 흰 화면 → 앱 재실행으로 복구.)
+- **파일**: `documents`(lib/retentionBadge·ui/DocumentRow·ui/RecentEntryButton 신규·RecentAnalysisSection 삭제·index·RecentEntryButton.test·retentionBadge.test) · `home/ui/Hero` · `app/index.tsx` · spec 0038 · TASKS(U1b).
+- **다음/주의**: 순서3~5(결과·마이페이지·최근목록). 온보딩 Hero 육안(0건)·실제 이미지 썸네일(현재 라인 플레이스홀더)·갤러리 버튼 최근있음 노출(시안엔 없으나 유지)은 후속 판단.
+
 ## 2026-10-01 · Claude · 담은 페이지 2열 썸네일 그리드 (TASK-U2b, #110)
 - **무엇**: 순서1에서 보류한 담은 페이지(②) 2열 썸네일 그리드. 드래그 엔진 `react-native-draggable-flatlist`(단일 열) → **`react-native-sortables@1.10.1` Sortable.Grid**(2열) 교체. 카드=썸네일(contain·3:4)+페이지번호+X(이미지=드래그 핸들), "+추가"=`fixed-order` 셀, 탭→전체화면 미리보기 모달(교체·삭제).
 - **착수 전 Codex 적대 토론**(grid): sortables 버전 고정(1.10.1)·게이트는 필요조건·실기기 별도 / "+추가"는 fixed-order+표시용 `(PageCell|AddCell)` 배열(DraftPage[] 오염 금지)·드롭 시 id만 / customHandle=이미지·X 핸들 밖 / 드래그만은 a11y 누락→앞·뒤 이동 액션 / aspectRatio≠메모리 최적화→썸네일 생성 / **치명: setPages 전체 교체가 stale 드롭에 삭제·교체 되돌림→reorderByIds(집합 검증), locked만으론 부족→dragging 가드**. **사용자 결정**: 탭=미리보기 모달·썸네일 지금 생성.

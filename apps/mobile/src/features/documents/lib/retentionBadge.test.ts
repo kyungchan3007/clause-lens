@@ -26,10 +26,9 @@ describe("retentionBadge", () => {
 });
 
 describe("completedAtLabel", () => {
-  it("오늘 → '오늘 HH:MM'", () => {
-    const d = new Date("2026-10-08T09:05:00.000Z");
-    // 로컬 시간대에 의존하지 않도록 접두사만 확인.
-    expect(completedAtLabel(d.toISOString(), now).startsWith("오늘 ")).toBe(true);
+  it("오늘 → '오늘'(시간 미표시)", () => {
+    // now와 같은 순간 → 같은 날 → '오늘'(tz 무관).
+    expect(completedAtLabel(now.toISOString(), now)).toBe("오늘");
   });
 
   it("어제 → '어제'", () => {

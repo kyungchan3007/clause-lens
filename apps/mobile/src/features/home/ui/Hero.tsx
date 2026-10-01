@@ -7,7 +7,7 @@ export function Hero() {
   return (
     <View className="items-center px-7 pb-2 pt-6">
       <View className="mb-5 h-24 w-24 items-center justify-center rounded-3xl bg-primary-tint">
-        <Icon name="ScanLine" size={40} color={color("primary")} />
+        <Icon name="ShieldCheck" size={40} color={color("text")} />
       </View>
       <Text className="text-center text-2xl font-extrabold text-foreground">계약서, 찍기만 하세요</Text>
       <Text className="mt-3 max-w-[260px] text-center text-[15px] leading-6 text-foreground-muted">

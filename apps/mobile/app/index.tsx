@@ -15,7 +15,7 @@ import {
 } from "../src/features/upload";
 import { useAnalysis, useAnalysisStore } from "../src/features/analysis";
 import { getAccessToken, useAuthStore } from "../src/features/auth";
-import { RecentAnalysisSection, useDocumentsStore } from "../src/features/documents";
+import { RecentEntryButton, useDocumentsStore } from "../src/features/documents";
 
 const UPLOAD_ACTIVE = ["presigning", "uploading", "confirming"];
 
@@ -215,10 +215,7 @@ export default function Page() {
           {onboarding ? (
             <HowItWorks />
           ) : (
-            <RecentAnalysisSection
-              onOpen={(id) => router.push({ pathname: "/result", params: { documentId: id } })}
-              onSeeAll={() => router.push("/recent")}
-            />
+            <RecentEntryButton onSeeAll={() => router.push("/recent")} />
           )}
           <View className="px-5 pt-5">
             <Notice tone="neutral" icon="Info">
