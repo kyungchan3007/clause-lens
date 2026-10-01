@@ -15,7 +15,13 @@ import { OcrPermanentError, type OcrPort } from "./ports/ocr.port";
 import type { StoragePort } from "./ports/storage.port";
 import type { PrismaService } from "./prisma.service";
 
-jest.mock("@clause-lens/db/analysis");
+// Tx 함수만 모킹하고, 순수 종결/에러 판정 헬퍼(isJobTerminal 등)는 실제 구현 유지(#141 단일 소스).
+jest.mock("@clause-lens/db/analysis", () => ({
+  ...jest.requireActual("@clause-lens/db/analysis"),
+  confirmAnalysisResultTx: jest.fn(),
+  confirmPageAnalysisTx: jest.fn(),
+  upsertPageOcr: jest.fn(),
+}));
 jest.mock("./lib/image-validator");
 jest.mock("./lib/box-mapper");
 
