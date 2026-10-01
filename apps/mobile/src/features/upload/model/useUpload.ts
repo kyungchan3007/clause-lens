@@ -3,8 +3,8 @@ import * as FileSystem from "expo-file-system/legacy";
 import type { UploadTicket } from "@clause-lens/contracts";
 
 import * as uploadApi from "../api/uploadApi";
-import { HttpError } from "../api/uploadApi";
 import { createRunGuard } from "../../../shared/lib/runGuard";
+import { classifyHttpError } from "../../../shared/lib/httpError";
 import { useUploadStore } from "./uploadStore";
 
 // 실행 세대 가드 — stale 콜백/취소 무효화(useAnalysis와 공통 구현).
@@ -311,12 +311,15 @@ function bumpSent(): void {
   useUploadStore.getState().set({ sentCount: useUploadStore.getState().sentCount + 1 });
 }
 
-// HTTP/스키마 오류를 사용자 문구로(원문·상태 로깅 금지).
+// HTTP/스키마 오류를 사용자 문구로(원문·상태 로깅 금지). 분류는 공통(classifyHttpError), 문구는 upload 소유.
+// auth(401)·conflict(409)만 전용 문구, 그 외(quota/gone/unknown·네트워크 등)는 제네릭 — 기존 분기와 동일.
 function describeError(e: unknown): string {
-  if (e instanceof HttpError) {
-    if (e.status === 401) return "로그인이 필요해요.";
-    if (e.status === 409) return "이미 처리 중이거나 만료된 세션이에요. 다시 시도해주세요.";
-    return "업로드 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.";
+  switch (classifyHttpError(e)) {
+    case "auth":
+      return "로그인이 필요해요.";
+    case "conflict":
+      return "이미 처리 중이거나 만료된 세션이에요. 다시 시도해주세요.";
+    default:
+      return "업로드 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.";
   }
-  return "업로드 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.";
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { PageAnalysisResult } from "@clause-lens/contracts";
 
 import { getAccessToken } from "../../auth";
-import { HttpError } from "../../../shared/http";
+import { classifyHttpError } from "../../../shared/lib/httpError";
 import { fetchDocumentReview } from "../api/documentsApi";
 import { useDocumentsStore } from "./documentsStore";
 
@@ -36,8 +36,9 @@ export function useDocumentReview(documentId: string | undefined): {
       setPages(res.pages);
       setState("ready");
     } catch (e) {
-      if (e instanceof HttpError && e.status === 410) {
-        removeDocument(documentId); // 보관 경과 → 목록에서도 제거
+      // 분류는 공통(classifyHttpError), 처리(목록 제거·state)는 documents 소유.
+      if (classifyHttpError(e) === "gone") {
+        removeDocument(documentId); // 410 보관 경과 → 목록에서도 제거
         setState("gone");
         return;
       }
