@@ -1,7 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import type { Document, Page } from "@clause-lens/db";
 import { Prisma } from "@clause-lens/db";
-import { reserveFreeAnalysis } from "@clause-lens/db/analysis";
+import {
+  reserveFreeAnalysis,
+  listRecentDocuments,
+  type RecentDocumentsCursor,
+  type RecentDocumentsPage,
+} from "@clause-lens/db/analysis";
 
 import { PrismaService } from "../../db/prisma.service";
 
@@ -150,6 +155,16 @@ export class DocumentsRepository {
       },
       { isolationLevel: "Serializable" },
     );
+  }
+
+  // ── 재열람 목록 (#96 / 0030) ──
+
+  // 재열람 가능한 최근 분석 문서 1페이지 + 일괄 집계(소유자·done|partial·retainUntil>now).
+  listRecentDocuments(
+    userId: string,
+    opts: { limit?: number; before?: RecentDocumentsCursor },
+  ): Promise<RecentDocumentsPage> {
+    return listRecentDocuments(this.prisma, userId, opts);
   }
 
   // ── 분석 (#16) ──

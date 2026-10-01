@@ -9,6 +9,7 @@ import { initializeKakaoSDK } from "@react-native-kakao/core";
 
 import { useAuthStore } from "../src/features/auth";
 import { useEntitlementSync } from "../src/features/entitlement";
+import { useDocumentsSync } from "../src/features/documents";
 
 // 카카오 SDK는 앱 시작 시 1회 초기화(네이티브 앱 키는 client-public, env 주입).
 const kakaoNativeAppKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY;
@@ -33,6 +34,8 @@ function AuthGate() {
 
   // 인증·분석 변화에 맞춰 무료 잔량 동기화(기능 간 결합을 이 상위 레이어 한 곳에).
   useEntitlementSync();
+  // 인증·분석 완료에 맞춰 재열람 문서 목록 동기화.
+  useDocumentsSync();
 
   useEffect(() => {
     restore();
@@ -55,6 +58,7 @@ function AuthGate() {
           options={{ headerShown: true, title: "마이페이지", headerBackTitle: "뒤로" }}
         />
         <Stack.Screen name="result" />
+        <Stack.Screen name="recent" />
       </Stack.Protected>
       <Stack.Protected guard={status === "unauthenticated"}>
         <Stack.Screen name="login" />

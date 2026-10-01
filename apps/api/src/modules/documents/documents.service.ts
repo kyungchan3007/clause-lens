@@ -1,13 +1,21 @@
 import {
   ConflictException,
   ForbiddenException,
+  GoneException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import {
   MAX_PENDING_DOCUMENTS_PER_USER,
+  type DocumentListResponse,
   type PresignPageInput,
 } from "@clause-lens/contracts";
+import { isRetentionActive } from "@clause-lens/db/analysis";
+
+import {
+  decodeCursor,
+  toListResponse,
+} from "./documents-list.mapper";
 
 import {
   type AnalysisJobWithPages,
@@ -137,15 +145,33 @@ export class DocumentsService {
   }
 
   // 현재 분석 상태 조회(진실의 기준). 소유권 확인 후 최신 job 반환.
+  // 재열람 보관 게이트(0030): retainUntil이 설정됐고(=terminal) 지났으면 410(접근 차단).
+  // retainUntil null(진행중)은 통과 — 진행중 폴링을 막지 않음. 세션 TTL(24h)은 재열람에 무관.
   async getAnalysis(
     userId: string,
     documentId: string,
   ): Promise<AnalysisJobWithPages> {
     const doc = await this.repo.findOwnedSession(userId, documentId);
     if (!doc) throw new NotFoundException("문서를 찾을 수 없습니다.");
+    if (!isRetentionActive(doc.retainUntil)) {
+      throw new GoneException("보관 기간이 지나 다시 볼 수 없습니다.");
+    }
     const job = await this.repo.findLatestAnalysis(documentId);
     if (!job) throw new NotFoundException("분석 요청이 없습니다.");
     return job;
+  }
+
+  // 재열람 가능한 최근 분석 문서 목록(#96 / 0030). 소유자·done|partial·retainUntil>now.
+  async listRecentDocuments(
+    userId: string,
+    params: { cursor?: string; limit?: number },
+  ): Promise<DocumentListResponse> {
+    const before = decodeCursor(params.cursor);
+    const page = await this.repo.listRecentDocuments(userId, {
+      limit: params.limit,
+      before,
+    });
+    return toListResponse(page.items, page.hasMore);
   }
 
   markDispatched(jobId: string): Promise<void> {

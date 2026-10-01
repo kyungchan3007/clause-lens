@@ -32,7 +32,8 @@
 | TASK-003 | 분석 요청·jobId 상태 폴링 | [analyze-document](../intent/features/analyze-document.md) | [0020](../intent/specs/0020-analysis-request-polling.md) | Claude | **done** (#63·PR#64 — 게이트 13검사·백엔드 실측 4/4·앱 시뮬 실측, 2026-09-28) | TASK-002 |
 | TASK-004 | OCR·위험 조항 결과 + 하이라이트 표시 | [view-highlights](../intent/features/view-highlights.md) | [0021](../intent/specs/0021-ocr-risk-analysis.md)·[0022](../intent/specs/0022-app-result-highlight.md) | Claude | **done** (4a 백엔드 #68/PR#69 — Vision OCR+Claude · 4b 결과·하이라이트 #73/PR#75 — react-native-svg 오버레이·좌표변환·조항목록·S20 시뮬 실측, 2026-09-30. EXIF fixture 실측·재진입 영속은 후속) | TASK-003 |
 | TASK-005 | 로그인·무료 분석 횟수 | [login-entitlement](../intent/features/login-entitlement.md) | [0009](../intent/specs/0009-app-kakao-login.md)(앱 로그인)·[0027](../intent/specs/0027-entitlement-enforcement/)(자격 집행)·[0029](../intent/specs/0029-app-entitlement-display/)(앱 표시) | Claude | **in-progress** (#36 앱 카카오 로그인 done · 정책 확정 #79 · **백엔드 집행 #90/PR#91 done** · **앱 잔량 표시·403 흐름 #94 in-progress** — Codex 설계 토론 반영) | #32 |
-| TASK-006 | 구독·문서 저장 | [save-retain](../intent/features/save-retain.md) | – | – | todo | TASK-005 |
+| TASK-008 | 분석 기록 재열람 — 문서목록 API + 7일 보관(접근 차단) | [save-retain](../intent/features/save-retain.md)(재열람 토대) | [0030](../intent/specs/0030-recall-documents-list/) | Claude | **in-progress** (#96 — Codex 설계 토론 반영. **조항 재열람만**·접근 차단만. 이미지 하이라이트 재열람·실삭제(#74)는 바로 다음) | TASK-004·TASK-005 |
+| TASK-006 | 구독·문서 저장 | [save-retain](../intent/features/save-retain.md) | – | – | todo | TASK-008 |
 | TASK-007 | 특정 페이지 이미지 교체·재분석 | [replace-page](../intent/features/replace-page.md) | – | – | todo | TASK-003 |
 
 > 위 태스크는 README "초기 개발 순서" + feature 정의를 DAG로 옮긴 시드입니다.

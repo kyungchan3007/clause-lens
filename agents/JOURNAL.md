@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-01 · Claude · 분석 기록 재열람 — 문서목록 API + 7일 보관(접근 차단) (TASK-008, #96)
+- **무엇**: 무료 사용자도 분석 완료 결과를 **7일간 재열람**. ① 보관 모델 `Document.completedAt·retainUntil`(terminal 확정 tx에서 1회, 중복 무연장, 기존 done|partial 백필) ② 목록 API `GET /me/documents`(소유자·done|partial·retainUntil>now·완료순 커서·일괄 risk 집계·N+1 없음) ③ 재열람 게이트 — 결과 상세를 세션 TTL(24h) 아닌 `retainUntil`+소유권으로 판정(지나면 410) ④ 앱 홈 '최근 분석' 섹션 + 전체 목록 화면 + 조항 재열람(ResultScreen 재사용) + "N일 후 삭제" 배지.
+- **착수 전 Codex 설계 토론**(사용자 워크플로우): "목록 추가"가 아니라 **"24h 세션을 7일 재열람 문서로 전환"**이 핵심. 반영 — 세션 TTL/재열람 권한 분리(코드 확인: findOwnedSession은 expiresAt 미필터라 이미 분리됨, 보관 게이트만 부재), completedAt/retainUntil 영속·1회 설정·무연장·백필, 목록·상세·집계가 **같은 공개 결과(최신 terminal)** 기준, partial 구분(analyzed/total), 안정 커서(completedAt+id), 일괄 집계. 사용자 범위: **조항 재열람만**(이미지 하이라이트=바로 다음), **접근 차단만**(실삭제=#74 바로 다음).
+- **아키텍처**: 집계는 raw SQL 조인(`PageAnalysis ⋈ Clause` on pageId+revision)으로 revision 정확 매칭. 재열람 UI 합성은 app 레이어(`app/result.tsx`)가 `useDocumentReview`(데이터) + ResultScreen(조항만, `imageByPageId={}`). 홈 섹션은 capture `extra` 슬롯으로 주입(capture는 documents 모름). 동기화는 `useDocumentsSync`(루트 _layout).
+- **검증**: api 유닛 **68 PASS**(신규 mapper 커서·service 게이트/목록) · mobile 유닛 **103 PASS**(신규 store 격리·loadMore·removeDocument·배지·api zod) · **db 실 Postgres 통합** `recall.integration.mjs`(보관 7일 1회·중복 무연장·집계 revision 정확·partial·완료순·커서 중복없음·소유자 격리·만료 제외) · 전체 게이트 `checks.sh` **ALL PASS**. 마이그레이션 백필 SQL 로컬 적용 확인. e2e `recent.yaml`(S22) 섹션 자동.
+- **파일**: `packages/db`(schema+migration `..010000_add_document_retention`, analysis-ops 보관 훅·RETENTION_DAYS, documents-ops `listRecentDocuments`/`isRetentionActive`, test), `packages/contracts/src/documents.ts`, `apps/api/.../documents`(list controller·mapper·service 게이트·repo), `apps/mobile/src/features/documents/*`(신규 api·model·ui·lib), capture `EmptyState`/`CaptureScreen` extra, `app/{index,recent,result,_layout}.tsx`, `.maestro/recent.yaml`(S22), spec `0030-recall-documents-list/`, TASKS(TASK-008).
+- **다음/주의**: **이미지 하이라이트 재열람**(이미지 수명·서명 URL 재발급·스냅샷 없이 복원) = 바로 다음 이슈. **실삭제 정리 잡 #74**(접근 종료↔삭제 지연·연쇄 삭제) = 바로 다음, **사용자 "7일 뒤 삭제" 공개 전 필수**. 시뮬레이터 실측·백엔드 seeding e2e(목록 내용·410·계정 전환) 후속. 재분석(TASK-007) 도입 시 공개 결과 선택 규칙(publishedAnalysisId) 재검토. 구독 저장=TASK-006.
+
 ## 2026-10-01 · Claude · 무료 분석 잔량 표시 + 403 흐름 (앱, TASK-005, #94)
 - **무엇**: 서버 집행(#90)의 **앱 표시**. `features/entitlement/`(api·store·ui) — ProfileScreen "내 이용 · 남은 무료 분석 N회"(서버 값 표시만) + 분석 접수 **403**→"현재 사용할 수 있는 무료 분석 횟수가 없어요"(404·409·네트워크 구분) + `GET /me/entitlement` 조회.
 - **착수 전 Codex 설계 토론**(사용자 워크플로우): 핵심 반영 — ① **잔량은 접수(예약) 시점에도 변함** → 갱신 트리거에 접수·terminal·403·포커스 ② 403 문구 완화(예약 때문일 수 있어 "모두 사용" 금지) ③ **계정·세션 격리**(generation guard로 늦은 응답 폐기, 토큰 갱신과 계정 변경 구분) ④ 겹친 refresh 직렬화(pending) ⑤ 로딩/실패 표시(0 대체 금지) ⑥ 단위+e2e 수용조건.
