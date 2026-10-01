@@ -33,6 +33,9 @@ run "Build (contracts)" pnpm --filter @clause-lens/contracts build
 # 0b) 공유 DB 함수 빌드 (db/analysis) — api·worker가 @clause-lens/db/analysis 를 해석하려면 선행 빌드 필요
 run "Build (db)" pnpm --filter @clause-lens/db build
 
+# 0c) 공유 인프라 빌드 (infra) — api·worker가 @clause-lens/infra(dist) 타입을 해석하려면 선행 빌드 필요
+run "Build (infra)" pnpm --filter @clause-lens/infra build
+
 # 1) 타입 체크 (모바일 앱)
 run "Typecheck (mobile)" pnpm --filter @clause-lens/mobile exec tsc --noEmit
 
@@ -61,6 +64,7 @@ run "Native modules single version" node agents/harness/evals/check-native-singl
 
 # 5) 유닛 테스트 (백엔드 로직·앱 상태/저장/API). e2e 시나리오는 apps/mobile/.maestro 참조.
 run "Unit tests (contracts)" pnpm --filter @clause-lens/contracts test
+run "Unit tests (infra)" pnpm --filter @clause-lens/infra test
 run "Unit tests (api)" pnpm --filter @clause-lens/api test
 run "Unit tests (worker)" pnpm --filter @clause-lens/worker test
 run "Unit tests (mobile)" pnpm --filter @clause-lens/mobile test

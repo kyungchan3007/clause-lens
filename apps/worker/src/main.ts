@@ -9,7 +9,7 @@ import { assertBootConfig } from "./config";
 import { terminalizeStuckJob } from "./lib/terminalize";
 import { NotificationPublisher } from "./notification.publisher";
 import { PrismaService } from "./prisma.service";
-import { createRedis } from "./redis.config";
+import { createRedis } from "@clause-lens/infra";
 import { WorkerModule } from "./worker.module";
 
 // OCR Worker — NestJS standalone(HTTP 없음) + BullMQ consumer.

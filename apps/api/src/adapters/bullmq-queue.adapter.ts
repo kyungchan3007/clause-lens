@@ -4,7 +4,7 @@ import { Queue } from "bullmq";
 import type IORedis from "ioredis";
 
 import { QueuePort } from "../ports/queue.port";
-import { createRedis } from "./redis.config";
+import { createRedis } from "@clause-lens/infra";
 
 // BullMQ 기반 producer. jobId를 큐 job id로 사용 → 동일 job 중복 add를 큐가 멱등 처리.
 @Injectable()
