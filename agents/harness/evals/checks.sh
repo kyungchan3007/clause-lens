@@ -42,6 +42,9 @@ run "Typecheck (api)" pnpm --filter @clause-lens/api exec tsc --noEmit
 # 1b') 타입 체크 (OCR Worker)
 run "Typecheck (worker)" pnpm --filter @clause-lens/worker exec tsc --noEmit
 
+# 1b'') 타입 체크 (공유 UI) — 앱 import에 안 걸리는 미사용 신규 컴포넌트까지 검사(테스트 제외)
+run "Typecheck (ui)" pnpm --filter @clause-lens/ui typecheck
+
 # 1c) Prisma 스키마 검증 (DB 연결 안 함 — env() 해석용 더미 URL만 주입)
 run "Prisma schema validate" bash -c 'DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" pnpm --filter @clause-lens/db exec prisma validate'
 
@@ -61,6 +64,8 @@ run "Unit tests (contracts)" pnpm --filter @clause-lens/contracts test
 run "Unit tests (api)" pnpm --filter @clause-lens/api test
 run "Unit tests (worker)" pnpm --filter @clause-lens/worker test
 run "Unit tests (mobile)" pnpm --filter @clause-lens/mobile test
+# 공유 UI(packages/ui) 단위 — 테스트는 ui에 소유, 실행은 mobile jest-expo 재사용(jest.ui.config.js)
+run "Unit tests (ui)" pnpm --filter @clause-lens/mobile exec jest --config jest.ui.config.js
 
 # 6) 이슈·체크박스 기록 (하네스 이식 1/4, #82) — 파서 단위 테스트 + 오프라인 판정
 #    (0023+ spec 이슈번호 필수 · done 태스크 spec의 사유 없는 미체크 차단)

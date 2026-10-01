@@ -1,12 +1,11 @@
 import { useEffect } from "react";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import { Icon } from "@clause-lens/ui";
-import { semantic } from "@clause-lens/tokens";
+import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
 import { DocumentRow } from "./DocumentRow";
 
-const c = semantic.light;
 
 // 최근 분석 전체 목록(무한 스크롤·당겨서 새로고침). 서버 값만 표시.
 export function RecentListScreen({
@@ -38,7 +37,7 @@ export function RecentListScreen({
           hitSlop={8}
           className="h-9 w-9 items-center justify-center rounded-xl active:opacity-60"
         >
-          <Icon name="ChevronLeft" size={22} color={c.text} />
+          <Icon name="ChevronLeft" size={22} color={color("text")} />
         </Pressable>
         <Text className="text-lg font-bold text-foreground">최근 분석</Text>
       </View>
@@ -77,7 +76,7 @@ export function RecentListScreen({
           }
           ListEmptyComponent={
             <View className="items-center gap-1 py-16">
-              <Icon name="FileClock" size={26} color={c.textMuted} />
+              <Icon name="FileClock" size={26} color={color("textMuted")} />
               <Text className="text-sm text-foreground-muted">아직 분석한 계약서가 없어요</Text>
             </View>
           }

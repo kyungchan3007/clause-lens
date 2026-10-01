@@ -2,32 +2,29 @@ import * as React from "react";
 import { Text, View } from "react-native";
 
 import { Icon } from "./icon";
+import { toneClasses, toneForeground, type Tone } from "./tone";
 
-// 색·라벨(+선택 아이콘)만 받는 프레젠테이셔널 배지(알약형). 도메인 의미(위험도·종류 등)
-// 매핑은 사용하는 쪽에서 넘긴다. 색은 인스턴스마다 달라 style로 주입.
+// 비상호작용 라벨(알약형). 색은 tone으로만 — 텍스트·배경·아이콘 조합을 tone이 정한다(접근성 대비).
+// 도메인 의미(위험도 등)→tone 매핑은 소비자(result 등)가 하고, Badge는 tone 문자열만 받는다.
 export interface BadgeProps {
   label: string;
-  // 텍스트·아이콘 색.
-  color?: string;
-  backgroundColor?: string;
-  // lucide 아이콘 이름(선택).
+  tone?: Tone;
+  // lucide 아이콘 이름(선택). 색은 tone 전경색을 따른다.
   icon?: string;
   className?: string;
 }
 
-export function Badge({ label, color, backgroundColor, icon, className }: BadgeProps) {
+export function Badge({ label, tone = "neutral", icon, className }: BadgeProps) {
+  const t = toneClasses(tone);
   return (
     <View
       accessibilityRole="text"
-      className={`flex-row items-center gap-1 self-start rounded-full px-2 py-0.5 ${
+      className={`flex-row items-center gap-1 self-start rounded-full px-2 py-0.5 ${t.container} ${
         className ?? ""
       }`}
-      style={backgroundColor ? { backgroundColor } : undefined}
     >
-      {icon ? <Icon name={icon} size={12} color={color} /> : null}
-      <Text className="text-xs font-semibold" style={color ? { color } : undefined}>
-        {label}
-      </Text>
+      {icon ? <Icon name={icon} size={12} color={toneForeground(tone)} /> : null}
+      <Text className={`text-xs font-semibold ${t.text}`}>{label}</Text>
     </View>
   );
 }

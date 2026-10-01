@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { Icon, IconBadge, SectionHeader } from "@clause-lens/ui";
-import { semantic } from "@clause-lens/tokens";
+import { Icon, IconBadge, ListRow, SectionHeader } from "@clause-lens/ui";
+import { color } from "@clause-lens/tokens";
 
 import { useAuthStore } from "../../auth";
 import { FreeQuotaRow, useEntitlementStore } from "../../entitlement";
@@ -21,15 +21,13 @@ function MenuRow({
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
+    <ListRow
+      variant="flat"
+      title={label}
+      leading={<Icon name={icon} size={20} color={color("textMuted")} />}
+      trailing={<Icon name="ChevronRight" size={18} color={color("textMuted")} />}
       onPress={onPress}
-      className="min-h-[56px] flex-row items-center gap-3 border-b border-border bg-surface px-4 active:bg-surface-alt"
-    >
-      <Icon name={icon} size={20} color={semantic.light.textMuted} />
-      <Text className="flex-1 text-base text-foreground">{label}</Text>
-      <Icon name="ChevronRight" size={18} color={semantic.light.textMuted} />
-    </Pressable>
+    />
   );
 }
 
@@ -96,7 +94,7 @@ export function ProfileScreen() {
           onPress={confirmSignOut}
           className="min-h-[56px] flex-row items-center gap-3 border-b border-border bg-surface px-4 active:bg-surface-alt"
         >
-          <Icon name="LogOut" size={20} color={semantic.light.danger} />
+          <Icon name="LogOut" size={20} color={color("danger")} />
           <Text className="flex-1 text-base text-danger">로그아웃</Text>
         </Pressable>
       </View>
