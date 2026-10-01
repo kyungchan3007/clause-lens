@@ -2,6 +2,10 @@ import { create } from "zustand";
 import type { EntitlementResponse } from "@clause-lens/contracts";
 
 import { getAccessToken } from "../../auth";
+import {
+  isStaleGeneration,
+  syncAccount as syncAccountState,
+} from "../../../shared/model/accountScopedStore";
 import { fetchEntitlement } from "../api/entitlementApi";
 
 // 무료 분석 잔량 상태. "서버가 진실의 기준" — freeRemaining을 표시만(앱이 −1 선반영·0으로 차단 금지).
@@ -37,10 +41,7 @@ export const useEntitlementStore = create<EntitlementState>((set, get) => ({
 
   // 로그인·복원·계정 변경·로그아웃에서 호출. 같은 userId(토큰 갱신 포함)면 유지, 바뀌면 세대++·초기화.
   syncAccount(userId) {
-    if (get().userId === userId) return;
-    set({
-      generation: get().generation + 1,
-      userId,
+    syncAccountState(get, set, userId, {
       status: "idle",
       data: null,
       staleError: false,
@@ -55,7 +56,7 @@ export const useEntitlementStore = create<EntitlementState>((set, get) => ({
     }
     const gen = get().generation;
     const token = await getAccessToken();
-    if (get().generation !== gen) return; // 조회 사이 계정 변경
+    if (isStaleGeneration(get, gen)) return; // 조회 사이 계정 변경
     if (!token) {
       set({ status: "idle", data: null, staleError: false });
       return;
@@ -67,10 +68,10 @@ export const useEntitlementStore = create<EntitlementState>((set, get) => ({
     });
     try {
       const data = await fetchEntitlement(token);
-      if (get().generation !== gen) return; // 계정 변경 → 폐기
+      if (isStaleGeneration(get, gen)) return; // 계정 변경 → 폐기
       set({ status: "ready", data, staleError: false });
     } catch {
-      if (get().generation !== gen) return;
+      if (isStaleGeneration(get, gen)) return;
       if (get().data) set({ staleError: true }); // 기존 값 유지 + 최신 확인 실패
       else set({ status: "error" });
     } finally {
