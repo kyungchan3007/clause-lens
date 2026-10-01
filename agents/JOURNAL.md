@@ -22,6 +22,13 @@
 - **파일**: `entitlement`(QuotaExceededScreen+test·index) · `documents`(SubscriptionPromoCard+test·RecentListScreen) · `analysis`(analysisStore·useAnalysis) · `app/index.tsx`(quota 분기) · `packages/ui/icon`(Star) · spec 0039 · TASKS(U4a).
 - **다음/주의**: 실제 구독 결제·플랜 화면=TASK-006. 마이페이지(⑤)·결과(순서3). 무료 소진 "확인"/"남은 상태 보기" 동작은 합리적 기본(사용자 피드백 시 조정).
 
+## 2026-10-01 · Claude · 홈으로 돌아가기 버튼 (#116)
+- **무엇**: 홈 route 내부 상태(담은 페이지·진행·무료 소진)에서 빈 홈으로 나갈 버튼이 없던 문제. BrandHeader에 옵셔널 **onHome**(좌측 ChevronLeft "홈으로") — hasPages면 노출, 누르면 onReset(담은 페이지·업로드·분석 초기화)→빈 홈. 빈 홈/루트에선 로고(버튼 없음).
+- **왜**: routes(profile 네이티브·recent ChevronLeft·result 닫기)는 back이 있으나 캡처 플로우 안쪽은 홈 탈출구가 없어 페이지 전부 삭제 전엔 못 돌아감(사용자 지적).
+- **검증**: BrandHeader 단위 2(onHome 유무·호출) + 게이트 ALL PASS. 라이브 육안은 재실행 시 세션 만료(카카오 로그인 벽)로 후속.
+- **파일**: `home/ui/BrandHeader.tsx`·`app/index.tsx`·home.test · spec 0040. 0039 유령 폴더(브랜치 전환 잔재) 제거.
+- **다음/주의**: routes back 스타일 통일은 후속. TASKS는 develop 머지 후 정리.
+
 ## 2026-10-01 · Claude · 홈 리디자인 보정 (TASK-U1b, #112)
 - **무엇**: 순서1(홈) 시안 보정. ① 온보딩 Hero 아이콘 ScanLine→**ShieldCheck**(네이비 `color("text")`). ② 홈 '최근있음' 인라인 카드 → **「최근 분석 N건 >」 진입 버튼**(RecentEntryButton)→기존 /recent 전체 화면. ③ DocumentRow 날짜 "오늘 HH:MM"→**상대일(오늘/어제/M·D)**·좌측 문서 아이콘→**라인 플레이스홀더**(썸네일 느낌). ④ **홈 중앙 Hero 복원**(사용자 지적 — Hero가 온보딩에서만 렌더돼 최근있음 홈이 "푸터만" 보이고 중앙 빔) → Hero를 최근있음에도 표시·ScrollView flexGrow:1 + Hero flex-1 justify-center로 **센터 배치**(시안 구조). 시뮬레이터 실측.
 - **설계=사용자 Q&A 확정**(Codex 생략): "최근은 원할 때 인터랙션으로"→진입 버튼→/recent · 날짜 상대일 · 라인 플레이스홀더 · Hero는 사용자가 보낸 Main 시안(ShieldCheck).

@@ -1,16 +1,21 @@
 import { Pressable, Text, View } from "react-native";
-import { Icon } from "@clause-lens/ui";
+import { Icon, IconButton } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
 // 홈 전용 상단 헤더 — 로고칩 + 브랜드명 + 프로필. 단일 사용처라 홈 feature에 둔다(공용 승격 X).
+// onHome: 캡처 플로우(담은 페이지·진행·무료소진) 안쪽에서 빈 홈으로 나가는 버튼. 있으면 좌측을 ChevronLeft로.
 // 프로필: 48 터치 영역 안에 38 원형 시각 요소(Codex: 38 시각 ≠ 48 터치). safe area는 라우트 소유.
-export function BrandHeader({ onProfile }: { onProfile: () => void }) {
+export function BrandHeader({ onProfile, onHome }: { onProfile: () => void; onHome?: () => void }) {
   return (
     <View className="flex-row items-center justify-between px-5 pb-1 pt-2">
       <View className="flex-row items-center gap-2">
-        <View className="h-7 w-7 items-center justify-center rounded-lg bg-primary">
-          <Icon name="ScanLine" size={15} color={color("primaryFg")} />
-        </View>
+        {onHome ? (
+          <IconButton icon="ChevronLeft" accessibilityLabel="홈으로" onPress={onHome} size={22} />
+        ) : (
+          <View className="h-7 w-7 items-center justify-center rounded-lg bg-primary">
+            <Icon name="ScanLine" size={15} color={color("primaryFg")} />
+          </View>
+        )}
         <Text className="text-lg font-extrabold text-foreground">ClauseLens</Text>
       </View>
       <Pressable
