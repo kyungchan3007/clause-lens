@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-01 · Claude · 담은 페이지 2열 썸네일 그리드 (TASK-U2b, #110)
+- **무엇**: 순서1에서 보류한 담은 페이지(②) 2열 썸네일 그리드. 드래그 엔진 `react-native-draggable-flatlist`(단일 열) → **`react-native-sortables@1.10.1` Sortable.Grid**(2열) 교체. 카드=썸네일(contain·3:4)+페이지번호+X(이미지=드래그 핸들), "+추가"=`fixed-order` 셀, 탭→전체화면 미리보기 모달(교체·삭제).
+- **착수 전 Codex 적대 토론**(grid): sortables 버전 고정(1.10.1)·게이트는 필요조건·실기기 별도 / "+추가"는 fixed-order+표시용 `(PageCell|AddCell)` 배열(DraftPage[] 오염 금지)·드롭 시 id만 / customHandle=이미지·X 핸들 밖 / 드래그만은 a11y 누락→앞·뒤 이동 액션 / aspectRatio≠메모리 최적화→썸네일 생성 / **치명: setPages 전체 교체가 stale 드롭에 삭제·교체 되돌림→reorderByIds(집합 검증), locked만으론 부족→dragging 가드**. **사용자 결정**: 탭=미리보기 모달·썸네일 지금 생성.
+- **구현**: draftStore `reorderByIds`(id 집합 일치만·불일치 no-op)·`dragging` 가드(add/remove/replace 거부)·clear 리셋 / DraftPage `thumbUri`(normalizeToJpeg가 makeThumbnail resize≤540 생성, 실패 시 localUri 폴백) / PageCard·AddCell·PagePreviewModal 신규·PageItem 삭제·draggable-flatlist 제거·X·Trash2 아이콘 추가. Modal safe-area는 모달 안 SafeAreaProvider 재감쌈.
+- **검증**: draftStore 8·PageList 스모크 1·게이트 **ALL PASS**(단일 네이티브 버전·expo-doctor 포함). **시뮬레이터 실측**: 1장·2장 그리드·+추가 wrap·탭→미리보기 모달(교체·삭제) 시안대로. **손가락 드래그 재정렬은 실기기 후속**(합성 터치로 gesture-handler 300ms 활성화 안 됨 — reorderByIds 단위+a11y로 커버).
+- **파일**: `apps/mobile/src/features/capture`(model/draftStore·types, lib/normalizeImage, ui/PageList 재작성·PageCard·AddCell·PagePreviewModal 신규·PageItem 삭제·draftStore.test·PageList.test) · `packages/ui/src/icon.tsx`(X·Trash2) · `apps/mobile/package.json`(sortables 추가·draggable-flatlist 제거) · spec 0037 · TASKS(U2b).
+- **다음/주의**: 순서3~5(결과·마이페이지·최근목록). 담은 페이지 ② 완료로 순서1(홈)도 완전. **실기기 손가락 드래그·Android 실측 후속**. 페이지 번호 배지가 문서 제목과 약간 겹침(미세).
+
 ## 2026-10-01 · Claude · UI/UX 순서2 — 분석 진행 전용 ProcessingScreen (TASK-U2, #108)
 - **무엇**: 업로드~분석 진행을 PageList 하단 인라인 → **전용 ProcessingScreen**(home). 모드별(업로드/분석/done/partial/error) 히어로·진행 블록·액션. determinate(uploading·analyzing+count)만 진행바+`progressbar`(now/max)+"M/N페이지 분석 완료" 주정보, 준비·요청은 스피너+단계텍스트(가짜 % 금지). `DocScanGraphic`(스캔 라인 Animated·reduced-motion 정적). `Notice` success tone(초록)+`ShieldCheck`. `PageList` idle 전용 축소(`AnalyzeControls`→`{onAnalyze}`). `app/index` 라우팅(idle→CaptureScreen / 그 외→ProcessingScreen)+done/partial 탈출구 `onReset`(draft clear+reset).
 - **착수 전 Codex 적대 토론 + 서버 계약 코드 확인**(order2): 핵심 — ① active만 전용 화면 쓰면 터미널 순간 UI 소실 모순 → idle 외 전부 전용 화면 ② 서버 계약: **분석=서버 job 독립 실행·클라 관찰만(취소 엔드포인트 없음)**, 업로드=FOREGROUND(닫으면 중단) → 시안 3곳이 "서버가 진실"과 충돌 ③ 큰 68%는 시간 아닌 페이지 비율 ④ indeterminate는 스피너+단계텍스트 ⑤ 늦은 응답·계정전환은 기존 runId/stateVersion 가드로 충분. **사용자 결정(AskUserQuestion): 정직 우선 — 시안 3곳 수정**(분석 버튼 "나가기"·큰 % 제거·초록 "앱 닫아도 계속"은 분석 구간만·업로드는 "앱 열어 두세요").
