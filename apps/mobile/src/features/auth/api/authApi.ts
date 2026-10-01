@@ -1,7 +1,8 @@
 // 백엔드 auth 계약(apps/api/src/modules/auth). 응답 shape는 서버 AuthResult와 일치.
 // zod contract 공유(packages/contracts)는 후속 — 지금은 최소 타입으로 시작.
+// baseUrl만 공통 client에서 공유. 커스텀 에러 메시지·무스키마 반환은 보존(동작 불변).
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+import { baseUrl } from "../../../shared/api/client";
 
 export interface SessionUser {
   id: string;
@@ -14,13 +15,6 @@ export interface AuthResult {
   accessToken: string;
   refreshToken: string;
   user: SessionUser;
-}
-
-function baseUrl(): string {
-  if (!API_BASE_URL) {
-    throw new Error("EXPO_PUBLIC_API_BASE_URL 누락 — apps/mobile/.env 확인");
-  }
-  return API_BASE_URL;
 }
 
 // 앱이 카카오 SDK로 받은 access token을 서버로 넘겨 우리 JWT 세션을 교환.
