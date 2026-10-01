@@ -1,5 +1,8 @@
+import type { ClauseRiskLevel } from "@clause-lens/contracts";
+
 // 위험조항 분석 공급자 경계(포트). 구현 = Claude(실) / Stub(개발·단위).
 // 의미 판단만 담당 — 좌표는 만들지 않고 근거 blockIds만 반환(worker가 box 매핑).
+// 위험도는 @clause-lens/contracts 단일 소스(값 불변, #131).
 
 export interface AnalyzerBlock {
   id: string;
@@ -11,7 +14,7 @@ export interface ExtractedClause {
   type: string;
   title: string;
   description: string;
-  riskLevel: "high" | "medium" | "low";
+  riskLevel: ClauseRiskLevel;
 }
 
 export interface AnalyzerResult {

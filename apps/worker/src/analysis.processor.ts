@@ -17,7 +17,7 @@ import {
   SCHEMA_VERSION,
   type WorkerConfig,
 } from "./config";
-import { AnalysisPermanentError, ValidationError } from "./lib/errors";
+import { AnalysisPermanentError, ValidationError, type WorkerErrorCode } from "./lib/errors";
 import { mapClauses } from "./lib/box-mapper";
 import { validateImage } from "./lib/image-validator";
 import { NotificationPublisher } from "./notification.publisher";
@@ -37,7 +37,7 @@ const TERMINAL = new Set(["done", "partial", "failed"]);
 
 interface FailDecision {
   retryLater: boolean; // true면 페이지 pending 유지 + job 재시도 신호
-  errorCode: string;
+  errorCode: WorkerErrorCode; // @clause-lens/contracts 기반(+스텁 전용) — drift 차단(#131)
   retryable: boolean;
 }
 
