@@ -2,7 +2,7 @@ import * as React from "react";
 import { Pressable } from "react-native";
 import { color } from "@clause-lens/tokens";
 
-import { Icon, type IconName } from "./icon";
+import { ICON_REGISTRY, type IconName } from "./icon";
 
 export type IconButtonVariant = "plain" | "tinted";
 
@@ -29,6 +29,8 @@ export function IconButton({
   disabled,
   testID,
 }: IconButtonProps) {
+  // icon은 IconName(레지스트리 키)이라 항상 유효한 컴포넌트 — 빈 버튼(null) 경로 없음.
+  const Glyph = ICON_REGISTRY[icon];
   return (
     <Pressable
       accessibilityRole="button"
@@ -42,7 +44,7 @@ export function IconButton({
         variant === "tinted" ? "bg-primary-tint" : ""
       } ${disabled ? "opacity-50" : "active:opacity-60"}`}
     >
-      <Icon name={icon} size={size} color={color(variant === "tinted" ? "primary" : "text")} />
+      <Glyph size={size} color={color(variant === "tinted" ? "primary" : "text")} strokeWidth={2} />
     </Pressable>
   );
 }
