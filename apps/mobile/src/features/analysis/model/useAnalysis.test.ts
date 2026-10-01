@@ -7,10 +7,17 @@ import {
   requestAnalysis,
   type StreamHandlers,
 } from "../api/analysisApi";
+import { HttpError } from "../../../shared/http";
 import { useAnalysis } from "./useAnalysis";
 import { useAnalysisStore } from "./analysisStore";
 
-jest.mock("../api/analysisApi");
+// 함수는 모킹하되 HttpError는 실제 공유 클래스 유지(useAnalysis의 instanceof 분기 검증용).
+jest.mock("../api/analysisApi", () => ({
+  HttpError: jest.requireActual("../../../shared/http").HttpError,
+  requestAnalysis: jest.fn(),
+  openStatusStream: jest.fn(),
+  fetchStatus: jest.fn(),
+}));
 
 const requestMock = requestAnalysis as jest.MockedFunction<typeof requestAnalysis>;
 const streamMock = openStatusStream as jest.MockedFunction<typeof openStatusStream>;
@@ -52,6 +59,28 @@ describe("useAnalysis.start", () => {
 
     expect(useAnalysisStore.getState().phase).toBe("done");
     expect(streamMock).not.toHaveBeenCalled();
+  });
+
+  it("접수 403 → 무료 횟수 없음 안내(그 외 오류와 구분)", async () => {
+    requestMock.mockRejectedValue(new HttpError(403));
+    const { result } = renderHook(() => useAnalysis());
+    await act(async () => {
+      await result.current.start("doc1", auth);
+    });
+    const s = useAnalysisStore.getState();
+    expect(s.phase).toBe("error");
+    expect(s.message).toBe("현재 사용할 수 있는 무료 분석 횟수가 없어요");
+  });
+
+  it("접수 403 외 오류(500) → 일반 실패 메시지", async () => {
+    requestMock.mockRejectedValue(new HttpError(500));
+    const { result } = renderHook(() => useAnalysis());
+    await act(async () => {
+      await result.current.start("doc1", auth);
+    });
+    const s = useAnalysisStore.getState();
+    expect(s.phase).toBe("error");
+    expect(s.message).toBe("분석 요청에 실패했어요");
   });
 
   it("진행 중이면 스트림 구독 시작", async () => {

@@ -5,17 +5,15 @@ import {
 } from "@clause-lens/contracts";
 import EventSource from "react-native-sse";
 
+import { HttpError } from "../../../shared/http";
+
 // 분석 API 클라이언트. 계약(@clause-lens/contracts)으로 응답을 런타임 검증.
 // 토큰·URL은 로그로 남기지 않는다(guardrail). SSE 토큰은 헤더로만(쿼리 금지).
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-export class HttpError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
-    this.name = "HttpError";
-  }
-}
+// 공유 HttpError 재노출(entitlement 등과 동일 클래스 → status 분기 일관).
+export { HttpError };
 
 function baseUrl(): string {
   if (!API_BASE_URL) {

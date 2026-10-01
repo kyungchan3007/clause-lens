@@ -8,6 +8,7 @@ import { Stack } from "expo-router";
 import { initializeKakaoSDK } from "@react-native-kakao/core";
 
 import { useAuthStore } from "../src/features/auth";
+import { useEntitlementSync } from "../src/features/entitlement";
 
 // 카카오 SDK는 앱 시작 시 1회 초기화(네이티브 앱 키는 client-public, env 주입).
 const kakaoNativeAppKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY;
@@ -29,6 +30,9 @@ export default function Layout() {
 function AuthGate() {
   const status = useAuthStore((s) => s.status);
   const restore = useAuthStore((s) => s.restore);
+
+  // 인증·분석 변화에 맞춰 무료 잔량 동기화(기능 간 결합을 이 상위 레이어 한 곳에).
+  useEntitlementSync();
 
   useEffect(() => {
     restore();

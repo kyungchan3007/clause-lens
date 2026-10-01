@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-01 · Claude · 무료 분석 잔량 표시 + 403 흐름 (앱, TASK-005, #94)
+- **무엇**: 서버 집행(#90)의 **앱 표시**. `features/entitlement/`(api·store·ui) — ProfileScreen "내 이용 · 남은 무료 분석 N회"(서버 값 표시만) + 분석 접수 **403**→"현재 사용할 수 있는 무료 분석 횟수가 없어요"(404·409·네트워크 구분) + `GET /me/entitlement` 조회.
+- **착수 전 Codex 설계 토론**(사용자 워크플로우): 핵심 반영 — ① **잔량은 접수(예약) 시점에도 변함** → 갱신 트리거에 접수·terminal·403·포커스 ② 403 문구 완화(예약 때문일 수 있어 "모두 사용" 금지) ③ **계정·세션 격리**(generation guard로 늦은 응답 폐기, 토큰 갱신과 계정 변경 구분) ④ 겹친 refresh 직렬화(pending) ⑤ 로딩/실패 표시(0 대체 금지) ⑥ 단위+e2e 수용조건.
+- **아키텍처**: 기능 간 결합을 상위 동기화 훅 `useEntitlementSync`(루트 _layout)에 모음 — analysis가 entitlement를 import하지 않음. HttpError를 `shared/http`로 승격(analysis·entitlement 공유).
+- **검증**: 모바일 유닛 **81 PASS**(신규 17 — 응답 격리·겹친 refresh·로딩/실패·403 분기·zod) · 전체 게이트 **16/16 ALL PASS**. e2e: 표시 자동(profile.yaml S21), 403·계정전환 실측은 백엔드 seeding 후속.
+- **파일**: `apps/mobile/src/features/entitlement/*`, `shared/http.ts`, `analysis/api·model`(403·HttpError), `profile/ui/ProfileScreen`, `app/_layout`, `.maestro`(S21), spec 폴더 `0029-app-entitlement-display/`, TASKS·Notion(03 설계서).
+- **다음/주의**: 구독 상태 표시·CTA·결제 = TASK-006. 서버 403 구조화 코드(계약 보강)·e2e 403/계정전환 실측은 후속. 잔량 stale 가능성(서버가 terminal 전 확정 안 하면) → 포커스·terminal refresh로 보정.
+
 ## 2026-10-01 · Claude · entitlement 설계 토론(Codex) + 실 Postgres 실측 보완 (#90)
 - **무엇**: 착수 전 못 한 설계 토론을 사후에 Codex와(`codex exec`) 진행. 로컬 Postgres 기동 → 통합 테스트 13/13 PASS로 증거를 대고, Codex 적대 리뷰 + PR #91 AI 봇(P1 3건) 교차 검토해 **보완 4건 적용**.
 - **보완**: ① settle 멱등 계약 깨짐(실측 consumed=2) → **원자적 조건부 전이**(`UPDATE … WHERE status='reserved' RETURNING`)로 1회만. ② terminal 후 재분석 경쟁(2차 job→2차 차감, Codex 발견) → `createAnalysisJob`에 **문서 FOR UPDATE 잠금+기존 job 재확인**. ③ 무결성 CHECK(음수·초과 거부). ④ 과장 주석 교정.
