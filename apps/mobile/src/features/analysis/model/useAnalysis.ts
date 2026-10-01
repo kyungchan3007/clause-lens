@@ -7,6 +7,7 @@ import {
   openStatusStream,
   requestAnalysis,
 } from "../api/analysisApi";
+import { createRunGuard } from "../../../shared/lib/runGuard";
 import { useAnalysisStore, type AnalysisPhase } from "./analysisStore";
 
 // 호출 직전 토큰·소유자 취득(장기 캡처 금지) — upload의 getAuth 재사용 가능.
@@ -23,6 +24,13 @@ let streamClose: (() => void) | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let reopenTimer: ReturnType<typeof setTimeout> | null = null;
 
+// 실행 세대 가드 — stale 콜백/취소 무효화(useUpload와 공통 구현).
+// teardown(타이머·스트림 자원 정리)은 feature 자원이라 아래에 그대로 둔다.
+const runGuard = createRunGuard(
+  () => useAnalysisStore.getState().runId,
+  (runId) => useAnalysisStore.getState().set({ runId }),
+);
+
 function teardown(): void {
   streamClose?.();
   streamClose = null;
@@ -34,10 +42,6 @@ function teardown(): void {
     clearTimeout(reopenTimer);
     reopenTimer = null;
   }
-}
-
-function alive(runId: number): boolean {
-  return useAnalysisStore.getState().runId === runId;
 }
 
 function phaseFromStatus(s: AnalysisStatusResponse): AnalysisPhase {
@@ -59,7 +63,7 @@ function isTerminal(p: AnalysisPhase): boolean {
 
 // 서버 상태를 store에 반영 — 같은 job의 큰 stateVersion만 적용(역순 도착 방지).
 function applyStatus(status: AnalysisStatusResponse, runId: number): void {
-  if (!alive(runId)) return;
+  if (!runGuard.isAlive(runId)) return;
   const st = useAnalysisStore.getState();
   if (st.jobId && status.jobId !== st.jobId) return;
   if (status.stateVersion < st.stateVersion) return;
@@ -91,13 +95,13 @@ function beginWatch(documentId: string, token: string, runId: number): void {
       onError: () => {
         streamClose?.();
         streamClose = null;
-        if (!alive(runId)) return;
+        if (!runGuard.isAlive(runId)) return;
         // 재연결: 백오프 후 현재 상태 재fetch(놓친 이벤트 보정) + 재오픈.
         reopenTimer = setTimeout(() => {
-          if (!alive(runId)) return;
+          if (!runGuard.isAlive(runId)) return;
           void fetchStatus(token, documentId)
             .then((s) => {
-              if (!alive(runId)) return;
+              if (!runGuard.isAlive(runId)) return;
               applyStatus(s, runId);
               if (!isTerminal(useAnalysisStore.getState().phase)) open();
             })
@@ -111,7 +115,7 @@ function beginWatch(documentId: string, token: string, runId: number): void {
   open();
 
   pollTimer = setInterval(() => {
-    if (!alive(runId)) {
+    if (!runGuard.isAlive(runId)) {
       teardown();
       return;
     }
@@ -127,12 +131,12 @@ export function useAnalysis() {
   const start = useCallback(
     async (documentId: string, getAuth: GetAnalysisAuth): Promise<void> => {
       teardown();
-      const runId = useAnalysisStore.getState().runId + 1;
+      const runId = runGuard.nextRun();
       useAnalysisStore.getState().reset();
       useAnalysisStore.getState().set({ runId, documentId, phase: "requesting" });
 
       const auth = await getAuth();
-      if (!alive(runId)) return;
+      if (!runGuard.isAlive(runId)) return;
       if (!auth) {
         useAnalysisStore
           .getState()
@@ -142,13 +146,13 @@ export function useAnalysis() {
 
       try {
         const status = await requestAnalysis(auth.accessToken, documentId);
-        if (!alive(runId)) return;
+        if (!runGuard.isAlive(runId)) return;
         applyStatus(status, runId);
         if (!isTerminal(phaseFromStatus(status))) {
           beginWatch(documentId, auth.accessToken, runId);
         }
       } catch (e) {
-        if (!alive(runId)) return;
+        if (!runGuard.isAlive(runId)) return;
         // 접수 403 = 가용 무료 횟수 없음(소유권 실패=404·업로드 전=409). 예약 때문일 수도 있어
         // "모두 사용"으로 단정하지 않는다. 잔량 갱신은 상위 동기화 훅이 phase=error에서 수행.
         const isQuota = e instanceof HttpError && e.status === 403;
@@ -165,10 +169,10 @@ export function useAnalysis() {
   );
 
   const cancel = useCallback((): void => {
-    const runId = useAnalysisStore.getState().runId + 1;
     teardown();
     useAnalysisStore.getState().reset();
-    useAnalysisStore.getState().set({ runId });
+    // reset()은 runId를 보존하므로 이후 bump = (기존 runId)+1 — 원래 순서와 결과 동일.
+    runGuard.bumpRun();
   }, []);
 
   return { start, cancel };
