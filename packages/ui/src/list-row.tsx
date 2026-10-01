@@ -1,6 +1,8 @@
 import * as React from "react";
 import { Pressable, Text, View } from "react-native";
 
+import { cardShadowStyle } from "./shadow";
+
 export type ListRowVariant = "card" | "flat";
 
 export interface ListRowProps {
@@ -13,6 +15,8 @@ export interface ListRowProps {
   onPress?: () => void;
   disabled?: boolean;
   variant?: ListRowVariant;
+  // card variant에 옅은 그림자(홈·목록 raised). 소비자가 명시 — ListRow 기본은 평면.
+  elevated?: boolean;
   accessibilityLabel?: string;
   accessibilityHint?: string;
 }
@@ -33,9 +37,11 @@ export function ListRow({
   onPress,
   disabled,
   variant = "card",
+  elevated,
   accessibilityLabel,
   accessibilityHint,
 }: ListRowProps) {
+  const shadowStyle = elevated && variant === "card" ? cardShadowStyle : undefined;
   const body = (
     <>
       {leading != null ? <View className="flex-shrink-0">{leading}</View> : null}
@@ -56,7 +62,11 @@ export function ListRow({
   const base = `flex-row items-center gap-3 ${VARIANT[variant].container}`;
 
   if (!onPress) {
-    return <View className={base}>{body}</View>;
+    return (
+      <View className={base} style={shadowStyle}>
+        {body}
+      </View>
+    );
   }
   return (
     <Pressable
@@ -66,6 +76,7 @@ export function ListRow({
       accessibilityHint={accessibilityHint}
       disabled={disabled}
       onPress={onPress}
+      style={shadowStyle}
       className={`${base} ${disabled ? "opacity-50" : "active:opacity-70"}`}
     >
       {body}

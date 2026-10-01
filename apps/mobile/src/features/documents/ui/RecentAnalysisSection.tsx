@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { Icon } from "@clause-lens/ui";
+import { Icon, SectionHeader } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
@@ -24,20 +24,15 @@ export function RecentAnalysisSection({
 
   return (
     <View className="gap-2.5 px-5 pt-2">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-base font-bold text-foreground">최근 분석</Text>
-        {status === "ready" && items.length > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={onSeeAll}
-            hitSlop={8}
-            className="flex-row items-center active:opacity-60"
-          >
-            <Text className="text-sm font-medium text-foreground-muted">모두 보기</Text>
-            <Icon name="ChevronRight" size={15} color={color("textMuted")} />
-          </Pressable>
-        ) : null}
-      </View>
+      <SectionHeader
+        label="최근 분석"
+        variant="title"
+        action={
+          status === "ready" && items.length > 0
+            ? { label: "모두 보기", onPress: onSeeAll }
+            : undefined
+        }
+      />
 
       {status === "loading" ? (
         <View className="items-center py-6">
