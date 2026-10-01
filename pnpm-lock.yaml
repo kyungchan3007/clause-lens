@@ -217,6 +217,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.700.0
         version: 3.1136.0
+      '@clause-lens/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@clause-lens/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -296,6 +299,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@clause-lens/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@prisma/client':
         specifier: ^6.1.0
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)

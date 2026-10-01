@@ -1,3 +1,4 @@
+import type { ClauseRisk } from "./analysis-ops";
 import { PrismaClient, Prisma } from "../generated/client";
 
 // 분석 기록 재열람 — 문서 목록 일괄 조회(0030). api가 GET /me/documents에서 사용.
@@ -100,7 +101,7 @@ export async function listRecentDocuments(
 
     // 위험 집계: 공개 결과(done 페이지)의 (pageId, revision)에 귀속된 Clause만 — 다른 revision/실패 제외.
     const risks = await prisma.$queryRaw<
-      { jobId: string; riskLevel: "high" | "medium" | "low"; cnt: bigint }[]
+      { jobId: string; riskLevel: ClauseRisk; cnt: bigint }[]
     >`
       SELECT pa."jobId" AS "jobId", c."riskLevel" AS "riskLevel", count(*) AS "cnt"
       FROM "PageAnalysis" pa

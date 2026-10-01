@@ -13,6 +13,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
     "@aws-sdk/client-s3": "^3.700.0",
+    "@clause-lens/contracts": "workspace:*",
     "@clause-lens/db": "workspace:*",
     "@clause-lens/infra": "workspace:*",
     "@google-cloud/vision": "^6.1.1",

@@ -1,5 +1,11 @@
+import type { Box, ClauseRiskLevel } from "@clause-lens/contracts";
+
 import { PrismaClient, Prisma } from "../generated/client";
 import { settleFreeAnalysis } from "./entitlement-ops";
+
+// Box·위험도 유니온은 @clause-lens/contracts 단일 소스를 재노출(값·shape 불변, drift 차단, #131).
+export type { Box } from "@clause-lens/contracts";
+export type ClauseRisk = ClauseRiskLevel;
 
 // 분석 파이프라인의 교차 테이블 상태 전이 — api·worker 공유 단일 소스.
 // 설계: agents/intent/specs/0020-analysis-request-polling.md §③·§⑤, 0021-ocr-risk-analysis.md §③·§⑤
@@ -27,12 +33,7 @@ export interface ConfirmResult {
 }
 
 // ── OCR·분석 결과 타입 (0021) ──
-export interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+// Box는 상단에서 @clause-lens/contracts 재노출.
 export interface OcrBlock {
   id: string;
   text: string;
@@ -57,7 +58,6 @@ export interface PersistedOcr {
   orientation: string;
   blocks: OcrBlock[];
 }
-export type ClauseRisk = "high" | "medium" | "low";
 export interface ClauseInput {
   order: number;
   type: string;

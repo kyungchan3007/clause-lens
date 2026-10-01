@@ -40,7 +40,8 @@ export const analysisErrorCodeSchema = z.enum(ANALYSIS_ERROR_CODES);
 
 // ── 위험 조항(Clause Result) 계약 (0021 / TASK-004) ──
 export const clauseRiskLevelSchema = z.enum(["high", "medium", "low"]);
-export const clauseTypeSchema = z.enum([
+// 조항 타입 9종 — 앱·API·worker 공유 단일 소스(값·순서 고정; DB enum 저장과 문자열 일치).
+export const CLAUSE_TYPES = [
   "auto_renewal", // 자동 연장
   "penalty", // 위약금·지연 손해
   "termination_restriction", // 해지·환불 제한
@@ -50,7 +51,8 @@ export const clauseTypeSchema = z.enum([
   "privacy_broad", // 광범위 개인정보 수집·제3자 제공
   "jurisdiction", // 관할·중재 강제
   "other", // 미분류
-]);
+] as const;
+export const clauseTypeSchema = z.enum(CLAUSE_TYPES);
 // 원본(EXIF 정규화 upright) 픽셀 좌표. 화면 좌표 변환은 앱(4b).
 export const boxSchema = z.object({
   x: z.number().int().min(0),
