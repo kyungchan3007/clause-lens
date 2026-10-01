@@ -8,6 +8,10 @@ import { color as tokenColor } from "@clause-lens/tokens";
 const map = Lucide as unknown as Record<string, React.ComponentType<any>>;
 
 export const ICON_REGISTRY = {
+  Camera: map.Camera,
+  Images: map.Images,
+  ScanLine: map.ScanLine,
+  Sparkles: map.Sparkles,
   ChevronLeft: map.ChevronLeft,
   ChevronRight: map.ChevronRight,
   FileClock: map.FileClock,
