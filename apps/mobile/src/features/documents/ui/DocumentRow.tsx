@@ -32,8 +32,13 @@ export function DocumentRow({
     .join(", ");
 
   // 썸네일 자리 — 연한 가로 라인 플레이스홀더(문서 느낌). 실제 이미지 썸네일은 후속.
+  // 장식 요소 — 의미는 행 전체 accessibilityLabel(a11yLabel)이 전달하므로 스크린리더에서 숨김.
   const leading = (
-    <View className="h-[60px] w-12 justify-center gap-[4px] rounded-xl border border-border bg-surface-alt px-2">
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      className="h-[60px] w-12 justify-center gap-[4px] rounded-xl border border-border bg-surface-alt px-2"
+    >
       <View className="h-[3px] w-full rounded-full bg-border" />
       <View className="h-[3px] w-4/5 rounded-full bg-border" />
       <View className="h-[3px] w-3/5 rounded-full bg-border" />

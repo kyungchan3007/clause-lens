@@ -42,6 +42,11 @@ describe("completedAtLabel", () => {
       "9/28",
     );
   });
+
+  it("잘못된 ISO → 빈 문자열(방어, 'NaN/NaN' 금지)", () => {
+    expect(completedAtLabel("not-a-date", now)).toBe("");
+    expect(completedAtLabel("", now)).toBe("");
+  });
 });
 
 describe("riskSummary", () => {

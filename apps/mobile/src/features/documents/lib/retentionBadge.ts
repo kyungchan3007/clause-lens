@@ -18,6 +18,7 @@ export function retentionBadge(retainUntilIso: string, now: Date = new Date()): 
 // 완료일 상대 표기: 오늘 · 어제 · M/D (시안 — 시간 미표시).
 export function completedAtLabel(completedAtIso: string, now: Date = new Date()): string {
   const d = new Date(completedAtIso);
+  if (Number.isNaN(d.getTime())) return ""; // 잘못된 ISO → 'NaN/NaN' 대신 빈 문자열(방어)
   const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const dayDiff = Math.round((startOf(now) - startOf(d)) / DAY_MS);
   if (dayDiff <= 0) return "오늘";
