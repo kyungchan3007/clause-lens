@@ -58,6 +58,14 @@
 > 각 태스크의 **무엇/행동**은 연결된 feature 정의를 따르고, 별도 설계 판단이 필요하면
 > [intent/specs/](../intent/specs/)에 spec을 추가합니다(TASK-001은 spec 0001 존재).
 
+## 리팩토링 태스크 (마크업·로직 분리 — 커스텀 훅)
+
+| id | 제목 | 정의 | spec | owner | status | depends |
+| --- | --- | --- | --- | --- | --- | --- |
+| TASK-R1 | 홈 분석 세션 로직 커스텀 훅 분리 (app/index.tsx) | 라우트 얇게(frontend-architecture) | [0041](../intent/specs/0041-home-session-hook/) | Claude | **in-progress** (#118 — widgets/home-session · 단위·게이트 PASS · 로그인 후 e2e 확인 남음) | – |
+| TASK-R2 | 결과 route 판정 로직 커스텀 훅 분리 (app/result.tsx) | 〃 | – | – | todo (#119) | TASK-R1 |
+| TASK-R3 | 프로필 화면 로직 커스텀 훅 분리 (ProfileScreen) | 〃 | – | – | todo (#120) | – |
+
 ## 하네스·거버넌스 태스크
 
 | id | 제목 | 정의 | spec | owner | status | depends |
