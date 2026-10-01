@@ -42,5 +42,5 @@ features/profile/
 
 ## 검증 결과 (2026-10-02)
 - 단위: `providerLabelOf` 3 · `useProfile` 6 → 9 추가(profile 전체 11) PASS. 타입체크 PASS.
-- 게이트 `checks.sh`: Task records(folder) 외 전 항목 PASS. 실패 원인은 로컬 잔재 폴더 `specs/0042-result-source-hook/`(#119 브랜치의 git 미추적 trace.auto.jsonl만 남음) — 코드와 무관, 사용자 정리 후 재실행 필요.
+- 게이트 `checks.sh`: Task records(folder) 외 전 항목 PASS. 실패 원인은 로컬 잔재 폴더 `specs/0042-result-source-hook/`(#119 브랜치의 git 미추적 trace.auto.jsonl만 남음) — 코드와 무관 → 사용자가 폴더 삭제 후 재실행 **ALL PASS**(모바일 단위 190).
 - e2e(Maestro, 로그인 상태 시뮬): `profile`(이름·카카오 라벨·잔량·FAQ 펼침/접힘·1:1 문의 준비 중) · `logout-cancel`(확인 다이얼로그 → 취소 → 프로필 유지) **둘 다 PASS**. 원본 yaml의 홈 대기 문구("계약서를 담아주세요")가 리디자인 전이라 대기 줄만 "계약서, 찍기만 하세요"로 바꾼 임시 사본으로 실행. `logout.yaml`은 실제 로그아웃이라 미실행.

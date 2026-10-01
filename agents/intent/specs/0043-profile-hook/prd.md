@@ -22,5 +22,5 @@
 - [x] `useProfile` 추출, `ProfileScreen`은 렌더 전용(스토어 직접 구독·Alert·useFocusEffect 없음).
 - [x] `providerLabelOf` 순수 함수 + 단위 테스트(KAKAO·미등록 코드·없음).
 - [x] `useProfile` 훅 단위 테스트(포커스 시 잔량 재조회·로그아웃 확인 후에만 signOut·문의 준비중 안내·사용자 정보).
-- [ ] 기존 단위 테스트 전부 통과 + 게이트 PASS. (단위·타입·빌드 등 전 항목 PASS, **Task records만 FAIL** — 브랜치 전환 잔재 `specs/0042-result-source-hook/`(git 미추적 trace.auto.jsonl만 존재) 때문. 이동이 권한 검사에 막혀 사용자 정리 대기 → 정리 후 재실행)
+- [x] 기존 단위 테스트 전부 통과 + 게이트 PASS. (잔재 0042 폴더를 사용자가 정리한 뒤 재실행 ALL PASS)
 - [x] e2e: 시나리오 변경 없음, profile·logout-cancel 회귀 확인. (홈 대기 문구만 현재 UI로 바꾼 임시 사본으로 실행 — 원본 yaml 문구 동기화는 별도 작업)

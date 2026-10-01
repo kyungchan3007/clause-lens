@@ -13,3 +13,4 @@
 - 타입체크 FAIL: 서버 `SessionUser.displayName`은 `string | null`인데 훅 반환을 `string | undefined`로 좁혀 잡음 → `string | null`로 넓힘 + null 테스트 추가. (jest는 타입 검사를 안 해서 단위는 통과했었음)
 - 루트에서 `--rootDir`로 jest 실행 시 useProfile 테스트 FAIL로 보였으나 앱 폴더 기준 실행은 PASS — 실행 설정 차이(오탐), 게이트 단위 테스트도 PASS.
 - 게이트 Task records FAIL: 브랜치 전환 잔재 `specs/0042-result-source-hook/`(trace.auto.jsonl만) — 0039 유령 폴더와 같은 현상. scratchpad로 이동 시도가 권한 검사(로컬 파괴)에 막힘 → 사용자 정리 대기.
+- 사용자가 `rm -r specs/0042-result-source-hook` 실행(실제 spec은 #119 브랜치에 커밋돼 있음) → 게이트 ALL PASS.
