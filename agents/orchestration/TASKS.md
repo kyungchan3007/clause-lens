@@ -70,7 +70,7 @@
 
 | id | 제목 | 정의 | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-E1 | Maestro 시나리오 문구를 홈 리디자인 이후 UI로 동기화 | [SCENARIOS.md](../../apps/mobile/.maestro/SCENARIOS.md) | [0043](../intent/specs/0043-maestro-home-copy-sync/) | Claude | **done** (#123 — 17 yaml + SCENARIOS 동기화 · 시뮬 10개 PASS · 게이트 PASS) | TASK-U1b |
+| TASK-E1 | Maestro 시나리오 문구를 홈 리디자인 이후 UI로 동기화 | [SCENARIOS.md](../../apps/mobile/.maestro/SCENARIOS.md) | [0044](../intent/specs/0044-maestro-home-copy-sync/) | Claude | **in-progress** (#123 — 17 yaml + SCENARIOS 동기화 · 시뮬 10개 PASS · 게이트 PASS · PR 리뷰 대기) | TASK-U1b |
 
 ## 하네스·거버넌스 태스크
 

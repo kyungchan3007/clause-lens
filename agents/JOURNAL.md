@@ -19,7 +19,7 @@
 - **왜**: 홈 리디자인(#106·#107·#112) 때 시나리오 트리거 누락으로 로그인 이후 시나리오 전부 깨져 있었음(#119 중 발견).
 - **검증**: 시뮬 10개 PASS(session-restore·capture-empty·recent·profile·faq-multi·logout-cancel·profile-back·capture-add-page·capture-remove-page(피커 탭 수동)·capture-gate). 게이트 **ALL PASS**.
 - **이번에 드러난 공백**: upload 실측 중 access 만료(TTL 15분) → "로그인이 필요해요." — 앱에 토큰 자동 refresh가 없어 실행 15분 뒤 인증 요청 401·재실행 시 로그아웃. yaml 무관, 별도 이슈 필요. 문구 기반 앵커는 문구 변경 시 다시 깨짐(testID 도입 검토). `pnpm issue-sync`가 폴더 spec 미지원이라 이슈 체크박스는 수동 동기화.
-- **파일**: `apps/mobile/.maestro/*.yaml`·`SCENARIOS.md` · spec 0043 · TASKS(E1).
+- **파일**: `apps/mobile/.maestro/*.yaml`·`SCENARIOS.md` · spec 0044 · TASKS(E1).
 - **다음/주의**: upload·analysis·result는 카카오 재로그인 + 무료 횟수 있는 계정으로 수동 실측 필요. login·login-failure·logout·permission-denied 수동. Notion 미기록(사용자 지시).
 
 ## 2026-10-02 · Claude · 홈 분석 세션 로직 커스텀 훅 분리 (#118)
