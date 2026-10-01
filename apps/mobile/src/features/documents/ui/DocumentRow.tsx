@@ -63,6 +63,7 @@ export function DocumentRow({
   return (
     <ListRow
       variant="card"
+      elevated
       title={item.label}
       supporting={supporting}
       leading={leading}

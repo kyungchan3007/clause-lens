@@ -5,6 +5,7 @@ const semantic = require("./semantic.js");
 const { fontFamily, fontSize, fontWeight, lineHeight, radius } = require("./typography.js");
 const { ROLES, cssVarName, cssVars } = require("./theme-vars.js");
 const { color } = require("./color.js");
+const shadow = require("./shadow.js");
 
 module.exports = {
   cobalt,
@@ -23,4 +24,5 @@ module.exports = {
   ROLES,
   cssVarName,
   cssVars, // cssVars("light") → { "--cl-...": hex } (루트 vars() 입력)
+  shadow, // { card: { ios, android } } — 그림자 디자인 값(ui 어댑터가 플랫폼 변환)
 };

@@ -46,3 +46,10 @@ export const ROLES: SemanticRole[];
 export function cssVarName(role: SemanticRole): string;
 export function cssVars(themeName: "light" | "dark"): Record<string, string>;
 export function color(role: SemanticRole): string;
+
+// 그림자 디자인 값(ui 어댑터가 플랫폼 변환, 0035)
+export interface ShadowSpec {
+  ios: { shadowColor: string; shadowOpacity: number; shadowRadius: number; shadowOffset: { width: number; height: number } };
+  android: { elevation: number };
+}
+export const shadow: { card: ShadowSpec };

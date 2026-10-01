@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
-import { View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { IconButton } from "@clause-lens/ui";
+import { Notice } from "@clause-lens/ui";
+import { BrandHeader, Hero, HowItWorks } from "../src/features/home";
+import { FreeQuotaChip } from "../src/features/entitlement";
 
-import { CaptureScreen, useDraftStore } from "../src/features/capture";
+import { CaptureCTA, CaptureScreen, useDraftStore } from "../src/features/capture";
 import {
   useUpload,
   useUploadStore,
@@ -13,7 +15,7 @@ import {
 } from "../src/features/upload";
 import { useAnalysis, useAnalysisStore } from "../src/features/analysis";
 import { getAccessToken, useAuthStore } from "../src/features/auth";
-import { RecentAnalysisSection } from "../src/features/documents";
+import { RecentAnalysisSection, useDocumentsStore } from "../src/features/documents";
 
 const UPLOAD_ACTIVE = ["presigning", "uploading", "confirming"];
 
@@ -21,7 +23,14 @@ const UPLOAD_ACTIVE = ["presigning", "uploading", "confirming"];
 export default function Page() {
   const router = useRouter();
   const setLocked = useDraftStore((s) => s.setLocked);
+  const hasPages = useDraftStore((s) => s.pages.length > 0);
   const userId = useAuthStore((s) => s.user?.id);
+
+  // 홈 4상태 계산: 담은 페이지 / 최근 0건(온보딩) / 최근 있음 / 최근 로딩·실패.
+  const docStatus = useDocumentsStore((s) => s.status);
+  const docCount = useDocumentsStore((s) => s.items.length);
+  // 온보딩은 "최근 조회 완료 & 0건"일 때만 — 로딩·실패를 0건으로 오인하지 않는다.
+  const onboarding = !hasPages && docStatus === "ready" && docCount === 0;
 
   const { start, retry, cancel } = useUpload();
   const uploadPhase = useUploadStore((s) => s.phase);
@@ -158,37 +167,55 @@ export default function Page() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <View className="flex-row items-center justify-end px-2 py-1">
-        <IconButton
-          icon="User"
-          accessibilityLabel="마이페이지"
-          onPress={() => router.push("/profile")}
+      <BrandHeader onProfile={() => router.push("/profile")} />
+      {hasPages ? (
+        <CaptureScreen
+          quota={<FreeQuotaChip />}
+          analyze={{
+            phase: m.phase,
+            sentCount: m.sentCount,
+            totalCount: m.totalCount,
+            message: m.message,
+            onAnalyze: () => void start(snapshots(), getAuth),
+            onRetry,
+            onCancel,
+            onViewResult: () => {
+              if (documentId) {
+                router.push({ pathname: "/result", params: { documentId } });
+              }
+            },
+          }}
         />
-      </View>
-      <CaptureScreen
-        emptyExtra={
-          <RecentAnalysisSection
-            onOpen={(id) =>
-              router.push({ pathname: "/result", params: { documentId: id } })
-            }
-            onSeeAll={() => router.push("/recent")}
-          />
-        }
-        analyze={{
-          phase: m.phase,
-          sentCount: m.sentCount,
-          totalCount: m.totalCount,
-          message: m.message,
-          onAnalyze: () => void start(snapshots(), getAuth),
-          onRetry,
-          onCancel,
-          onViewResult: () => {
-            if (documentId) {
-              router.push({ pathname: "/result", params: { documentId } });
-            }
-          },
-        }}
-      />
+      ) : (
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 28 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="px-5 pb-1 pt-1">
+            <FreeQuotaChip />
+          </View>
+          {onboarding ? <Hero /> : null}
+          <View className="px-5 pt-3">
+            <CaptureCTA />
+          </View>
+          {onboarding ? (
+            <HowItWorks />
+          ) : (
+            <RecentAnalysisSection
+              onOpen={(id) => router.push({ pathname: "/result", params: { documentId: id } })}
+              onSeeAll={() => router.push("/recent")}
+            />
+          )}
+          <View className="px-5 pt-5">
+            <Notice tone="neutral" icon="Info">
+              {onboarding
+                ? "분석 결과는 참고용이며 법률 자문을 대체하지 않아요."
+                : "분석 결과는 7일 동안 보관돼요. 계속 보관하려면 구독이 필요해요."}
+            </Notice>
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

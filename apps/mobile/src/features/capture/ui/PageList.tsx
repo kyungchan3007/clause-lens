@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
 import { Button, Icon } from "@clause-lens/ui";
@@ -75,7 +76,8 @@ function statusLabel(a: AnalyzeControls): string | null {
   }
 }
 
-export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
+// quota: 하단 바에 끼울 잔량 표시(entitlement). app 레이어가 주입(capture는 entitlement를 모른다).
+export function PageList({ analyze, quota }: { analyze?: AnalyzeControls; quota?: ReactNode }) {
   const pages = useDraftStore((s) => s.pages);
   const setPages = useDraftStore((s) => s.setPages);
   const locked = useDraftStore((s) => s.locked);
@@ -85,7 +87,7 @@ export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
   const label = analyze ? statusLabel(analyze) : null;
 
   return (
-    <View className="flex-1 px-4 pt-3">
+    <View className="flex-1 px-4 pt-1">
       <DraggableFlatList
         data={pages}
         keyExtractor={(p) => p.id}
@@ -94,6 +96,12 @@ export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
           <PageItem page={item} drag={drag} isActive={isActive} />
         )}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View className="mb-1 flex-row items-end justify-between">
+            <Text className="text-base font-bold text-foreground">담은 페이지 {pages.length}장</Text>
+            <Text className="text-xs text-foreground-muted">길게 눌러 순서 변경</Text>
+          </View>
+        }
         ListFooterComponent={
           <Pressable
             onPress={() => captureToDraft("library")}
@@ -106,18 +114,21 @@ export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
           </Pressable>
         }
       />
-      <View className="py-3">
+      <View className="border-t border-border py-3">
+        {/* 잔량 안내는 분석 대기(idle)에서만 — 진행/완료 중엔 상태 라벨에 집중. */}
+        {quota && !active && !label ? (
+          <View className="mb-2 flex-row items-center justify-between">
+            {quota}
+            <Text className="text-xs text-foreground-muted">완료 시 1회 차감</Text>
+          </View>
+        ) : null}
         {label ? (
           <Text
             className={`mb-2 text-center text-xs ${analyze?.phase === "error" ? "text-danger" : "text-foreground-muted"}`}
           >
             {label}
           </Text>
-        ) : (
-          <Text className="mb-2 text-center text-xs text-foreground-muted">
-            끌어서 순서 변경 · 탭해서 교체
-          </Text>
-        )}
+        ) : null}
 
         {analyze && PROGRESS_PHASES.includes(analyze.phase) && analyze.totalCount > 0 ? (
           <View

@@ -9,15 +9,17 @@ import { PageList, type AnalyzeControls } from "./PageList";
 export function CaptureScreen({
   analyze,
   emptyExtra,
+  quota,
 }: {
   analyze?: AnalyzeControls;
   emptyExtra?: ReactNode;
+  quota?: ReactNode;
 }) {
   const hasPages = useDraftStore((s) => s.pages.length > 0);
 
   return (
     <View className="flex-1 bg-background">
-      {hasPages ? <PageList analyze={analyze} /> : <EmptyState extra={emptyExtra} />}
+      {hasPages ? <PageList analyze={analyze} quota={quota} /> : <EmptyState extra={emptyExtra} />}
     </View>
   );
 }

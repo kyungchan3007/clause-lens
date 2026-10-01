@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-10-01 · Claude · UI/UX 순서1 — 홈 화면 리디자인 (TASK-U1, #106)
+- **무엇**: 확정 홈 시안대로 홈 리디자인(4커밋). ① BrandHeader(로고칩+타이틀+48터치 안 38 프로필)·`FreeQuotaChip`(entitlement, 상태 분기)·공용 `Notice`·Badge `dot`. ② **홈 4상태 분기**(페이지 담음 / 최근0건 온보딩 Hero+HowItWorks+Notice / 최근있음 CTA+최근+Notice / 최근 로딩·실패)·`CaptureCTA` 추출. ③ 최근 섹션 `SectionHeader(title+action)` + **card shadow**(tokens 값+ui 어댑터, DocumentRow 공통→홈·/recent). ④ 페이지 담음 chrome(헤더·하단 바 잔량 슬롯, 그리드 보류).
+- **착수 전 Codex 설계 토론**(order1): 핵심 반영 — Chip 신설 반대(Badge dot+FreeQuotaChip 도메인) · BrandHeader/Hero/HowItWorks 홈 전용(단일 사용처)·Notice만 공용 · **38 시각≠48 터치** · **PageList는 세로 드래그 리스트(그리드 아님)** → 그리드 보류 · shadow ListRow 자동 금지→DocumentRow 명시 공통 · **홈 4상태 계약**(로딩·실패를 0건 온보딩으로 오인 금지) · busy를 취소 버튼에 연결 금지 · 세로 드래그를 세로 ScrollView로 안 감쌈. 사용자 결정: 그리드 보류·shadow 공통.
+- **검증**: ui 유닛 **27** · mobile 유닛 **125**(FreeQuotaChip 상태 5·home 3) · 전체 게이트 **ALL PASS**. **로그인 이후 홈 4상태·shadow(iOS/Android)·큰 글자 육안 실측은 후속**(세션 만료·단위/게이트 커버).
+- **파일**: `packages/tokens`(shadow.card)·`packages/ui`(notice·shadow 어댑터·Badge dot·ListRow elevated·icon 레지스트리 Camera 등) · `apps/mobile/src/features/home`(BrandHeader·Hero·HowItWorks 신규) · entitlement(FreeQuotaChip) · capture(CaptureCTA·PageList chrome·CaptureScreen quota) · documents(DocumentRow elevated·RecentAnalysisSection SectionHeader) · `app/index.tsx`(4상태) · spec 0035 · TASKS(U1).
+- **다음/주의**: 순서2~5(분석진행·결과·마이페이지·최근목록 리디자인). shadow 공통이라 **/recent(순서5)도 raised** — 그 화면 실측 시 확인. 썸네일 그리드는 별도 이슈(드래그 엔진). 로그인 후 홈 육안 실측.
+
 ## 2026-10-01 · Claude · UI/UX 순서0b-2 — Button·IconButton·SectionHeader·EmptyState + semantic.light 정리 (TASK-U0b2, #101)
 - **무엇**: 공통 컴포넌트 2단계. `packages/ui`에 **Button 재작성**(스타일 표면 차단=className·style·무제한 spread 제거·허용 native props만, `size` min-h(md48/lg52)·`fullWidth`·`busy`/`disabled`·상태색 1회 매핑→Text class/Icon·spinner color()·스피너=선행 슬롯+label 유지) · **IconButton**(minW/H 48·accessibilityLabel 필수·아이콘 레지스트리) · **SectionHeader** variant(label/title)+action(형제 button·여백 소유권) · **EmptyState**(표시 전용 w-full) · **ICON_REGISTRY/IconName**. 이관: 마이페이지·뒤로→IconButton, capture EmptyState→공용(두 경로 보존). 잔여 `semantic.light` 직접 참조 0건(PageList·PageItem·FaqSection·FreeQuotaRow 아이콘·app/index). nativewind peer `^4.2.6`.
 - **착수 전 Codex 설계 토론**(order0b2): ① className뿐 아니라 **style·spread도 차단** ② **busy를 화면 active에 일괄 연결 금지**(PageList "취소" 회귀 방지) ③ IconButton **minW/H 48**(padding 추정 금지)·레지스트리(빈 활성 버튼 금지) ④ SectionHeader `px-4 pt-6` 여백 이중 방지 ⑤ EmptyState hero Fragment→View 너비 축소 주의·홈 0건도 extra 경로 ⑥ FreeQuotaRow 상태 분기 보존(아이콘 색만) ⑦ 정정(ResultScreen disabled·마이페이지=app/index·FaqSection·#101 develop 브랜치) ⑧ 커밋=컴포넌트+caller 이관 묶어 3단계.
