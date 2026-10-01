@@ -3,7 +3,7 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Notice } from "@clause-lens/ui";
-import { BrandHeader, Hero, HowItWorks } from "../src/features/home";
+import { BrandHeader, Hero, HowItWorks, ProcessingScreen } from "../src/features/home";
 import { FreeQuotaChip } from "../src/features/entitlement";
 
 import { CaptureCTA, CaptureScreen, useDraftStore } from "../src/features/capture";
@@ -23,6 +23,7 @@ const UPLOAD_ACTIVE = ["presigning", "uploading", "confirming"];
 export default function Page() {
   const router = useRouter();
   const setLocked = useDraftStore((s) => s.setLocked);
+  const clearDraft = useDraftStore((s) => s.clear);
   const hasPages = useDraftStore((s) => s.pages.length > 0);
   const userId = useAuthStore((s) => s.user?.id);
 
@@ -120,6 +121,14 @@ export default function Page() {
     }
   };
 
+  // done/partial에서 "새 계약서 분석" — 담은 페이지·업로드·분석 세션 초기화(처음 상태로).
+  const onReset = (): void => {
+    cancelAnalysis();
+    resetUpload();
+    startedRef.current = null;
+    clearDraft();
+  };
+
   // 업로드+분석을 하나의 표시 상태로 병합.
   const merged = (): {
     phase:
@@ -168,22 +177,26 @@ export default function Page() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       <BrandHeader onProfile={() => router.push("/profile")} />
-      {hasPages ? (
+      {hasPages && m.phase === "idle" ? (
+        // idle: 담은 페이지 리뷰 + 분석하기. 진행·터미널은 아래 ProcessingScreen이 소유.
         <CaptureScreen
           quota={<FreeQuotaChip />}
-          analyze={{
-            phase: m.phase,
-            sentCount: m.sentCount,
-            totalCount: m.totalCount,
-            message: m.message,
-            onAnalyze: () => void start(snapshots(), getAuth),
-            onRetry,
-            onCancel,
-            onViewResult: () => {
-              if (documentId) {
-                router.push({ pathname: "/result", params: { documentId } });
-              }
-            },
+          analyze={{ onAnalyze: () => void start(snapshots(), getAuth) }}
+        />
+      ) : hasPages ? (
+        // active + 모든 터미널(done/partial/failed/error) → 전용 진행 화면. (m.phase !== "idle")
+        <ProcessingScreen
+          phase={m.phase as Exclude<typeof m.phase, "idle">}
+          sentCount={m.sentCount}
+          totalCount={m.totalCount}
+          message={m.message}
+          onCancel={onCancel}
+          onRetry={onRetry}
+          onReset={onReset}
+          onViewResult={() => {
+            if (documentId) {
+              router.push({ pathname: "/result", params: { documentId } });
+            }
           }}
         />
       ) : (

@@ -22,4 +22,12 @@ describe("Notice", () => {
   it("아이콘·tone 없이도 렌더", () => {
     expect(() => render(<Notice>안내</Notice>)).not.toThrow();
   });
+  it("success tone(초록 안심)도 크래시 없이 렌더", () => {
+    const root = render(
+      <Notice tone="success" icon="ShieldCheck">앱을 닫아도 분석은 계속돼요.</Notice>,
+    );
+    expect(
+      root.findAllByType(Text).some((t) => t.props.children === "앱을 닫아도 분석은 계속돼요."),
+    ).toBe(true);
+  });
 });
