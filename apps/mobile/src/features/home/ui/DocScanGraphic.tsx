@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, View } from "react-native";
 import { color } from "@clause-lens/tokens";
+import { useReduceMotion } from "./useReduceMotion";
 
 // 진행 화면 히어로 그래픽(홈 전용) — 문서 박스 + 플레이스홀더 줄 + 스캔 라인.
 // 스캔 라인은 analyze(분석 구간)에서만 상하 이동. reduced-motion이면 정적(중앙 고정).
@@ -8,22 +9,8 @@ import { color } from "@clause-lens/tokens";
 const LINES = [0.88, 0.7, 0.95, 0.6, 0.82, 0.5];
 
 export function DocScanGraphic({ animate }: { animate?: boolean }) {
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useReduceMotion();
   const y = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((v) => mounted && setReduceMotion(v))
-      .catch(() => {});
-    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", (v) =>
-      setReduceMotion(v),
-    );
-    return () => {
-      mounted = false;
-      sub.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (!animate || reduceMotion) {

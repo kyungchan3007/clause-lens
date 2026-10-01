@@ -2,6 +2,8 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { Button, Icon, Notice } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 import { DocScanGraphic } from "./DocScanGraphic";
+import { IndeterminateBar } from "./IndeterminateBar";
+import { useReduceMotion } from "./useReduceMotion";
 
 // 업로드+분석을 병합한 표시 phase(app 레이어 merged와 동일). feature→feature import 방지 위해 로컬 정의.
 export type ProcessingPhase =
@@ -48,25 +50,17 @@ function modeOf(p: ProcessingPhase): Mode {
   }
 }
 
-// 진행률 바를 보일(카운트가 의미 있는) 단계.
-const DETERMINATE: ProcessingPhase[] = ["uploading", "analyzing"];
-function pct(s: ProcessingState): number {
-  return s.totalCount > 0 ? Math.round((s.sentCount / s.totalCount) * 100) : 0;
-}
-
-// 카운트 없는 진행 단계의 스피너 문구(가짜 % 금지).
-function indeterminateLabel(p: ProcessingPhase): string | null {
-  switch (p) {
-    case "presigning":
-      return "업로드 준비 중…";
-    case "confirming":
-      return "서버 확인 중…";
-    case "uploaded":
-    case "requesting":
-      return "분석 요청 중…";
-    default:
-      return null;
+// 진행 문구(가짜 % 금지) — 서버가 주는 유일한 이산 정보는 "완료 페이지 수"뿐.
+// 페이지당 내부(OCR·분석) 진행률이 없어 바는 항상 indeterminate(흐르는 띠), 완료 수는 다페이지일 때만 텍스트.
+function progressText(mode: Mode, p: ProcessingPhase, sent: number, total: number): string {
+  if (mode === "upload") {
+    if (p === "presigning") return "업로드 준비 중…";
+    if (p === "confirming") return "서버 확인 중…";
+    return total >= 2 ? `${total}장 중 ${sent}장 전송` : "전송 중…"; // uploading
   }
+  // analysis
+  if (p === "requesting" || p === "uploaded") return "분석 요청 중…";
+  return total >= 2 ? `${total}페이지 중 ${sent}페이지 완료` : "분석 중…"; // analyzing
 }
 
 function hero(mode: Mode): { title: string; sub?: string } {
@@ -87,13 +81,11 @@ function hero(mode: Mode): { title: string; sub?: string } {
 export function ProcessingScreen(state: ProcessingState) {
   const mode = modeOf(state.phase);
   const h = hero(mode);
-  const determinate = DETERMINATE.includes(state.phase) && state.totalCount > 0;
-  const indeterminate = mode === "upload" || mode === "analysis" ? !determinate : false;
-  const spinnerLabel = indeterminate ? indeterminateLabel(state.phase) : null;
+  const reduceMotion = useReduceMotion();
   const progressing = mode === "upload" || mode === "analysis";
-  // 완료 카운트 주정보 문구(큰 % 대신).
-  const progressVerb = mode === "upload" ? "전송" : "분석";
-  const progressSummary = `${state.totalCount}페이지 중 ${state.sentCount}페이지 ${progressVerb} 완료`;
+  const ptext = progressing
+    ? progressText(mode, state.phase, state.sentCount, state.totalCount)
+    : null;
 
   return (
     <View className="flex-1 px-5">
@@ -131,44 +123,27 @@ export function ProcessingScreen(state: ProcessingState) {
           </Text>
         ) : null}
 
-        {/* 진행 블록 */}
+        {/* 진행 블록 — 흐르는 바(위치 주장 X) + 완료 수 텍스트. reduced-motion이면 스피너. */}
         {progressing ? (
-          <View className="mt-7 w-full max-w-[300px]">
-            {determinate ? (
-              <>
-                <View className="mb-2 flex-row items-baseline justify-between">
-                  <Text className="text-[13px] font-semibold text-foreground-muted">
-                    {mode === "upload" ? "전송 중" : "분석 중"}
-                  </Text>
-                  <Text className="text-[13px] text-foreground-muted">
-                    {state.sentCount} / {state.totalCount}페이지
-                  </Text>
-                </View>
-                <View
-                  className="h-2.5 w-full overflow-hidden rounded-full bg-border"
-                  accessibilityRole="progressbar"
-                  accessibilityValue={{ min: 0, max: state.totalCount, now: state.sentCount }}
-                >
-                  <View
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${pct(state)}%` }}
-                  />
-                </View>
-                <Text
-                  accessibilityLiveRegion="polite"
-                  className="mt-2 text-center text-[13px] text-foreground-muted"
-                >
-                  {progressSummary}
-                </Text>
-              </>
-            ) : (
+          <View className="mt-7 w-full max-w-[280px]">
+            {reduceMotion ? (
               <View
                 className="flex-row items-center justify-center gap-2"
                 accessibilityLiveRegion="polite"
               >
                 <ActivityIndicator size="small" color={color("primary")} />
-                <Text className="text-sm text-foreground-muted">{spinnerLabel}</Text>
+                <Text className="text-sm text-foreground-muted">{ptext}</Text>
               </View>
+            ) : (
+              <>
+                <IndeterminateBar />
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="mt-2.5 text-center text-[13px] text-foreground-muted"
+                >
+                  {ptext}
+                </Text>
+              </>
             )}
           </View>
         ) : null}

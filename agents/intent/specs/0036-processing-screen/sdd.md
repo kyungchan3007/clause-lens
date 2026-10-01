@@ -14,9 +14,10 @@
   - 모드 판정(phase→mode): 업로드(presigning·uploading·confirming) / 분석(requesting·analyzing) / done / partial / failed·error.
   - 센터 히어로: 문서+스캔 그래픽(DocScanGraphic) + h1(모드별) + sub + "계약서 N페이지"(totalCount 가시화).
     - 업로드 h1 "계약서를 올리고 있어요", 분석 h1 "계약서를 분석하고 있어요"/sub "불리할 수 있는 조항을 찾는 중…".
-  - 진행 블록:
-    - determinate(uploading=전송 N/N, analyzing=완료 M/N & totalCount>0): 좌 라벨·우 "M / N페이지" + 진행바(bg-border/bg-primary) + **주정보 텍스트**("N페이지 중 M페이지 분석 완료"). 큰 % 없음.
-    - indeterminate(presigning·confirming·requesting): **스피너 1개 + 단계텍스트**("업로드 준비 중…"·"서버 확인 중…"·"분석 요청 중…"). 가짜 바/now=0 금지.
+  - 진행 블록(**전면 indeterminate — 서버 계약상 percent·페이지 내부 진행 없음**):
+    - **IndeterminateBar**(흐르는 띠, Animated translateX 루프): 채움(0→100%) 아님 → 위치 주장 안 함 → 1페이지에서도 멈춰 보이지 않음. accessibilityValue 없음(가짜 now 금지).
+    - 보조 텍스트(progressText): 업로드 presigning="업로드 준비 중…"·confirming="서버 확인 중…"·uploading=다장 "N장 중 M장 전송"/1장 "전송 중…". 분석 requesting/uploaded="분석 요청 중…"·analyzing=다페이지 "N페이지 중 M페이지 완료"/1페이지 "분석 중…". (완료 수는 서버가 주는 유일한 이산 정보 → 다페이지만.)
+    - reduced-motion이면 흐르는 바 대신 **ActivityIndicator 스피너 + 같은 텍스트**(useReduceMotion).
   - 안심 Notice(분석 구간만, tone 성공/초록 + shield): "서버에서 분석 중이에요. 앱을 닫아도 분석은 계속돼요."
     - 업로드 구간: tone neutral 안내 "전송이 끝날 때까지 앱을 열어 두세요."
   - 하단 액션(모드별):

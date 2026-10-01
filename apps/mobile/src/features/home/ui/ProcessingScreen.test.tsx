@@ -29,33 +29,45 @@ const base: ProcessingState = {
   onReset: jest.fn(),
 };
 
+const bars = (r: ReturnType<typeof render>) =>
+  r.findAll((n) => n.props.testID === "indeterminate-bar");
+
 describe("ProcessingScreen — 모드별 정직 표현", () => {
-  it("업로드(uploading): '올리고 있어요' + 진짜 '취소' + '전송 완료' 주정보", () => {
+  it("업로드(uploading, 다장): '올리고 있어요' + 진짜 '취소' + 흐르는 바 + 'N장 중 M장 전송'", () => {
     const r = render(<ProcessingScreen {...base} phase="uploading" sentCount={1} totalCount={3} />);
     expect(hasText(r, "계약서를 올리고 있어요")).toBe(true);
     expect(hasText(r, "취소")).toBe(true);
     expect(hasText(r, "나가기")).toBe(false);
-    expect(hasText(r, "3페이지 중 1페이지 전송 완료")).toBe(true);
+    expect(bars(r).length).toBeGreaterThanOrEqual(1); // 흐르는 바(채움 아님)
+    expect(hasText(r, "3장 중 1장 전송")).toBe(true);
     // 업로드 안내(반대 문구) — "앱 닫아도 계속" 아님.
     expect(hasText(r, "전송이 끝날 때까지 앱을 열어 두세요.")).toBe(true);
   });
 
-  it("분석(analyzing): '분석하고 있어요' + '나가기'(서버 계속) + 초록 안심 + '분석 완료' 주정보", () => {
-    const r = render(<ProcessingScreen {...base} phase="analyzing" />);
+  it("분석(analyzing, 다페이지): '나가기'(서버 계속) + 초록 안심 + 흐르는 바 + 'N페이지 중 M페이지 완료'", () => {
+    const r = render(<ProcessingScreen {...base} phase="analyzing" sentCount={2} totalCount={3} />);
     expect(hasText(r, "계약서를 분석하고 있어요")).toBe(true);
     expect(hasText(r, "나가기")).toBe(true);
     expect(hasText(r, "분석 취소")).toBe(false);
     expect(hasText(r, "서버에서 분석 중이에요. 앱을 닫아도 분석은 계속돼요.")).toBe(true);
-    expect(hasText(r, "3페이지 중 2페이지 분석 완료")).toBe(true);
-    // 큰 % 숫자(68%) 없음.
+    expect(bars(r).length).toBeGreaterThanOrEqual(1);
+    expect(hasText(r, "3페이지 중 2페이지 완료")).toBe(true);
+    // 가짜 % 없음.
     expect(texts(r).some((t) => typeof t === "string" && t.includes("%"))).toBe(false);
   });
 
-  it("준비 단계(requesting): 스피너 + '분석 요청 중…', 가짜 진행바/주정보 없음", () => {
+  it("분석(1페이지): 채움 바 아님 — 흐르는 바 + '분석 중…'(멈춘 0% 바 없음)", () => {
+    const r = render(<ProcessingScreen {...base} phase="analyzing" sentCount={0} totalCount={1} />);
+    expect(bars(r).length).toBeGreaterThanOrEqual(1);
+    expect(hasText(r, "분석 중…")).toBe(true);
+    expect(hasText(r, "1페이지 중 0페이지 완료")).toBe(false); // 1장은 완료 수 숨김
+  });
+
+  it("준비 단계(requesting): 흐르는 바 + '분석 요청 중…', 완료 수 없음", () => {
     const r = render(<ProcessingScreen {...base} phase="requesting" sentCount={0} totalCount={3} />);
-    expect(r.findAllByType(ActivityIndicator).length).toBe(1);
+    expect(bars(r).length).toBeGreaterThanOrEqual(1);
+    expect(r.findAllByType(ActivityIndicator).length).toBe(0); // reduced-motion 아님 → 스피너 아님
     expect(hasText(r, "분석 요청 중…")).toBe(true);
-    expect(hasText(r, "3페이지 중 0페이지 분석 완료")).toBe(false);
   });
 
   it("done: '결과 보기' + '새 계약서 분석'(onReset)", () => {
@@ -81,14 +93,9 @@ describe("ProcessingScreen — 모드별 정직 표현", () => {
     expect(hasText(r, "페이지 확인")).toBe(true);
   });
 
-  it("determinate 진행바에 progressbar role·값(now/max) 노출", () => {
+  it("흐르는 바는 now 값을 주장하지 않음(가짜 진행률 없음)", () => {
     const r = render(<ProcessingScreen {...base} phase="analyzing" sentCount={2} totalCount={3} />);
-    const bar = r.find((n) => n.props.accessibilityRole === "progressbar");
-    expect(bar.props.accessibilityValue).toEqual({ min: 0, max: 3, now: 2 });
-  });
-
-  it("indeterminate 구간엔 progressbar(가짜 now) 없음", () => {
-    const r = render(<ProcessingScreen {...base} phase="requesting" sentCount={0} totalCount={3} />);
-    expect(r.findAll((n) => n.props.accessibilityRole === "progressbar").length).toBe(0);
+    const bar = r.findAll((n) => n.props.testID === "indeterminate-bar")[0];
+    expect(bar.props.accessibilityValue).toBeUndefined();
   });
 });

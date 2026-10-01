@@ -28,7 +28,7 @@
 
 ## Acceptance
 - [x] `idle`→PageList(페이지 리뷰+분석하기), 그 외(active+터미널)→전용 ProcessingScreen. 완료 순간 UI가 사라지는 모순 없음.
-- [x] 업로드 중/분석 중 모드 분기 — determinate(카운트)·indeterminate(스피너) 구분, 가짜 % 없음, "M/N페이지" 주정보.
+- [x] 업로드 중/분석 중 모드 분기 — **indeterminate 흐르는 바**(채움 아님·위치 주장 X) + 완료 수 텍스트(다페이지만 "N페이지 중 M페이지 완료", 1페이지는 "분석 중…"). reduced-motion이면 스피너. 가짜 % 없음. **근거**: 서버는 완료 페이지 수만 줌(percent·페이지 내부 진행 없음) → 1페이지는 채움 바가 0%에 멈춰 보임(사용자 실측 버그) → 흐르는 바로 교체.
 - [x] 정직 문구 3곳: 분석=버튼 "나가기"·초록 "앱 닫아도 계속"(분석만), 업로드=버튼 "취소"·"앱 열어 두세요". 큰 68% 없음.
 - [x] 터미널: done/partial→"결과 보기"(/result)+"새 계약서 분석"(탈출구), partial 불완전성 명시, failed·error→"다시 시도"+"페이지 확인"(복귀).
 - [x] 동작 보존(자동 시작·취소 분기 non-busy·재시도·잠금·계정전환·늦은 응답 가드) + 접근성(progressbar now/max·header 초점·reduced-motion·44pt).

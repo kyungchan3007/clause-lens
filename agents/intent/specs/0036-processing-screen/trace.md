@@ -18,4 +18,6 @@
 - **DocScanGraphic**: 스캔 라인 Animated.loop, `AccessibilityInfo.isReduceMotionEnabled`+이벤트 구독으로 reduced-motion이면 정적 중앙 고정. 장식 → accessibilityElementsHidden. 테스트에선 목(애니메이션 노이즈 회피).
 - **정직 3곳(사용자 승인)**: 분석 버튼 "나가기"(서버 취소 불가·관찰만 중단), 큰 % 제거→"M/N페이지 분석 완료" 주정보, 초록 "앱 닫아도 계속"은 분석 구간만·업로드는 "앱 열어 두세요".
 - 늦은 응답·계정전환 가드는 기존 runId/stateVersion으로 충분 → 신규 코드 없음.
-- **후속**: 읽기전용 페이지 목록 펼침 / "백그라운드로"(documentId 보존 재관찰) / 서버 분석-취소 엔드포인트 / 경과시간 문구 / 로그인 이후 시뮬레이터 육안 실측.
+- **진행바 재설계(사용자 실측 피드백)**: 최초 구현은 determinate 채움 바(uploading·analyzing=sent/total). 사용자가 시뮬레이터에서 **1페이지 문서 → 바가 0/1(0%)에 멈춰 보임** 지적. 서버 계약 재확인: `analysisStatusResponseSchema`는 `job.totalPages` + `pages[].status`(pending/processing/done/failed)만 — **percent·페이지 내부 진행 없음**. 워커도 페이지를 pending→done/failed 터미널만 기록(중간 processing 미기록). 즉 진행 신호=완료 페이지 수뿐 → 1페이지는 채움 구간이 없음. **사용자 결정**: 흐르는 바(indeterminate)로 교체(위치 주장 X·가짜 % 없음), 완료 수는 다페이지만 텍스트. 백엔드 percent는 후속(페이지당 OCR/분석 2단계가 최선이라 1페이지엔 효용 적음).
+- **라이브 검증**: 시뮬레이터에서 ProcessingScreen **error 모드** 렌더 확인(세션 만료 → "분석에 문제가 생겼어요/로그인이 필요해요"+다시 시도+페이지 확인). **흐르는 바(진행 중) 라이브 육안은 유효 세션+무료 횟수(현재 0) 필요 → 후속**. 모드 로직은 단위로 커버.
+- **후속**: 읽기전용 페이지 목록 펼침 / "백그라운드로"(documentId 보존 재관찰) / 서버 분석-취소 엔드포인트 / **백엔드 진행 percent(페이지당 단계) 이슈** / 경과시간 문구 / 로그인+무료횟수 있을 때 흐르는 바 육안.
