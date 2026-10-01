@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { IconButton } from "@clause-lens/ui";
+import { BrandHeader } from "../src/features/home";
+import { FreeQuotaChip } from "../src/features/entitlement";
 
 import { CaptureScreen, useDraftStore } from "../src/features/capture";
 import {
@@ -158,12 +159,9 @@ export default function Page() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <View className="flex-row items-center justify-end px-2 py-1">
-        <IconButton
-          icon="User"
-          accessibilityLabel="마이페이지"
-          onPress={() => router.push("/profile")}
-        />
+      <BrandHeader onProfile={() => router.push("/profile")} />
+      <View className="px-5 pb-1 pt-1">
+        <FreeQuotaChip />
       </View>
       <CaptureScreen
         emptyExtra={

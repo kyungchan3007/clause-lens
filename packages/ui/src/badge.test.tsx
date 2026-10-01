@@ -28,4 +28,9 @@ describe("Badge", () => {
     }
     expect(() => render(<Badge label="기본" />)).not.toThrow();
   });
+
+  it("dot을 주면 선행 점과 함께 렌더(크래시 없음)", () => {
+    const root = render(<Badge label="무료 분석 3회 남음" tone="info" dot />);
+    expect(root.findAllByType(Text).some((t) => t.props.children === "무료 분석 3회 남음")).toBe(true);
+  });
 });
