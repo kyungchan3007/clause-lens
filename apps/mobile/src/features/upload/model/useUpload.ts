@@ -4,7 +4,15 @@ import type { UploadTicket } from "@clause-lens/contracts";
 
 import * as uploadApi from "../api/uploadApi";
 import { HttpError } from "../api/uploadApi";
+import { createRunGuard } from "../../../shared/lib/runGuard";
 import { useUploadStore } from "./uploadStore";
+
+// 실행 세대 가드 — stale 콜백/취소 무효화(useAnalysis와 공통 구현).
+// 타이머/스트림 같은 자원 정리는 없고 runId 세대만 관리한다.
+const runGuard = createRunGuard(
+  () => useUploadStore.getState().runId,
+  (runId) => useUploadStore.getState().set({ runId }),
+);
 
 // app 레이어가 주입: 호출 직전 현재 토큰·소유자. 장기 캡처 금지.
 export interface UploadAuth {
@@ -38,7 +46,7 @@ export function useUpload() {
       const store = useUploadStore.getState();
       if ((ACTIVE_PHASES as readonly string[]).includes(store.phase)) return; // 실행 잠금(첫 await 이전)
 
-      const myRun = store.runId + 1;
+      const myRun = runGuard.nextRun();
       const clientRequestId = store.clientRequestId ?? genClientRequestId();
       useUploadStore.getState().set({
         phase: "presigning",
@@ -59,7 +67,7 @@ export function useUpload() {
 
       try {
         const auth = await getAuth();
-        if (!alive(myRun)) return;
+        if (!runGuard.isAlive(myRun)) return;
         if (!auth) return fail(myRun, "로그인이 필요해요.");
         useUploadStore.getState().set({ ownerUserId: auth.userId });
 
@@ -74,7 +82,7 @@ export function useUpload() {
             height: s.height,
           })),
         });
-        if (!alive(myRun)) return;
+        if (!runGuard.isAlive(myRun)) return;
         const byOrder = mapByOrder(snapshots, pre.pages);
         if (!byOrder) return fail(myRun, "서버 응답이 요청과 일치하지 않아요.");
 
@@ -94,15 +102,15 @@ export function useUpload() {
 
         // 순차 PUT(진행 n/N). 403→해당 페이지 1회 재발급 후 재시도.
         for (const s of snapshots) {
-          if (!alive(myRun)) return;
+          if (!runGuard.isAlive(myRun)) return;
           const ticket = byOrder.get(s.order)!;
           await putWithRetry(myRun, auth, pre.documentId, s, ticket);
         }
-        if (!alive(myRun)) return;
+        if (!runGuard.isAlive(myRun)) return;
 
         await confirm(myRun, auth, pre.documentId, snapshots);
       } catch (e) {
-        if (!alive(myRun)) return;
+        if (!runGuard.isAlive(myRun)) return;
         fail(myRun, describeError(e));
       }
     },
@@ -116,13 +124,13 @@ export function useUpload() {
       if ((ACTIVE_PHASES as readonly string[]).includes(store.phase)) return;
       if (!store.documentId) return start(snapshots, getAuth);
 
-      const myRun = store.runId + 1;
+      const myRun = runGuard.nextRun();
       const documentId = store.documentId;
       useUploadStore.getState().set({ phase: "uploading", runId: myRun, message: undefined });
 
       try {
         const auth = await getAuth();
-        if (!alive(myRun)) return;
+        if (!runGuard.isAlive(myRun)) return;
         if (!auth) return fail(myRun, "로그인이 필요해요.");
         if (auth.userId !== store.ownerUserId) {
           return fail(myRun, "계정이 변경되어 업로드를 중단했어요.");
@@ -139,20 +147,20 @@ export function useUpload() {
             documentId,
             pending.map((p) => p.pageId!),
           );
-          if (!alive(myRun)) return;
+          if (!runGuard.isAlive(myRun)) return;
           for (const ticket of rep.pages) {
-            if (!alive(myRun)) return;
+            if (!runGuard.isAlive(myRun)) return;
             const p = pending.find((x) => x.pageId === ticket.pageId);
             const snap = p && snapById.get(p.draftId);
             if (!snap) continue;
             await putWithRetry(myRun, auth, documentId, snap, ticket);
           }
-          if (!alive(myRun)) return;
+          if (!runGuard.isAlive(myRun)) return;
         }
         // reprisign이 비어도(이미 서버 확정 가능) complete로 확인 — 알고 있는 pageIds로.
         await confirm(myRun, auth, documentId, snapshots);
       } catch (e) {
-        if (!alive(myRun)) return;
+        if (!runGuard.isAlive(myRun)) return;
         fail(myRun, describeError(e));
       }
     },
@@ -162,7 +170,9 @@ export function useUpload() {
   // 취소: 실행 무효화(runId bump) + 진행 중 전송 중단. 서버 반영은 재시도 때 확인.
   const cancel = useCallback(() => {
     const store = useUploadStore.getState();
-    store.set({ runId: store.runId + 1, phase: "idle", message: "취소했어요." });
+    // 취소 시점 세대 캡처(cancel은 동기 — 스냅샷과 등가), 다른 필드와 원자적 묶음 set.
+    const next = runGuard.nextRun();
+    store.set({ runId: next, phase: "idle", message: "취소했어요." });
     void activeTask?.cancelAsync().catch(() => {});
     activeTask = null;
   }, []);
@@ -172,12 +182,8 @@ export function useUpload() {
 
 // ── 내부 헬퍼 ──
 
-function alive(runId: number): boolean {
-  return useUploadStore.getState().runId === runId;
-}
-
 function fail(runId: number, message: string): void {
-  if (!alive(runId)) return;
+  if (!runGuard.isAlive(runId)) return;
   useUploadStore.getState().set({ phase: "error", message });
 }
 
@@ -215,7 +221,7 @@ async function putWithRetry(
       // URL 만료 가능 → 1회 재발급 후 재시도. 재차 403이면 실패.
       try {
         const rep = await uploadApi.reprisign(auth.accessToken, documentId, [ticket.pageId]);
-        if (!alive(runId)) return;
+        if (!runGuard.isAlive(runId)) return;
         const fresh = rep.pages.find((p) => p.pageId === ticket.pageId);
         if (fresh) {
           await putOnce(runId, fresh.uploadUrl, snap);
@@ -251,7 +257,7 @@ async function putOnce(
   activeTask = task;
   const res = await task.uploadAsync();
   activeTask = null;
-  if (!alive(runId)) throw new Error("stale");
+  if (!runGuard.isAlive(runId)) throw new Error("stale");
   if (!res || res.status < 200 || res.status >= 300) {
     throw new PutHttpError(res?.status ?? 0);
   }
@@ -270,7 +276,7 @@ async function confirm(
     .pages.map((p) => p.pageId)
     .filter((id): id is string => !!id);
   const done = await uploadApi.complete(auth.accessToken, documentId, pageIds);
-  if (!alive(runId)) return;
+  if (!runGuard.isAlive(runId)) return;
 
   const resultById = new Map(done.pages.map((p) => [p.pageId, p]));
   const pages = useUploadStore.getState().pages.map((p) => {
