@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-10-01 · Claude · 무료 분석 횟수 서버 집행 — 예약·확정·해제 (TASK-005 백엔드, #90)
+- **무엇**: 확정된 정책(#79 — done만 1회 차감·partial/failed/invalid 무차감·멱등키 `AnalysisJob.id`·3회)을 서버가 집행. **예약→확정|해제 2단계 원장**: 분석 접수(새 job 생성 tx) 시 `reserveFreeAnalysis`로 원자 예약(조건부 단일 UPDATE, 가용 없으면 `ForbiddenException` 403), terminal 전이와 같은 tx에서 `settleFreeAnalysis`로 done=확정 차감·그 외=해제. `GET /me/entitlement`로 서버 잔량 조회.
+- **왜**: done만 terminal에서 차감하면 1회 남은 사용자의 동시 접수 2건이 모두 done→음수. 접수 시 원자 예약으로 선점해 한도 초과를 막고, terminal에서 확정/해제. 멱등은 `EntitlementCharge`(jobId PK)로 — 재연결·중복 완료 이벤트에 job당 최대 1회.
+- **검증**: api 유닛 57개 PASS(신규 `entitlement-ops.spec` 13케이스 — 예약/한도 거부/멱등/동시성(가용1→1건)/done 확정/비-done 해제/중복 no-op/잔량 계산). contracts·db 빌드·mobile·api·worker 타입체크·prisma validate·기록 게이트 PASS. **Expo Doctor만 FAIL(기존 expo-constants 57.0.19 드리프트 — 백엔드와 무관, 별도 작업으로 분리)**.
+- **파일**: `packages/db/prisma/schema.prisma`(Entitlement·EntitlementCharge·enum)+마이그레이션, `packages/db/src/entitlement-ops.ts`·analysis-ops(settle 훅)·index, `apps/api/.../documents.repository`(예약·QuotaExceededError)·documents.service(403 매핑)·`modules/entitlement/*`(service·controller·module·spec)·app.module, `packages/contracts/src/entitlement.ts`, spec 폴더 `0027-entitlement-enforcement/`, 피처·TASKS.
+- **다음/주의**: **앱 잔량 표시 UI·403(quota) 흐름은 별도 이슈**(이 백엔드에 의존). 구독 우회는 TASK-006. 실 Postgres 동시성·terminal→settle 통합 실측은 인프라 기동 후 후속. expo-constants 드리프트는 별도 작업 칩.
+
 ## 2026-09-30 · Claude · 복기 자동 주입 + 측정 — 하네스 이식 4/4 (TASK-H4, #85, 마지막)
 - **무엇**: 대화 시작·날짜/브랜치 변경 첫 요청에 **미처리 커밋 `[보완]`**(이후 언급 제외)·최근 JOURNAL·작업 상태를 AI 컨텍스트로 **자동 주입**(session-context·recall-hook, stdout·비차단·반복 억제·1500자). `metrics.mjs`로 복기 참조율·체크박스 방치율 측정(`pnpm metrics`, 기준선 33%).
 - **적응**: ClauseLens JOURNAL은 표가 아닌 `## 날짜 · Claude · 제목` 섹션 → `recentJournal` 파서 재작성. 커밋 `[보완]`(#83부터)·`agents/JOURNAL.md`만(Notion은 hook이 못 읽음). base=develop.

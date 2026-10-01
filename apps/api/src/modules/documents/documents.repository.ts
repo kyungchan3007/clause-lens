@@ -1,8 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import type { Document, Page } from "@clause-lens/db";
 import { Prisma } from "@clause-lens/db";
+import { reserveFreeAnalysis } from "@clause-lens/db/analysis";
 
 import { PrismaService } from "../../db/prisma.service";
+
+// 가용 무료 횟수 없음 — 서비스가 권한 안내(ForbiddenException)로 매핑. 접수 트랜잭션에서 throw → 전체 롤백.
+export class QuotaExceededError extends Error {
+  constructor() {
+    super("무료 분석 횟수를 모두 사용했습니다.");
+    this.name = "QuotaExceededError";
+  }
+}
 
 // 분석 job 조회 시 문서 상태 + 페이지 order/revision + (0021) 결과 치수·조항까지 포함.
 // OCR blocks는 select에서 제외(응답·쿼리 최소화, N+1 방지). 조항은 order순 일괄 조회.
@@ -154,10 +163,12 @@ export class DocumentsRepository {
     });
   }
 
-  // 접수: job + 페이지별 PageAnalysis 생성 + Document=analyzing (한 트랜잭션).
+  // 접수: 무료 1회 예약 + job + 페이지별 PageAnalysis 생성 + Document=analyzing (한 트랜잭션).
   // 활성 job 유일성은 부분 유니크 인덱스가 강제 → 동시 생성은 P2002.
+  // 가용 없으면 QuotaExceededError → 트랜잭션 롤백(job 미생성). 실차감은 terminal(#90).
   createAnalysisJob(
     documentId: string,
+    userId: string,
     pages: NewAnalysisPage[],
   ): Promise<AnalysisJobWithPages> {
     return this.prisma.$transaction(async (tx) => {
@@ -168,6 +179,8 @@ export class DocumentsRepository {
           pages: { create: pages },
         },
       });
+      const reserved = await reserveFreeAnalysis(tx, userId, job.id);
+      if (!reserved) throw new QuotaExceededError();
       await tx.document.update({
         where: { id: documentId },
         data: { status: "analyzing" },

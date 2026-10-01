@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   MAX_PENDING_DOCUMENTS_PER_USER,
   type PresignPageInput,
@@ -9,6 +14,7 @@ import {
   type DocumentWithPages,
   DocumentsRepository,
   type PageConfirmation,
+  QuotaExceededError,
 } from "./documents.repository";
 
 // P2002 = unique 제약 위반(활성 job 동시 생성 경쟁).
@@ -113,6 +119,7 @@ export class DocumentsService {
     try {
       return await this.repo.createAnalysisJob(
         documentId,
+        userId,
         doc.pages.map((p) => ({ pageId: p.id, revision: p.revision })),
       );
     } catch (e) {
@@ -120,6 +127,10 @@ export class DocumentsService {
       if (isUniqueViolation(e)) {
         const winner = await this.repo.findLatestAnalysis(documentId);
         if (winner) return winner;
+      }
+      // 가용 무료 횟수 없음 → 권한 안내(앱이 로그인·구독으로 연결).
+      if (e instanceof QuotaExceededError) {
+        throw new ForbiddenException("무료 분석 횟수를 모두 사용했습니다.");
       }
       throw e;
     }

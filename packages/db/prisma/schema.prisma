@@ -28,8 +28,10 @@ model User {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
-  refreshTokens RefreshToken[]
-  documents     Document[]
+  refreshTokens      RefreshToken[]
+  documents          Document[]
+  entitlement        Entitlement?
+  entitlementCharges EntitlementCharge[]
 
   @@unique([provider, providerUserId])
 }
@@ -139,6 +141,7 @@ model AnalysisJob {
 
   document Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
   pages    PageAnalysis[]
+  charge   EntitlementCharge?
   // 활성 job(queued|processing) 문서당 1개 = 부분 유니크 인덱스(마이그레이션 SQL로 추가).
 
   @@index([documentId, status])
@@ -227,4 +230,40 @@ model Clause {
   result PageAnalysisResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
 
   @@index([pageId, revision])
+}
+
+// ── 자격(무료 분석 횟수) 집행 (TASK-005 / #90) ──
+// 설계: agents/intent/specs/0027-entitlement-enforcement/
+// 정책(#79): done만 1회 차감 · partial/failed/invalid_image 무차감 · 멱등키 AnalysisJob.id · 사용자당 3회.
+// 집행: 접수 시 예약(freeReserved++) → terminal에서 done=확정(consumed) / 그 외=해제(released).
+
+// 사용자별 무료 횟수 집계. 가용 = freeGranted - freeConsumed - freeReserved.
+model Entitlement {
+  userId       String   @id
+  freeGranted  Int      @default(3) // 부여된 무료 횟수(정책값). 구독 우회는 TASK-006.
+  freeConsumed Int      @default(0) // 확정 차감(done terminal)
+  freeReserved Int      @default(0) // 진행 중 예약(접수~terminal). terminal에서 확정/해제로 0 복귀
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum EntitlementChargeStatus {
+  reserved // 접수 시 선점(한도 집행·동시성 방지)
+  consumed // done terminal — 확정 차감
+  released // partial/failed/stale/worker_failed terminal — 예약 해제(무차감)
+}
+
+// 무료 횟수 원장(job당 1행 = 멱등키). settle은 status==reserved일 때만 작동 → 중복 완료 이벤트에 no-op.
+model EntitlementCharge {
+  jobId     String                  @id // 멱등키 = AnalysisJob.id (1 job = 최대 1 차감)
+  userId    String
+  status    EntitlementChargeStatus @default(reserved)
+  createdAt DateTime                @default(now()) @db.Timestamptz(3)
+  settledAt DateTime?               @db.Timestamptz(3) // consumed/released 확정 시각
+
+  job  AnalysisJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
 }
