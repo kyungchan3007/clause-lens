@@ -21,6 +21,17 @@ export function analysisChannel(prefix: string, documentId: string): string {
   return `${prefix}:analysis:${documentId}`;
 }
 
+// 종결(terminal) 상태 단일 소스 — api·worker·db 공유(값 불변, drift 차단).
+// job: done·partial·failed / page: done·failed. 멱등 가드·종결 판정은 이 헬퍼로만.
+export const JOB_TERMINAL_STATUSES = ["done", "partial", "failed"] as const;
+export const PAGE_TERMINAL_STATUSES = ["done", "failed"] as const;
+export function isJobTerminal(status: string): boolean {
+  return (JOB_TERMINAL_STATUSES as readonly string[]).includes(status);
+}
+export function isPageTerminal(status: string): boolean {
+  return (PAGE_TERMINAL_STATUSES as readonly string[]).includes(status);
+}
+
 export type PageOutcome =
   | { pageId: string; ok: true }
   | { pageId: string; ok: false; errorCode: string; retryable: boolean };
@@ -76,6 +87,15 @@ export interface AnalysisResultInput {
   clauses: ClauseInput[];
 }
 
+// Prisma 에러 코드 판별 단일 소스(api·db 공유, 코드 값 불변).
+// P2002 = unique 제약 위반(동시 생성 경쟁) · P2034 = 직렬화 실패(40001, Serializable 경쟁).
+export function isUniqueViolation(e: unknown): boolean {
+  return (e as { code?: string })?.code === "P2002";
+}
+export function isSerializationFailure(e: unknown): boolean {
+  return (e as { code?: string })?.code === "P2034";
+}
+
 // 직렬화 실패(40001/P2034) 재시도 — Serializable 하에서 동시 confirm 경쟁 흡수.
 async function withSerializableRetry<T>(
   fn: () => Promise<T>,
@@ -85,8 +105,7 @@ async function withSerializableRetry<T>(
     try {
       return await fn();
     } catch (e) {
-      const code = (e as { code?: string }).code;
-      if (code === "P2034" && attempt < retries) {
+      if (isSerializationFailure(e) && attempt < retries) {
         await new Promise((r) => setTimeout(r, 10 * (attempt + 1)));
         continue;
       }
@@ -174,7 +193,7 @@ export function confirmPageAnalysisTx(
           };
         };
 
-        if (job.status === "done" || job.status === "partial" || job.status === "failed") {
+        if (isJobTerminal(job.status)) {
           return noop();
         }
 
@@ -184,7 +203,7 @@ export function confirmPageAnalysisTx(
         if (!page) {
           throw new Error(`PageAnalysis not found: job=${jobId} page=${outcome.pageId}`);
         }
-        if (page.status === "done" || page.status === "failed") return noop();
+        if (isPageTerminal(page.status)) return noop();
 
         const currentPage = await tx.page.findUnique({ where: { id: outcome.pageId } });
         const stale = !currentPage || currentPage.revision !== page.revision;
@@ -260,7 +279,7 @@ export async function upsertPageOcr(
     });
     return toPersisted(row);
   } catch (e) {
-    if ((e as { code?: string }).code === "P2002") {
+    if (isUniqueViolation(e)) {
       // 경합 패자 → 저장된 승자 행 사용(불변).
       const existing = await prisma.pageOcr.findUnique({
         where: { pageId_revision: { pageId: input.pageId, revision: input.revision } },
@@ -296,7 +315,7 @@ export function confirmAnalysisResultTx(
         };
 
         // (a) job terminal → no-op(결과 쓰기 금지)
-        if (job.status === "done" || job.status === "partial" || job.status === "failed") {
+        if (isJobTerminal(job.status)) {
           return noop();
         }
 
@@ -307,7 +326,7 @@ export function confirmAnalysisResultTx(
           throw new Error(`PageAnalysis not found: job=${jobId} page=${input.pageId}`);
         }
         // (a) page terminal → no-op
-        if (page.status === "done" || page.status === "failed") return noop();
+        if (isPageTerminal(page.status)) return noop();
 
         const currentPage = await tx.page.findUnique({ where: { id: input.pageId } });
         const stale =

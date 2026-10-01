@@ -10,7 +10,7 @@ import {
   type DocumentListResponse,
   type PresignPageInput,
 } from "@clause-lens/contracts";
-import { isRetentionActive } from "@clause-lens/db/analysis";
+import { isRetentionActive, isUniqueViolation } from "@clause-lens/db/analysis";
 
 import {
   decodeCursor,
@@ -24,11 +24,6 @@ import {
   type PageConfirmation,
   QuotaExceededError,
 } from "./documents.repository";
-
-// P2002 = unique 제약 위반(활성 job 동시 생성 경쟁).
-function isUniqueViolation(e: unknown): boolean {
-  return (e as { code?: string })?.code === "P2002";
-}
 
 // 세션 만료(정리 기준). URL TTL과 분리.
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h

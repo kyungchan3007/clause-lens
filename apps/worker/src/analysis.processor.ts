@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import {
   confirmAnalysisResultTx,
   confirmPageAnalysisTx,
+  isJobTerminal,
+  isPageTerminal,
   upsertPageOcr,
   type ClauseInput,
   type OcrBlock,
@@ -32,8 +34,6 @@ export interface AnalysisJobRef {
   attemptsMade: number;
   opts: { attempts?: number };
 }
-
-const TERMINAL = new Set(["done", "partial", "failed"]);
 
 interface FailDecision {
   retryLater: boolean; // true면 페이지 pending 유지 + job 재시도 신호
@@ -69,14 +69,14 @@ export class AnalysisProcessor {
       },
     });
     if (!analysisJob) return; // 정리됨/없음
-    if (TERMINAL.has(analysisJob.status)) return; // 이미 종결(멱등)
+    if (isJobTerminal(analysisJob.status)) return; // 이미 종결(멱등)
 
     const maxAttempts = job.opts.attempts ?? 1;
     const isLastAttempt = job.attemptsMade + 1 >= maxAttempts;
     let mustRetry = false;
 
     for (const pa of analysisJob.pages) {
-      if (pa.status === "done" || pa.status === "failed") continue; // 재실행 안전
+      if (isPageTerminal(pa.status)) continue; // 재실행 안전
 
       try {
         await this.processPage(jobId, analysisJob.documentId, pa);

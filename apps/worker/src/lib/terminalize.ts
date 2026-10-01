@@ -1,4 +1,8 @@
-import { confirmPageAnalysisTx } from "@clause-lens/db/analysis";
+import {
+  confirmPageAnalysisTx,
+  isJobTerminal,
+  isPageTerminal,
+} from "@clause-lens/db/analysis";
 
 import type { NotificationPublisher } from "../notification.publisher";
 import type { PrismaService } from "../prisma.service";
@@ -15,11 +19,11 @@ export async function terminalizeStuckJob(
     include: { pages: true },
   });
   if (!job) return;
-  if (job.status === "done" || job.status === "partial" || job.status === "failed") {
+  if (isJobTerminal(job.status)) {
     return;
   }
   for (const pa of job.pages) {
-    if (pa.status === "done" || pa.status === "failed") continue;
+    if (isPageTerminal(pa.status)) continue;
     const res = await confirmPageAnalysisTx(prisma, {
       jobId,
       outcome: { pageId: pa.pageId, ok: false, errorCode: "worker_failed", retryable: true },
