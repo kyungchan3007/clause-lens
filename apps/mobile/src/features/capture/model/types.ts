@@ -3,6 +3,8 @@
 export interface DraftPage {
   id: string;
   localUri: string;
+  // 표시용 축소 썸네일 URI(그리드 렌더 메모리 절감). 업로드엔 쓰지 않음(localUri 사용).
+  thumbUri: string;
   order: number;
   width: number;
   height: number;
@@ -12,6 +14,7 @@ export interface DraftPage {
 
 export interface DraftImageInput {
   localUri: string;
+  thumbUri: string;
   width: number;
   height: number;
   contentType: string;
