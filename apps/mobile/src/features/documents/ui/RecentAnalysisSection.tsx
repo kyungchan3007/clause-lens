@@ -1,11 +1,10 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { Icon } from "@clause-lens/ui";
-import { semantic } from "@clause-lens/tokens";
+import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
 import { DocumentRow } from "./DocumentRow";
 
-const c = semantic.light;
 const HOME_PREVIEW = 3;
 
 // 홈 '최근 분석' 섹션. 상위 N개 미리보기 + "모두 보기". 서버 값만 표시.
@@ -35,7 +34,7 @@ export function RecentAnalysisSection({
             className="flex-row items-center active:opacity-60"
           >
             <Text className="text-sm font-medium text-foreground-muted">모두 보기</Text>
-            <Icon name="ChevronRight" size={15} color={c.textMuted} />
+            <Icon name="ChevronRight" size={15} color={color("textMuted")} />
           </Pressable>
         ) : null}
       </View>
@@ -54,7 +53,7 @@ export function RecentAnalysisSection({
         </Pressable>
       ) : items.length === 0 ? (
         <View className="items-center gap-1 rounded-2xl border border-dashed border-border bg-surface py-7">
-          <Icon name="FileClock" size={22} color={c.textMuted} />
+          <Icon name="FileClock" size={22} color={color("textMuted")} />
           <Text className="text-sm text-foreground-muted">아직 분석한 계약서가 없어요</Text>
         </View>
       ) : (

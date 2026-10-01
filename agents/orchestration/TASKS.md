@@ -42,9 +42,12 @@
 
 | id | 제목 | 정의 | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-U0a | 디자인 토큰 정비 + 테마 경로(vars) + 위험도 tone 도메인 | 14 순서 0 | [0031](../intent/specs/0031-design-tokens-theme-path/) | Claude | **in-progress** (#98 — Codex 토론 반영: vars() 테마 경로·대비 분리·riskTone 도메인) | TASK-F2·TASK-F3 |
-| TASK-U0b | 공통 컴포넌트 신규·승격 + 게이트 배선 | 14 순서 0 | – | – | todo (#96 머지 후) | TASK-U0a·TASK-008 |
-| TASK-U1~5 | 화면 리디자인 (홈·분석진행·결과·마이페이지·최근) | 14 순서 1~5 | – | – | todo | TASK-U0b |
+| TASK-U0a | 디자인 토큰 정비 + 테마 경로(vars) + 위험도 tone 도메인 | 14 순서 0 | [0031](../intent/specs/0031-design-tokens-theme-path/) | Claude | **done** (#98/PR#99 머지 — vars() 테마 경로·대비 분리·riskTone 도메인) | TASK-F2·TASK-F3 |
+| TASK-U0b1 | ListRow·Badge(tone)·StatusDot 신설 + DocumentRow/MenuRow 승격 + UI 테스트 게이트 | 14 순서 0 | [0032](../intent/specs/0032-listrow-badge-tone/) | Claude | **in-progress** (#100 — Codex 토론 반영) | TASK-U0a |
+| TASK-U0b2 | Button·IconButton·SectionHeader·EmptyState + 잔여 inline 정리 | 14 순서 0 | – | – | todo | TASK-U0b1 |
+| TASK-U1~5 | 화면 리디자인 (홈·분석진행·결과·마이페이지·최근) | 14 순서 1~5 | – | – | todo | TASK-U0b2 |
+
+> BrandHeader·Notice·card shadow는 선제 공통화하지 않고 **순서1(홈 리디자인)**에서 실제 소비 확인 후 도입(Codex·0012 승격 스펙).
 
 > 위 태스크는 README "초기 개발 순서" + feature 정의를 DAG로 옮긴 시드입니다.
 > 각 태스크의 **무엇/행동**은 연결된 feature 정의를 따르고, 별도 설계 판단이 필요하면

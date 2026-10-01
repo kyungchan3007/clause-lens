@@ -9,7 +9,8 @@ import { riskIcon, riskLabel, riskTone, type Tone } from "../../../entities/clau
 
 export interface RiskPresentation {
   label: string;
-  color: string; // 배지 텍스트·아이콘(대비 700대)
+  tone: Tone; // 배지(공용 Badge)용 — 색은 tone이 결정(ui)
+  color: string; // (하위호환) 배지 텍스트·아이콘(대비 700대)
   accentColor: string; // 이미지 하이라이트 강조(600)
   backgroundColor: string; // 배지 배경(50)
   icon: string;
@@ -23,6 +24,7 @@ function present(level: ClauseRiskLevel): RiskPresentation {
   const tone: Tone = riskTone(level);
   return {
     label: riskLabel(level),
+    tone,
     color: color(TONE_TEXT[tone]),
     accentColor: color(TONE_ACCENT[tone]),
     backgroundColor: color(TONE_BG[tone]),

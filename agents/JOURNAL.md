@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-10-01 · Claude · UI/UX 순서0b-1 — ListRow·Badge(tone)·StatusDot + DocumentRow/MenuRow 승격 + UI 테스트 게이트 (TASK-U0b1, #100)
+- **무엇**: 화면 리디자인(순서1~5) 선행 공통 컴포넌트. `packages/ui`에 **ListRow**(슬롯·onPress 유무·disabled·표면 variant card/flat·제목 타이포 variant, **trailing 포함 행 전체 press**)·**Badge tone**(neutral/danger/warning/success/info, color/bg prop 제거)·**StatusDot(tone)** 신설 + `tone.ts`(toneClasses/toneForeground/toneAccent). DocumentRow·profile MenuRow·ClauseCard를 이 위로 승격. **UI 테스트를 게이트에 배선**(mobile jest-expo 재사용).
+- **착수 전 Codex 설계 토론**(order0b): 핵심 반영 — ① **ListRow trailing press 제외 철회**(배지·chevron 탭도 문서 열림=회귀 방지) ② Badge color/bg **같은 변경에서 제거**(소비자 ClauseCard뿐)·tone→역할 정적 매핑·**대비 휘도비 ≥4.5:1 단위검사**·ui는 entities import 금지 ③ **DocumentRow a11y 버그**(partial·분석 페이지 수 누락 → 보완) ④ **FreeQuotaRow→Badge 반대**(상태 분기 보존) ⑤ 범위 분할(0b-1/0b-2)·BrandHeader·Notice·그림자는 순서1 ⑥ UI 테스트=ui 소유+mobile jest-expo 재사용(복제 금지).
+- **검증**: ui 유닛 **13**(tone 매핑·WCAG 대비 5 tone·ListRow 모드/a11y·Badge) · mobile 유닛 **117** · **Typecheck (ui)**·**Unit tests (ui)** 게이트 신규 배선 · 전체 `checks.sh` **ALL PASS**. **시뮬레이터 실측**: 홈 최근 분석 카드 행(StatusDot 빨강·보관 Badge amber·chevron)·프로필 1:1 문의 평면 행·FreeQuotaRow "3회" 보존 — 회귀 없음.
+- **파일**: `packages/ui/src/`(tone·list-row·status-dot 신규·badge tone 재작성·index·tests·tsconfig·package typescript devDep) · `apps/mobile/jest.ui.config.js`·lucide 목 · `checks.sh`(ui 2항목) · documents(DocumentRow·RecentAnalysisSection·RecentListScreen inline 정리) · profile(MenuRow→ListRow·로그아웃 inline) · result(ClauseCard tone·clausePresentation tone) · spec 0032 · TASKS(U0b1).
+- **다음/주의**: **0b-2(#101)** — Button(병합 도구·min-h·busy/disabled)·IconButton(실제 크기·아이콘 레지스트리)·SectionHeader variant·표시용 EmptyState + capture/entitlement 잔여 inline + nativewind peer 범위. BrandHeader·Notice·card shadow = 순서1(홈)에서 실제 소비 확인 후. react-test-renderer Pressable 함정·Metro 캐시 staleness(--clear) 교훈.
+
 ## 2026-10-01 · Claude · 분석 기록 재열람 — 문서목록 API + 7일 보관(접근 차단) (TASK-008, #96)
 - **무엇**: 무료 사용자도 분석 완료 결과를 **7일간 재열람**. ① 보관 모델 `Document.completedAt·retainUntil`(terminal 확정 tx에서 1회, 중복 무연장, 기존 done|partial 백필) ② 목록 API `GET /me/documents`(소유자·done|partial·retainUntil>now·완료순 커서·일괄 risk 집계·N+1 없음) ③ 재열람 게이트 — 결과 상세를 세션 TTL(24h) 아닌 `retainUntil`+소유권으로 판정(지나면 410) ④ 앱 홈 '최근 분석' 섹션 + 전체 목록 화면 + 조항 재열람(ResultScreen 재사용) + "N일 후 삭제" 배지.
 - **착수 전 Codex 설계 토론**(사용자 워크플로우): "목록 추가"가 아니라 **"24h 세션을 7일 재열람 문서로 전환"**이 핵심. 반영 — 세션 TTL/재열람 권한 분리(코드 확인: findOwnedSession은 expiresAt 미필터라 이미 분리됨, 보관 게이트만 부재), completedAt/retainUntil 영속·1회 설정·무연장·백필, 목록·상세·집계가 **같은 공개 결과(최신 terminal)** 기준, partial 구분(analyzed/total), 안정 커서(completedAt+id), 일괄 집계. 사용자 범위: **조항 재열람만**(이미지 하이라이트=바로 다음), **접근 차단만**(실삭제=#74 바로 다음).
