@@ -1,0 +1,18 @@
+# S22. 분석 기록 재열람 — 홈 최근 섹션 · 목록 (documents) — 반자동 (#96)
+# 사전조건: 로그인된 상태. (목록 내용은 백엔드 seeding 필요 → 아래 자동 범위는 섹션 노출까지)
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서를 담아주세요"
+    timeout: 15000
+# 홈 빈 상태(담긴 페이지 없음)에서 '최근 분석' 섹션이 보인다.
+- assertVisible: "최근 분석"
+# 분석 기록이 없으면 빈 안내(seeding 없는 기본 상태에서 결정적).
+- assertVisible: ".*아직 분석한 계약서가 없어요.*"
+# (seeding 있을 때) '모두 보기' → 전체 목록 화면. 보관 안내 문구 확인.
+#   아래는 기록이 있을 때만 유효 → 수동/실측 구간.
+# - tapOn: "모두 보기"
+# - assertVisible: ".*분석 결과는 7일 동안 보관돼요.*"
+# - tapOn: 첫 번째 문서 행 → 결과(조항) 재열람 진입

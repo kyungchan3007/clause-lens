@@ -5,6 +5,10 @@ import { settleFreeAnalysis } from "./entitlement-ops";
 // 설계: agents/intent/specs/0020-analysis-request-polling.md §③·§⑤, 0021-ocr-risk-analysis.md §③·§⑤
 // 규칙: 문서 상태 전이는 여기(도메인 전이 계약)로만. worker→api import 금지를 이 함수로 대체.
 
+// 분석 완료 결과 재열람 보관 기한(일). completedAt + 이 일수 = retainUntil.
+// 정책 02 · ADR-06(무료 7일). 재열람 접근은 retainUntil로 판정(세션 TTL과 분리, 0030).
+export const RETENTION_DAYS = 7;
+
 // 큐·pub/sub 이름(api·worker 공유). 채널은 공유 Redis 대비 env prefix.
 export const ANALYSIS_QUEUE = "analysis";
 export function analysisChannel(prefix: string, documentId: string): string {
@@ -118,6 +122,17 @@ async function reaggregateAndBump(
     }
     // 무료횟수 정산(#90): done=확정 차감, 그 외=예약 해제. 전이와 같은 tx·jobId 멱등.
     await settleFreeAnalysis(tx, job.id, jobStatus);
+    // 재열람 보관 기한 설정(0030): done|partial 최초 확정 시 completedAt·retainUntil 1회.
+    // `completedAt IS NULL` 가드로 중복 완료·재집계가 기한을 연장하지 못하게 한다(멱등).
+    // failed는 재열람 대상이 아니므로 설정하지 않음(null 유지 → 목록·게이트에서 제외).
+    if (jobStatus === "done" || jobStatus === "partial") {
+      const now = new Date();
+      const retainUntil = new Date(now.getTime() + RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      await tx.$executeRaw`
+        UPDATE "Document"
+        SET "completedAt" = ${now}, "retainUntil" = ${retainUntil}
+        WHERE "id" = ${job.documentId} AND "completedAt" IS NULL`;
+    }
   } else {
     jobStatus = "processing";
     documentStatus = "analyzing";

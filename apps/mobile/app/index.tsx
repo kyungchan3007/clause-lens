@@ -14,6 +14,7 @@ import {
 } from "../src/features/upload";
 import { useAnalysis, useAnalysisStore } from "../src/features/analysis";
 import { getAccessToken, useAuthStore } from "../src/features/auth";
+import { RecentAnalysisSection } from "../src/features/documents";
 
 const UPLOAD_ACTIVE = ["presigning", "uploading", "confirming"];
 
@@ -170,6 +171,14 @@ export default function Page() {
         </Pressable>
       </View>
       <CaptureScreen
+        emptyExtra={
+          <RecentAnalysisSection
+            onOpen={(id) =>
+              router.push({ pathname: "/result", params: { documentId: id } })
+            }
+            onSeeAll={() => router.push("/recent")}
+          />
+        }
         analyze={{
           phase: m.phase,
           sentCount: m.sentCount,
