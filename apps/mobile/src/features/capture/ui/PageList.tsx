@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
 import { Button, Icon } from "@clause-lens/ui";
-import { semantic } from "@clause-lens/tokens";
+import { color } from "@clause-lens/tokens";
 import { useDraftStore } from "../model/draftStore";
 import { useImagePicker } from "../model/useImagePicker";
 import { PageItem } from "./PageItem";
@@ -101,7 +101,7 @@ export function PageList({ analyze }: { analyze?: AnalyzeControls }) {
             className={`mt-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-3 ${locked ? "opacity-40" : ""}`}
             accessibilityLabel="페이지 추가"
           >
-            <Icon name="Plus" size={17} color={semantic.light.primary} />
+            <Icon name="Plus" size={17} color={color("primary")} />
             <Text className="text-sm font-medium text-primary">페이지 추가</Text>
           </Pressable>
         }

@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Icon } from "@clause-lens/ui";
-import { semantic } from "@clause-lens/tokens";
+import { IconButton } from "@clause-lens/ui";
 
 import { CaptureScreen, useDraftStore } from "../src/features/capture";
 import {
@@ -159,16 +158,12 @@ export default function Page() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <View className="flex-row items-center justify-end px-4 py-2">
-        <Pressable
-          accessibilityRole="button"
+      <View className="flex-row items-center justify-end px-2 py-1">
+        <IconButton
+          icon="User"
           accessibilityLabel="마이페이지"
           onPress={() => router.push("/profile")}
-          hitSlop={12}
-          className="p-1 active:opacity-60"
-        >
-          <Icon name="User" size={24} color={semantic.light.text} />
-        </Pressable>
+        />
       </View>
       <CaptureScreen
         emptyExtra={

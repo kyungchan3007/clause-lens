@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-10-01 · Claude · UI/UX 순서0b-2 — Button·IconButton·SectionHeader·EmptyState + semantic.light 정리 (TASK-U0b2, #101)
+- **무엇**: 공통 컴포넌트 2단계. `packages/ui`에 **Button 재작성**(스타일 표면 차단=className·style·무제한 spread 제거·허용 native props만, `size` min-h(md48/lg52)·`fullWidth`·`busy`/`disabled`·상태색 1회 매핑→Text class/Icon·spinner color()·스피너=선행 슬롯+label 유지) · **IconButton**(minW/H 48·accessibilityLabel 필수·아이콘 레지스트리) · **SectionHeader** variant(label/title)+action(형제 button·여백 소유권) · **EmptyState**(표시 전용 w-full) · **ICON_REGISTRY/IconName**. 이관: 마이페이지·뒤로→IconButton, capture EmptyState→공용(두 경로 보존). 잔여 `semantic.light` 직접 참조 0건(PageList·PageItem·FaqSection·FreeQuotaRow 아이콘·app/index). nativewind peer `^4.2.6`.
+- **착수 전 Codex 설계 토론**(order0b2): ① className뿐 아니라 **style·spread도 차단** ② **busy를 화면 active에 일괄 연결 금지**(PageList "취소" 회귀 방지) ③ IconButton **minW/H 48**(padding 추정 금지)·레지스트리(빈 활성 버튼 금지) ④ SectionHeader `px-4 pt-6` 여백 이중 방지 ⑤ EmptyState hero Fragment→View 너비 축소 주의·홈 0건도 extra 경로 ⑥ FreeQuotaRow 상태 분기 보존(아이콘 색만) ⑦ 정정(ResultScreen disabled·마이페이지=app/index·FaqSection·#101 develop 브랜치) ⑧ 커밋=컴포넌트+caller 이관 묶어 3단계.
+- **검증**: ui 유닛 **24**(Button disabled/busy·스피너·a11y / IconButton 48·레지스트리 / SectionHeader action / EmptyState) · mobile 유닛 117 · 타입체크(ui+mobile) · 전체 게이트 **ALL PASS**. 번들 클린 로드(3844 모듈·에러 0). **로그인 이후 EmptyState·IconButton 육안은 세션 만료로 후속**(단위+게이트+클린 번들 커버).
+- **파일**: `packages/ui/src`(button 재작성·icon-button·empty-state 신규·section-header variant·icon 레지스트리·index·tests) · package.json(peer ^4.2.6) · `apps/mobile`(app/index·RecentListScreen IconButton, capture EmptyState·PageList·PageItem·profile FaqSection·entitlement FreeQuotaRow 색 정리) · spec 0034 · TASKS(U0b2).
+- **다음/주의**: **순서1(홈 리디자인)**부터 — BrandHeader·Notice·card shadow를 그때 실제 소비 확인 후 도입. 홈 SectionHeader(title+action) 적용. 로그인 후 0b-2 육안 실측. cn/tailwind-merge 미도입(필요 시).
+
 ## 2026-10-01 · Claude · UI/UX 순서0b-1 — ListRow·Badge(tone)·StatusDot + DocumentRow/MenuRow 승격 + UI 테스트 게이트 (TASK-U0b1, #100)
 - **무엇**: 화면 리디자인(순서1~5) 선행 공통 컴포넌트. `packages/ui`에 **ListRow**(슬롯·onPress 유무·disabled·표면 variant card/flat·제목 타이포 variant, **trailing 포함 행 전체 press**)·**Badge tone**(neutral/danger/warning/success/info, color/bg prop 제거)·**StatusDot(tone)** 신설 + `tone.ts`(toneClasses/toneForeground/toneAccent). DocumentRow·profile MenuRow·ClauseCard를 이 위로 승격. **UI 테스트를 게이트에 배선**(mobile jest-expo 재사용).
 - **착수 전 Codex 설계 토론**(order0b): 핵심 반영 — ① **ListRow trailing press 제외 철회**(배지·chevron 탭도 문서 열림=회귀 방지) ② Badge color/bg **같은 변경에서 제거**(소비자 ClauseCard뿐)·tone→역할 정적 매핑·**대비 휘도비 ≥4.5:1 단위검사**·ui는 entities import 금지 ③ **DocumentRow a11y 버그**(partial·분석 페이지 수 누락 → 보완) ④ **FreeQuotaRow→Badge 반대**(상태 분기 보존) ⑤ 범위 분할(0b-1/0b-2)·BrandHeader·Notice·그림자는 순서1 ⑥ UI 테스트=ui 소유+mobile jest-expo 재사용(복제 금지).
