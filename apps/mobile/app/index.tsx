@@ -202,13 +202,16 @@ export default function Page() {
       ) : (
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ paddingBottom: 28 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 28 }}
           showsVerticalScrollIndicator={false}
         >
           <View className="px-5 pb-1 pt-1">
             <FreeQuotaChip />
           </View>
-          {onboarding ? <Hero /> : null}
+          {/* Hero는 홈의 중심 — 온보딩·최근있음 모두 표시, 남는 공간 중앙에 배치. */}
+          <View className="flex-1 justify-center">
+            <Hero />
+          </View>
           <View className="px-5 pt-3">
             <CaptureCTA />
           </View>

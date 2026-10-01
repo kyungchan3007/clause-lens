@@ -15,3 +15,4 @@
 - completedAtLabel today → "오늘"(시간·pad 제거). retentionBadge.test "오늘 HH:MM"→"오늘"(now 동일 순간, tz 무관)로 갱신.
 - 테스트 함정: RecentEntryButton→documentsStore→auth(@react-native-kakao/user ESM) → `jest.mock("@react-native-kakao/user")`로 체인 차단(FreeQuotaChip와 동일).
 - 설계는 사용자 Q&A 확정(Codex 생략): 진입 버튼→/recent·상대일·라인 플레이스홀더·Hero ShieldCheck.
+- **추가 지적(사용자)**: 최근있음 홈이 "푸터만" 보이고 **중앙 Hero가 없음**(Hero가 온보딩에서만 렌더됐음). → Hero를 **최근있음에도 표시**하고 **홈 중앙 배치**(ScrollView flexGrow:1 + Hero flex-1 justify-center, 푸터 하단). 시안(센터 Hero+하단 푸터) 구조 일치. 시뮬레이터 실측 확인.

@@ -25,7 +25,8 @@
 - 설계 방향은 사용자 Q&A로 확정(진입 버튼→전체화면). 완료 전 `checks.sh` PASS.
 
 ## Acceptance
-- [x] 온보딩 Hero=ShieldCheck(네이비, `color("text")`) — 시안 Main 일치. (코드 반영 · 단위는 lucide 목 · 시뮬 육안은 0건 상태 필요 → 후속)
+- [x] 온보딩 Hero=ShieldCheck(네이비, `color("text")`) — 시안 Main 일치. **시뮬레이터 육안 확인**(최근있음 홈 중앙 Hero).
+- [x] **Hero를 홈 중앙에 항상 표시**(온보딩·최근있음 모두) — 기존엔 온보딩에서만 렌더돼 최근있음 홈이 "푸터만" 보이고 중앙이 빔(사용자 지적). ScrollView flexGrow:1 + Hero `flex-1 justify-center`로 센터 배치·푸터(촬영/최근/고지) 하단. **시뮬레이터 실측**.
 - [x] 홈 최근있음=「최근 분석 N건 >」 진입 버튼 → /recent, 인라인 카드 제거. 로딩·에러 처리. **시뮬레이터 실측**(최근 6건 진입 버튼 → /recent 이동).
 - [x] DocumentRow 날짜 상대일(오늘/어제/M·D)·시간 미표시·라인 플레이스홀더. **시뮬레이터 실측**(/recent 카드).
 - [x] 동작 보존(촬영·갤러리·4상태·잔량·재열람) + 단위(retentionBadge·RecentEntryButton 4) + 게이트 ALL PASS.
