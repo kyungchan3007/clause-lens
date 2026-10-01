@@ -3,6 +3,7 @@ import type { AnalysisStatusResponse } from "@clause-lens/contracts";
 
 import {
   fetchStatus,
+  HttpError,
   openStatusStream,
   requestAnalysis,
 } from "../api/analysisApi";
@@ -146,11 +147,15 @@ export function useAnalysis() {
         if (!isTerminal(phaseFromStatus(status))) {
           beginWatch(documentId, auth.accessToken, runId);
         }
-      } catch {
+      } catch (e) {
         if (!alive(runId)) return;
-        useAnalysisStore
-          .getState()
-          .set({ phase: "error", message: "분석 요청에 실패했어요" });
+        // 접수 403 = 가용 무료 횟수 없음(소유권 실패=404·업로드 전=409). 예약 때문일 수도 있어
+        // "모두 사용"으로 단정하지 않는다. 잔량 갱신은 상위 동기화 훅이 phase=error에서 수행.
+        const message =
+          e instanceof HttpError && e.status === 403
+            ? "현재 사용할 수 있는 무료 분석 횟수가 없어요"
+            : "분석 요청에 실패했어요";
+        useAnalysisStore.getState().set({ phase: "error", message });
       }
     },
     [],

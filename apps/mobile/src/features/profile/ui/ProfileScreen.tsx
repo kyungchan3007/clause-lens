@@ -1,8 +1,11 @@
+import { useCallback } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { Icon, IconBadge, SectionHeader } from "@clause-lens/ui";
 import { semantic } from "@clause-lens/tokens";
 
 import { useAuthStore } from "../../auth";
+import { FreeQuotaRow, useEntitlementStore } from "../../entitlement";
 import { FaqSection } from "./FaqSection";
 
 // provider 코드 → 사용자에게 보일 라벨.
@@ -35,6 +38,13 @@ export function ProfileScreen() {
   const signOut = useAuthStore((s) => s.signOut);
   const providerLabel = PROVIDER_LABEL[user?.provider ?? ""] ?? user?.provider ?? "";
 
+  // 프로필 포커스마다 서버 잔량 재조회(접수·완료로 바뀌었을 수 있음).
+  useFocusEffect(
+    useCallback(() => {
+      void useEntitlementStore.getState().refresh();
+    }, []),
+  );
+
   const confirmSignOut = () => {
     Alert.alert("로그아웃", "로그아웃 하시겠어요?", [
       { text: "취소", style: "cancel" },
@@ -58,6 +68,10 @@ export function ProfileScreen() {
           ) : null}
         </View>
       </View>
+
+      {/* 내 이용 — 남은 무료 분석 횟수(서버 값) */}
+      <SectionHeader label="내 이용" />
+      <FreeQuotaRow />
 
       {/* 자주 묻는 질문 */}
       <FaqSection />
