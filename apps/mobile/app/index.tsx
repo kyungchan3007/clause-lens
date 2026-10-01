@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ScrollView, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Notice } from "@clause-lens/ui";
@@ -129,6 +129,18 @@ export default function Page() {
     clearDraft();
   };
 
+  // "홈으로" — 파괴적(담은 페이지·진행 분석 소실)이라 확인 후 초기화(오터치 방지).
+  const onHome = (): void => {
+    Alert.alert(
+      "홈으로 이동",
+      "담은 페이지와 진행 중인 분석이 사라져요. 홈으로 이동할까요?",
+      [
+        { text: "취소", style: "cancel" },
+        { text: "홈으로", style: "destructive", onPress: onReset },
+      ],
+    );
+  };
+
   // 업로드+분석을 하나의 표시 상태로 병합.
   const merged = (): {
     phase:
@@ -178,7 +190,7 @@ export default function Page() {
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       <BrandHeader
         onProfile={() => router.push("/profile")}
-        onHome={hasPages ? onReset : undefined}
+        onHome={hasPages ? onHome : undefined}
       />
       {hasPages && m.phase === "idle" ? (
         // idle: 담은 페이지 리뷰 + 분석하기. 진행·터미널은 아래 ProcessingScreen이 소유.

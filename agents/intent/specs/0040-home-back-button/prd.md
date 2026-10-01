@@ -11,7 +11,7 @@
 
 ## 3. 목표가 아닌 것 (Non-goals)
 - N1. routes(profile·recent·result) back 스타일 통일 — 각자 back 있음(후속 판단).
-- N2. "홈으로" 확인 다이얼로그(즉시 초기화). 담은 페이지 보존 모드.
+- N2. 담은 페이지 보존 모드(홈으로=초기화).
 
 ## 4. 제약 (Constraints)
 - BrandHeader 단일 사용처(홈). onReset은 기존 로직 재사용(cancelAnalysis+resetUpload+ref 해제+clearDraft). 완료 전 `checks.sh` PASS.
@@ -19,4 +19,5 @@
 ## Acceptance
 - [ ] 담은 페이지·진행·무료소진 상태 BrandHeader 좌측 "홈으로"(ChevronLeft)·누르면 빈 홈 복귀.
 - [ ] 빈 홈에선 홈 버튼 없음(로고). 프로필 유지.
+- [ ] "홈으로"는 파괴적이라 확인 다이얼로그(취소/홈으로) 후 초기화 — 오터치 방지(PR 리뷰 반영).
 - [ ] 단위(BrandHeader onHome 유무) + 시뮬레이터 + 게이트 PASS.
