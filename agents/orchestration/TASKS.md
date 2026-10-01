@@ -66,6 +66,12 @@
 | TASK-R2 | 결과 route 판정 로직 커스텀 훅 분리 (app/result.tsx) | 〃 | [0042](../intent/specs/0042-result-source-hook/) | Claude | **in-progress** (#119 — widgets/result-source · 단위·게이트 PASS · review 경로 시뮬 실측) | TASK-R1 |
 | TASK-R3 | 프로필 화면 로직 커스텀 훅 분리 (ProfileScreen) | 〃 | – | – | todo (#120) | – |
 
+## 테스트 자산 태스크
+
+| id | 제목 | 정의 | spec | owner | status | depends |
+| --- | --- | --- | --- | --- | --- | --- |
+| TASK-E1 | Maestro 시나리오 문구를 홈 리디자인 이후 UI로 동기화 | [SCENARIOS.md](../../apps/mobile/.maestro/SCENARIOS.md) | [0044](../intent/specs/0044-maestro-home-copy-sync/) | Claude | **in-progress** (#123 — 17 yaml + SCENARIOS 동기화 · 시뮬 11개 PASS · 게이트 PASS · PR 리뷰 대기) | TASK-U1b |
+
 ## 하네스·거버넌스 태스크
 
 | id | 제목 | 정의 | spec | owner | status | depends |

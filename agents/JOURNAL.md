@@ -22,6 +22,14 @@
 - **파일**: `apps/mobile/src/widgets/result-source/**`(신규) · `apps/mobile/app/result.tsx` · spec 0042 · TASKS(R2).
 - **다음/주의**: #120 ProfileScreen. Maestro 시나리오 문구 동기화 별도 이슈 필요. Notion 미기록(사용자 직접 정리).
 
+## 2026-10-02 · Claude · Maestro 시나리오 문구 홈 리디자인 이후 UI로 동기화 (TASK-E1, #123)
+- **무엇**: `.maestro` yaml 17개 중 16개가 의존하던 옛 홈 앵커 `계약서를 담아주세요`를 Hero `계약서, 찍기만 하세요`로 교체 + 바뀐 문구 동기화(`촬영하기`→`계약서 촬영`, `1페이지`→`담은 페이지 1장`/`1페이지 삭제`, `업로드 완료`·`분석 완료`→ProcessingScreen 문구, 홈 최근 섹션→`최근 분석 N건` 버튼). recent.yaml은 기록 유무 `runFlow.when` 분기. SCENARIOS.md 동기화. 앱 코드 불변.
+- **왜**: 홈 리디자인(#106·#107·#112) 때 시나리오 트리거 누락으로 로그인 이후 시나리오 전부 깨져 있었음(#119 중 발견).
+- **검증**: 시뮬 11개 PASS(session-restore·capture-empty·recent·profile·faq-multi·logout-cancel·profile-back·capture-add-page·capture-remove-page(피커 탭 수동)·capture-gate·upload(재로그인 후, 무료 소진 화면 도달)). 게이트 **ALL PASS**.
+- **이번에 드러난 공백**: upload 실측 중 access 만료(TTL 15분) → "로그인이 필요해요." — 앱에 토큰 자동 refresh가 없어 실행 15분 뒤 인증 요청 401·재실행 시 로그아웃. yaml 무관, 별도 이슈 필요. 문구 기반 앵커는 문구 변경 시 다시 깨짐(testID 도입 검토). `pnpm issue-sync`가 폴더 spec 미지원이라 이슈 체크박스는 수동 동기화.
+- **파일**: `apps/mobile/.maestro/*.yaml`·`SCENARIOS.md` · spec 0044 · TASKS(E1).
+- **다음/주의**: analysis·result는 무료 횟수 있는 계정으로 수동 실측 필요. login·login-failure·logout·permission-denied 수동. Notion 미기록(사용자 지시).
+
 ## 2026-10-02 · Claude · 홈 분석 세션 로직 커스텀 훅 분리 (#118)
 - **무엇**: `app/index.tsx`(249줄→약 75줄)의 업로드→분석 세션 로직을 `src/widgets/home-session/`로 추출. `useAnalysisSession()`(구독·effect 3개·액션 analyze/cancel/retry/reset/confirmHome) · `useHomeOnboarding()` · 순수 함수 `mergeSessionPhase()`. route는 렌더·네비게이션만. **동작 불변**.
 - **왜**: 사용자 지적 "tsx에 마크업과 비즈니스 로직 혼재 → 웹처럼 커스텀 훅 모듈화". 세션 로직·상태 병합이 테스트 불가 상태였음. 도메인별 이슈 분리: #118(홈)·#119(결과)·#120(프로필).
