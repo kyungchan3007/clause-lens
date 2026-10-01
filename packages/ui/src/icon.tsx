@@ -30,6 +30,7 @@ export const ICON_REGISTRY = {
   ShieldCheck: map.ShieldCheck,
   X: map.X,
   Trash2: map.Trash2,
+  Star: map.Star,
 } satisfies Record<string, React.ComponentType<any>>;
 
 export type IconName = keyof typeof ICON_REGISTRY;

@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Notice } from "@clause-lens/ui";
 import { BrandHeader, Hero, HowItWorks, ProcessingScreen } from "../src/features/home";
-import { FreeQuotaChip } from "../src/features/entitlement";
+import { FreeQuotaChip, QuotaExceededScreen } from "../src/features/entitlement";
 
 import { CaptureCTA, CaptureScreen, useDraftStore } from "../src/features/capture";
 import {
@@ -47,6 +47,7 @@ export default function Page() {
   const analysisDone = useAnalysisStore((s) => s.doneCount);
   const analysisTotal = useAnalysisStore((s) => s.totalCount);
   const analysisMessage = useAnalysisStore((s) => s.message);
+  const analysisErrorKind = useAnalysisStore((s) => s.errorKind);
 
   const uploadActive = UPLOAD_ACTIVE.includes(uploadPhase);
   const analysisActive = ["requesting", "analyzing"].includes(analysisPhase);
@@ -146,6 +147,7 @@ export default function Page() {
     sentCount: number;
     totalCount: number;
     message?: string;
+    errorKind?: "quota";
   } => {
     if (uploadPhase === "error") {
       return { phase: "error", sentCount, totalCount, message: uploadMessage };
@@ -167,6 +169,7 @@ export default function Page() {
         sentCount: analysisDone,
         totalCount: analysisTotal,
         message: analysisMessage,
+        errorKind: analysisErrorKind,
       };
     }
     return { phase: "idle", sentCount: 0, totalCount: 0 };
@@ -183,6 +186,9 @@ export default function Page() {
           quota={<FreeQuotaChip />}
           analyze={{ onAnalyze: () => void start(snapshots(), getAuth) }}
         />
+      ) : hasPages && m.phase === "error" && m.errorKind === "quota" ? (
+        // 분석 403(무료 소진) → 전용 무료 소진 화면. 확인=idle 복귀(onCancel)·남은 상태=/recent.
+        <QuotaExceededScreen onConfirm={onCancel} onViewStatus={() => router.push("/recent")} />
       ) : hasPages ? (
         // active + 모든 터미널(done/partial/failed/error) → 전용 진행 화면. (m.phase !== "idle")
         <ProcessingScreen

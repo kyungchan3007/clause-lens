@@ -48,7 +48,8 @@
 | TASK-U1 | 홈 화면 리디자인 (빈 상태·페이지 담음·최근) | 14 순서 1 | [0035](../intent/specs/0035-home-redesign/) | Claude | **done** (#106·#107 — 4상태·BrandHeader·Notice·card shadow·그리드 보류) | TASK-U0b2 |
 | TASK-U2 | 분석 진행 화면 리디자인 (전용 ProcessingScreen) | 14 순서 2 | [0036](../intent/specs/0036-processing-screen/) | Claude | **done** (#108·PR#109 — 서버 계약 반영: indeterminate 흐르는 바·정직 문구 3곳) | TASK-U1 |
 | TASK-U2b | 담은 페이지 2열 썸네일 그리드 (드래그 엔진 교체) | 14 순서 1 후속(②) | [0037](../intent/specs/0037-captured-pages-grid/) | Claude | **done** (#110·PR#111 — sortables Grid·fixed-order·ID-only 드롭·썸네일·미리보기 모달) | TASK-U2 |
-| TASK-U1b | 홈 리디자인 보정 (Hero 아이콘·최근 진입 버튼·DocumentRow 상대일/플레이스홀더) | 14 순서 1 보정 | [0038](../intent/specs/0038-home-polish/) | Claude | **in-progress** (#112 — 사용자 시안 보정: 진입 버튼→/recent) | TASK-U2b |
+| TASK-U1b | 홈 리디자인 보정 (Hero 아이콘·최근 진입 버튼·DocumentRow 상대일/플레이스홀더·중앙 Hero) | 14 순서 1 보정 | [0038](../intent/specs/0038-home-polish/) | Claude | **review** (#112/PR#113) | TASK-U2b |
+| TASK-U4a | 구독 예고 UI — 무료 소진(403) 화면 + 최근 목록 구독 카드 | 14 ⑥·⑨ (구독 선반영) | [0039](../intent/specs/0039-subscription-ui/) | Claude | **in-progress** (#114 — 시안 선반영, 실구독=TASK-006) | TASK-U1b |
 | TASK-U3~5 | 화면 리디자인 (결과·마이페이지·최근목록) | 14 순서 3~5 | – | – | todo | TASK-U2b |
 
 > BrandHeader·Notice·card shadow는 선제 공통화하지 않고 **순서1(홈 리디자인)**에서 실제 소비 확인 후 도입(Codex·0012 승격 스펙).

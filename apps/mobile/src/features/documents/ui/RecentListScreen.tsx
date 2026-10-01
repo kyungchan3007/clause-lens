@@ -5,6 +5,7 @@ import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
 import { DocumentRow } from "./DocumentRow";
+import { SubscriptionPromoCard } from "./SubscriptionPromoCard";
 
 
 // 최근 분석 전체 목록(무한 스크롤·당겨서 새로고침). 서버 값만 표시.
@@ -50,6 +51,7 @@ export function RecentListScreen({
           </Pressable>
         </View>
       ) : (
+        <View className="flex-1">
         <FlatList
           data={items}
           keyExtractor={(it) => it.documentId}
@@ -84,6 +86,12 @@ export function RecentListScreen({
             ) : null
           }
         />
+        {items.length > 0 ? (
+          <View className="px-4 pb-3 pt-1">
+            <SubscriptionPromoCard />
+          </View>
+        ) : null}
+        </View>
       )}
     </View>
   );

@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-01 · Claude · 구독 예고 UI — 무료 소진(403) + 최근 목록 구독 카드 (TASK-U4a, #114)
+- **무엇**: 시안에 있으나 미구현이던 구독 예고 UI 2곳(실구독=TASK-006). ⑥ **무료 소진(403) 전용 화면**(티켓·"무료 분석 횟수가 없어요"·안내·구독 Notice(별)·확인·남은 분석 상태 보기). ⑨ **최근 목록 하단 구독 카드**("분석 결과를 계속 보관하세요"·"구독 알아보기 (곧 제공)").
+- **설계=사용자 요청+주어진 시안**(Codex 생략, "일단 구현"). 403 식별: analysisStore `errorKind="quota"` → app/index merged에 포함 → `hasPages && error && errorKind==="quota"`면 QuotaExceededScreen(기존 ProcessingScreen error 앞 분기). 확인=기존 onCancel(idle 복귀·담은 페이지 유지)·남은 상태=/recent·구독 버튼=Alert('곧 제공').
+- **구현**: QuotaExceededScreen(entitlement/ui)·SubscriptionPromoCard(documents/ui)·RecentListScreen 하단 고정·analysisStore errorKind·useAnalysis 403 분기·Star 아이콘 추가.
+- **검증**: 단위(QuotaExceededScreen 2·SubscriptionPromoCard 2)·게이트 **ALL PASS**. **시뮬레이터 실측**: 무료 0회에서 분석하기 → 403 → 무료 소진 화면(시안 일치) → 확인=담은 페이지 복귀. /recent 하단 구독 카드 시안 일치.
+- **파일**: `entitlement`(QuotaExceededScreen+test·index) · `documents`(SubscriptionPromoCard+test·RecentListScreen) · `analysis`(analysisStore·useAnalysis) · `app/index.tsx`(quota 분기) · `packages/ui/icon`(Star) · spec 0039 · TASKS(U4a).
+- **다음/주의**: 실제 구독 결제·플랜 화면=TASK-006. 마이페이지(⑤)·결과(순서3). 무료 소진 "확인"/"남은 상태 보기" 동작은 합리적 기본(사용자 피드백 시 조정).
+
 ## 2026-10-01 · Claude · 홈 리디자인 보정 (TASK-U1b, #112)
 - **무엇**: 순서1(홈) 시안 보정. ① 온보딩 Hero 아이콘 ScanLine→**ShieldCheck**(네이비 `color("text")`). ② 홈 '최근있음' 인라인 카드 → **「최근 분석 N건 >」 진입 버튼**(RecentEntryButton)→기존 /recent 전체 화면. ③ DocumentRow 날짜 "오늘 HH:MM"→**상대일(오늘/어제/M·D)**·좌측 문서 아이콘→**라인 플레이스홀더**(썸네일 느낌). ④ **홈 중앙 Hero 복원**(사용자 지적 — Hero가 온보딩에서만 렌더돼 최근있음 홈이 "푸터만" 보이고 중앙 빔) → Hero를 최근있음에도 표시·ScrollView flexGrow:1 + Hero flex-1 justify-center로 **센터 배치**(시안 구조). 시뮬레이터 실측.
 - **설계=사용자 Q&A 확정**(Codex 생략): "최근은 원할 때 인터랙션으로"→진입 버튼→/recent · 날짜 상대일 · 라인 플레이스홀더 · Hero는 사용자가 보낸 Main 시안(ShieldCheck).
