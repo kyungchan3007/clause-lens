@@ -15,7 +15,7 @@
 ---
 
 ## 2026-10-01 · Claude · 홈 리디자인 보정 (TASK-U1b, #112)
-- **무엇**: 순서1(홈) 시안 보정. ① 온보딩 Hero 아이콘 ScanLine→**ShieldCheck**(네이비 `color("text")`). ② 홈 '최근있음' 인라인 카드 → **「최근 분석 N건 >」 진입 버튼**(RecentEntryButton)→기존 /recent 전체 화면. ③ DocumentRow 날짜 "오늘 HH:MM"→**상대일(오늘/어제/M·D)**·좌측 문서 아이콘→**라인 플레이스홀더**(썸네일 느낌).
+- **무엇**: 순서1(홈) 시안 보정. ① 온보딩 Hero 아이콘 ScanLine→**ShieldCheck**(네이비 `color("text")`). ② 홈 '최근있음' 인라인 카드 → **「최근 분석 N건 >」 진입 버튼**(RecentEntryButton)→기존 /recent 전체 화면. ③ DocumentRow 날짜 "오늘 HH:MM"→**상대일(오늘/어제/M·D)**·좌측 문서 아이콘→**라인 플레이스홀더**(썸네일 느낌). ④ **홈 중앙 Hero 복원**(사용자 지적 — Hero가 온보딩에서만 렌더돼 최근있음 홈이 "푸터만" 보이고 중앙 빔) → Hero를 최근있음에도 표시·ScrollView flexGrow:1 + Hero flex-1 justify-center로 **센터 배치**(시안 구조). 시뮬레이터 실측.
 - **설계=사용자 Q&A 확정**(Codex 생략): "최근은 원할 때 인터랙션으로"→진입 버튼→/recent · 날짜 상대일 · 라인 플레이스홀더 · Hero는 사용자가 보낸 Main 시안(ShieldCheck).
 - **구현**: `RecentAnalysisSection` 제거(홈 인라인) → `RecentEntryButton`(loading/error/0=null/N건·onSeeAll). `completedAtLabel` today→"오늘"(시간·pad 제거). DocumentRow leading 라인 플레이스홀더. Hero ShieldCheck. app/index 배선.
 - **검증**: retentionBadge·documentsStore·RecentEntryButton(4) 단위·게이트 **ALL PASS**. **시뮬레이터 실측**: 홈 진입 버튼("최근 분석 6건 >")→/recent 이동, /recent 카드 라인 플레이스홀더·"오늘/어제/9/29"(시간 없음) 확인. 온보딩 Hero(ShieldCheck)는 0건 상태 필요 → 코드 반영·육안 후속. (파일 삭제 후 fast refresh 흰 화면 → 앱 재실행으로 복구.)
