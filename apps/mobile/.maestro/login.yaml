@@ -12,7 +12,7 @@ appId: com.chan.clauselens
 # 카카오 로그인 웹뷰(kauth.kakao.com)로 전환됨.
 # ⚠️ 자격증명 입력·"계속하기"는 수동(테스트 계정). 아래는 완료를 최대 60초 대기.
 - extendedWaitUntil:
-    visible: "계약서를 담아주세요"
+    visible: "계약서, 찍기만 하세요"
     timeout: 60000
-# 로그인 성공 → Capture 진입
-- assertVisible: "계약서를 담아주세요"
+# 로그인 성공 → 홈 진입
+- assertVisible: "계약서, 찍기만 하세요"

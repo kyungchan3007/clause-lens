@@ -1,18 +1,37 @@
-# S22. 분석 기록 재열람 — 홈 최근 섹션 · 목록 (documents) — 반자동 (#96)
-# 사전조건: 로그인된 상태. (목록 내용은 백엔드 seeding 필요 → 아래 자동 범위는 섹션 노출까지)
+# S22. 분석 기록 재열람 — 홈 "최근 분석 N건" 진입 → /recent 목록 (documents) — 반자동 (#96, #112)
+# 사전조건: 로그인된 상태 · 로컬 API+Postgres 기동.
+# 홈 리디자인(#112) 이후 홈 인라인 "최근 분석" 섹션은 없음:
+#   기록 있음 → "최근 분석 N건" 진입 버튼 · 0건 → 온보딩(HowItWorks 3단계) + 참고용 안내
 appId: com.chan.clauselens
 ---
 - launchApp:
     clearState: false
 - extendedWaitUntil:
-    visible: "계약서를 담아주세요"
+    visible: "계약서, 찍기만 하세요"
     timeout: 15000
-# 홈 빈 상태(담긴 페이지 없음)에서 '최근 분석' 섹션이 보인다.
-- assertVisible: "최근 분석"
-# 분석 기록이 없으면 빈 안내(seeding 없는 기본 상태에서 결정적).
-- assertVisible: ".*아직 분석한 계약서가 없어요.*"
-# (seeding 있을 때) '모두 보기' → 전체 목록 화면. 보관 안내 문구 확인.
-#   아래는 기록이 있을 때만 유효 → 수동/실측 구간.
-# - tapOn: "모두 보기"
-# - assertVisible: ".*분석 결과는 7일 동안 보관돼요.*"
-# - tapOn: 첫 번째 문서 행 → 결과(조항) 재열람 진입
+# 최근 목록 조회가 끝날 때까지(버튼 또는 온보딩) 대기
+- extendedWaitUntil:
+    visible: "(최근 분석 \\d+건.*|분석 결과는 참고용이며 법률 자문을 대체하지 않아요.)"
+    timeout: 10000
+# (기록 있음) 진입 버튼 → 전체 목록 → 보관 안내 → 뒤로 홈
+- runFlow:
+    when:
+      visible: "최근 분석 \\d+건.*"
+    commands:
+      - tapOn: "최근 분석 \\d+건.*"
+      - extendedWaitUntil:
+          visible: "분석 결과는 7일 동안 보관돼요."
+          timeout: 10000
+      - assertVisible: "최근 분석"
+      - assertVisible: ".*(\\d+일 후 삭제|오늘 만료).*"
+      - tapOn: "뒤로"
+      - assertVisible: "계약서, 찍기만 하세요"
+# (0건) 온보딩 3단계 + 참고용 안내
+- runFlow:
+    when:
+      visible: "분석 결과는 참고용이며 법률 자문을 대체하지 않아요."
+    commands:
+      - assertVisible: "촬영"
+      - assertVisible: "분석"
+      - assertVisible: "하이라이트"
+#   문서 행 탭 → 결과(조항) 재열람은 데이터 의존 → 수동/실측 구간.

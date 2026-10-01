@@ -1,10 +1,13 @@
 # S7. 로그아웃 — 프로필 계정 섹션 → 확인 → 로그인 화면
 # 사전조건: 로그인된 상태
+# ⚠️ 세션을 파괴함 → 이후 로그인 이후 시나리오는 수동 재로그인(login.yaml) 필요. 전체 실행 시 마지막에.
 appId: com.chan.clauselens
 ---
 - launchApp:
     clearState: false
-- assertVisible: "계약서를 담아주세요"
+- extendedWaitUntil:
+    visible: "계약서, 찍기만 하세요"
+    timeout: 15000
 - tapOn: "마이페이지"
 # 계정 > 로그아웃(메뉴 행)
 - tapOn: "로그아웃"
@@ -12,4 +15,6 @@ appId: com.chan.clauselens
 # 확인 다이얼로그의 "로그아웃" 버튼(다이얼로그가 최상단)
 - tapOn: "로그아웃"
 # 로그인 화면 복귀
-- assertVisible: "카카오로 시작하기"
+- extendedWaitUntil:
+    visible: "카카오로 시작하기"
+    timeout: 10000
