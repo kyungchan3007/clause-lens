@@ -2,6 +2,10 @@ import { create } from "zustand";
 import type { DocumentListItem } from "@clause-lens/contracts";
 
 import { getAccessToken } from "../../auth";
+import {
+  isStaleGeneration,
+  syncAccount as syncAccountState,
+} from "../../../shared/model/accountScopedStore";
 import { fetchRecentDocuments } from "../api/documentsApi";
 
 // 재열람 가능한 최근 분석 문서 목록(0030). "서버가 진실의 기준" — 집계·보관 기한을 표시만.
@@ -49,10 +53,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
 
   // 로그인·복원·계정 변경·로그아웃에서 호출. 같은 userId면 유지, 바뀌면 세대++·초기화.
   syncAccount(userId) {
-    if (get().userId === userId) return;
-    set({
-      generation: get().generation + 1,
-      userId,
+    syncAccountState(get, set, userId, {
       status: "idle",
       items: [],
       nextCursor: null,
@@ -66,7 +67,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     if (get().refreshing) return;
     const gen = get().generation;
     const token = await getAccessToken();
-    if (get().generation !== gen) return;
+    if (isStaleGeneration(get, gen)) return;
     if (!token) {
       set({ status: "idle", items: [], nextCursor: null });
       return;
@@ -74,14 +75,14 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     set({ refreshing: true, status: get().items.length ? get().status : "loading" });
     try {
       const page = await fetchRecentDocuments(token);
-      if (get().generation !== gen) return; // 계정 변경 → 폐기
+      if (isStaleGeneration(get, gen)) return; // 계정 변경 → 폐기
       set({ status: "ready", items: dedupe(page.items), nextCursor: page.nextCursor });
     } catch {
-      if (get().generation !== gen) return;
+      if (isStaleGeneration(get, gen)) return;
       if (!get().items.length) set({ status: "error" });
       // 기존 목록이 있으면 조용히 유지(다음 기회에 갱신).
     } finally {
-      if (get().generation === gen) set({ refreshing: false });
+      if (!isStaleGeneration(get, gen)) set({ refreshing: false });
     }
   },
 
@@ -91,11 +92,11 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     if (!cursor || get().loadingMore || get().refreshing) return;
     const gen = get().generation;
     const token = await getAccessToken();
-    if (get().generation !== gen || !token) return;
+    if (isStaleGeneration(get, gen) || !token) return;
     set({ loadingMore: true });
     try {
       const page = await fetchRecentDocuments(token, cursor);
-      if (get().generation !== gen) return;
+      if (isStaleGeneration(get, gen)) return;
       set({
         items: dedupe([...get().items, ...page.items]),
         nextCursor: page.nextCursor,
@@ -103,7 +104,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     } catch {
       // 실패는 조용히(사용자가 다시 스크롤하면 재시도). 커서 유지.
     } finally {
-      if (get().generation === gen) set({ loadingMore: false });
+      if (!isStaleGeneration(get, gen)) set({ loadingMore: false });
     }
   },
 
