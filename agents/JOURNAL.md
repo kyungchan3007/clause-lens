@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-01 · Claude · expo-constants 57.0.20 정렬 — Expo Doctor 게이트 통과 (chore, #92)
+- **무엇**: `apps/mobile`의 `expo-constants`를 Expo SDK 57 요구치 `~57.0.20`로 정렬(`expo install`). 완료 게이트 Expo Doctor FAIL(드리프트 `57.0.19`) 해소 → 전체 `checks.sh` ALL PASS.
+- **왜/분리**: TASK-005(#90) 백엔드 작업 중 발견했으나 성격(모바일 의존성)이 달라 `1이슈=1브랜치=1성격`대로 별도 이슈·브랜치. 엔타이틀먼트 PR #91은 불변.
+- **막힘**: `expo install`의 lockfile peer 재해석(jest에 `@types/node` 추가)으로 node_modules 어긋나 ts-jest 미발견→테스트 실패 → 루트 `pnpm install` 동기화로 해결. 브랜치 90의 `0027/trace.auto.jsonl`(gitignore) 잔존이 폴더 게이트 오탐 → 비추적 잔존물 삭제.
+- **검증**: `expo-doctor` 21/21 · 전체 게이트 16항목 ALL PASS.
+- **파일**: `apps/mobile/package.json`, `pnpm-lock.yaml`, spec 폴더 `0028-expo-constants-align/`.
+- **다음/주의**: 하네스 [보완] 2건 — ① `trace.auto.jsonl`을 spec 폴더 밖으로(브랜치 전환 오탐 방지) ② `expo install` 후 게이트에 `pnpm install` 동기화 단계. issue-link/issue-sync 폴더 spec 미지원도 여전(별건).
+
 ## 2026-09-30 · Claude · 복기 자동 주입 + 측정 — 하네스 이식 4/4 (TASK-H4, #85, 마지막)
 - **무엇**: 대화 시작·날짜/브랜치 변경 첫 요청에 **미처리 커밋 `[보완]`**(이후 언급 제외)·최근 JOURNAL·작업 상태를 AI 컨텍스트로 **자동 주입**(session-context·recall-hook, stdout·비차단·반복 억제·1500자). `metrics.mjs`로 복기 참조율·체크박스 방치율 측정(`pnpm metrics`, 기준선 33%).
 - **적응**: ClauseLens JOURNAL은 표가 아닌 `## 날짜 · Claude · 제목` 섹션 → `recentJournal` 파서 재작성. 커밋 `[보완]`(#83부터)·`agents/JOURNAL.md`만(Notion은 hook이 못 읽음). base=develop.
