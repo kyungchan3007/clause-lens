@@ -8,72 +8,10 @@ import { useImagePicker } from "../model/useImagePicker";
 import { PageItem } from "./PageItem";
 import type { DraftPage } from "../model/types";
 
-// 업로드+분석 제어(서버 개념 없이 로컬 타입) — app 레이어가 조합·주입. feature→feature import 방지.
+// 분석 제어(idle 전용) — 진행·터미널 표현은 전용 ProcessingScreen(app 레이어)이 소유.
+// PageList는 담은 페이지 리뷰 + "분석하기"만. app이 idle일 때만 이 화면을 보여준다.
 export interface AnalyzeControls {
-  phase:
-    | "idle"
-    | "presigning"
-    | "uploading"
-    | "confirming"
-    | "uploaded"
-    | "requesting"
-    | "analyzing"
-    | "done"
-    | "partial"
-    | "failed"
-    | "error";
-  sentCount: number; // 진행 카운트(업로드=전송, 분석=완료 페이지)
-  totalCount: number;
-  message?: string;
   onAnalyze: () => void;
-  onRetry: () => void;
-  onCancel: () => void;
-  onViewResult?: () => void; // 완료·부분완료 시 결과 화면으로
-}
-
-// 진행 중(취소 노출) 단계.
-const ACTIVE = [
-  "presigning",
-  "uploading",
-  "confirming",
-  "uploaded",
-  "requesting",
-  "analyzing",
-];
-
-// 진행률(%) — 카운트 기반 단계(업로드·분석)에서 사용.
-function pct(a: AnalyzeControls): number {
-  return a.totalCount > 0 ? Math.round((a.sentCount / a.totalCount) * 100) : 0;
-}
-
-// 진행 바를 보여줄 단계(카운트가 의미 있는 구간).
-const PROGRESS_PHASES = ["uploading", "analyzing"];
-
-function statusLabel(a: AnalyzeControls): string | null {
-  switch (a.phase) {
-    case "presigning":
-      return "업로드 준비 중…";
-    case "uploading":
-      return `전송 중 ${pct(a)}% (${a.sentCount}/${a.totalCount})`;
-    case "confirming":
-      return "서버 확인 중…";
-    case "uploaded":
-      return "업로드 완료 · 분석 시작…";
-    case "requesting":
-      return "분석 요청 중…";
-    case "analyzing":
-      return `분석 중 ${pct(a)}% (${a.sentCount}/${a.totalCount})`;
-    case "done":
-      return "분석 완료";
-    case "partial":
-      return a.message ?? "일부 페이지 분석 실패";
-    case "failed":
-      return a.message ?? "분석 실패";
-    case "error":
-      return a.message ?? "오류가 발생했어요";
-    default:
-      return null;
-  }
 }
 
 // quota: 하단 바에 끼울 잔량 표시(entitlement). app 레이어가 주입(capture는 entitlement를 모른다).
@@ -82,9 +20,6 @@ export function PageList({ analyze, quota }: { analyze?: AnalyzeControls; quota?
   const setPages = useDraftStore((s) => s.setPages);
   const locked = useDraftStore((s) => s.locked);
   const { captureToDraft } = useImagePicker();
-
-  const active = analyze ? ACTIVE.includes(analyze.phase) : false;
-  const label = analyze ? statusLabel(analyze) : null;
 
   return (
     <View className="flex-1 px-4 pt-1">
@@ -115,50 +50,13 @@ export function PageList({ analyze, quota }: { analyze?: AnalyzeControls; quota?
         }
       />
       <View className="border-t border-border py-3">
-        {/* 잔량 안내는 분석 대기(idle)에서만 — 진행/완료 중엔 상태 라벨에 집중. */}
-        {quota && !active && !label ? (
+        {quota ? (
           <View className="mb-2 flex-row items-center justify-between">
             {quota}
             <Text className="text-xs text-foreground-muted">완료 시 1회 차감</Text>
           </View>
         ) : null}
-        {label ? (
-          <Text
-            className={`mb-2 text-center text-xs ${analyze?.phase === "error" ? "text-danger" : "text-foreground-muted"}`}
-          >
-            {label}
-          </Text>
-        ) : null}
-
-        {analyze && PROGRESS_PHASES.includes(analyze.phase) && analyze.totalCount > 0 ? (
-          <View
-            className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-border"
-            accessibilityRole="progressbar"
-          >
-            <View
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${pct(analyze)}%` }}
-            />
-          </View>
-        ) : null}
-
-        {analyze?.phase === "error" ? (
-          <Button label="다시 시도" variant="primary" onPress={analyze.onRetry} />
-        ) : active ? (
-          <Button label="취소" variant="secondary" onPress={analyze!.onCancel} />
-        ) : analyze?.phase === "done" ? (
-          <Button label="결과 보기" variant="primary" onPress={() => analyze?.onViewResult?.()} />
-        ) : analyze?.phase === "partial" ? (
-          <Button label="결과 보기 (일부 완료)" variant="primary" onPress={() => analyze?.onViewResult?.()} />
-        ) : analyze?.phase === "failed" ? (
-          <Button label="분석 실패" variant="secondary" onPress={() => {}} />
-        ) : (
-          <Button
-            label="분석하기"
-            variant="primary"
-            onPress={() => analyze?.onAnalyze()}
-          />
-        )}
+        <Button label="분석하기" variant="primary" onPress={() => analyze?.onAnalyze()} />
       </View>
     </View>
   );

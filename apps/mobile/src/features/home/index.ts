@@ -2,3 +2,5 @@
 export { BrandHeader } from "./ui/BrandHeader";
 export { Hero } from "./ui/Hero";
 export { HowItWorks } from "./ui/HowItWorks";
+export { ProcessingScreen } from "./ui/ProcessingScreen";
+export type { ProcessingState, ProcessingPhase } from "./ui/ProcessingScreen";

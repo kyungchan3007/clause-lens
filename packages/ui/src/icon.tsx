@@ -27,6 +27,7 @@ export const ICON_REGISTRY = {
   CircleHelp: map.CircleHelp,
   Info: map.Info,
   TriangleAlert: map.TriangleAlert,
+  ShieldCheck: map.ShieldCheck,
 } satisfies Record<string, React.ComponentType<any>>;
 
 export type IconName = keyof typeof ICON_REGISTRY;

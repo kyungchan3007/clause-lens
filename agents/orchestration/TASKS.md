@@ -45,8 +45,9 @@
 | TASK-U0a | 디자인 토큰 정비 + 테마 경로(vars) + 위험도 tone 도메인 | 14 순서 0 | [0031](../intent/specs/0031-design-tokens-theme-path/) | Claude | **done** (#98/PR#99 머지 — vars() 테마 경로·대비 분리·riskTone 도메인) | TASK-F2·TASK-F3 |
 | TASK-U0b1 | ListRow·Badge(tone)·StatusDot 신설 + DocumentRow/MenuRow 승격 + UI 테스트 게이트 | 14 순서 0 | [0032](../intent/specs/0032-listrow-badge-tone/) | Claude | **in-progress** (#100 — Codex 토론 반영) | TASK-U0a |
 | TASK-U0b2 | Button·IconButton·SectionHeader·EmptyState + semantic.light 직접 참조 정리 | 14 순서 0 | [0034](../intent/specs/0034-button-iconbutton/) | Claude | **in-progress** (#101 — Codex 토론 반영) | TASK-U0b1 |
-| TASK-U1 | 홈 화면 리디자인 (빈 상태·페이지 담음·최근) | 14 순서 1 | [0035](../intent/specs/0035-home-redesign/) | Claude | **in-progress** (#106 — Codex 토론 반영: 4상태·BrandHeader·Notice·card shadow·그리드 보류) | TASK-U0b2 |
-| TASK-U2~5 | 화면 리디자인 (분석진행·결과·마이페이지·최근목록) | 14 순서 2~5 | – | – | todo | TASK-U1 |
+| TASK-U1 | 홈 화면 리디자인 (빈 상태·페이지 담음·최근) | 14 순서 1 | [0035](../intent/specs/0035-home-redesign/) | Claude | **done** (#106·#107 — 4상태·BrandHeader·Notice·card shadow·그리드 보류) | TASK-U0b2 |
+| TASK-U2 | 분석 진행 화면 리디자인 (전용 ProcessingScreen) | 14 순서 2 | [0036](../intent/specs/0036-processing-screen/) | Claude | **in-progress** (#108 — Codex 토론+서버 계약 반영: 정직 문구 3곳 수정) | TASK-U1 |
+| TASK-U3~5 | 화면 리디자인 (결과·마이페이지·최근목록) | 14 순서 3~5 | – | – | todo | TASK-U2 |
 
 > BrandHeader·Notice·card shadow는 선제 공통화하지 않고 **순서1(홈 리디자인)**에서 실제 소비 확인 후 도입(Codex·0012 승격 스펙).
 

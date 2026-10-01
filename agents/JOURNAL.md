@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-10-01 · Claude · UI/UX 순서2 — 분석 진행 전용 ProcessingScreen (TASK-U2, #108)
+- **무엇**: 업로드~분석 진행을 PageList 하단 인라인 → **전용 ProcessingScreen**(home). 모드별(업로드/분석/done/partial/error) 히어로·진행 블록·액션. determinate(uploading·analyzing+count)만 진행바+`progressbar`(now/max)+"M/N페이지 분석 완료" 주정보, 준비·요청은 스피너+단계텍스트(가짜 % 금지). `DocScanGraphic`(스캔 라인 Animated·reduced-motion 정적). `Notice` success tone(초록)+`ShieldCheck`. `PageList` idle 전용 축소(`AnalyzeControls`→`{onAnalyze}`). `app/index` 라우팅(idle→CaptureScreen / 그 외→ProcessingScreen)+done/partial 탈출구 `onReset`(draft clear+reset).
+- **착수 전 Codex 적대 토론 + 서버 계약 코드 확인**(order2): 핵심 — ① active만 전용 화면 쓰면 터미널 순간 UI 소실 모순 → idle 외 전부 전용 화면 ② 서버 계약: **분석=서버 job 독립 실행·클라 관찰만(취소 엔드포인트 없음)**, 업로드=FOREGROUND(닫으면 중단) → 시안 3곳이 "서버가 진실"과 충돌 ③ 큰 68%는 시간 아닌 페이지 비율 ④ indeterminate는 스피너+단계텍스트 ⑤ 늦은 응답·계정전환은 기존 runId/stateVersion 가드로 충분. **사용자 결정(AskUserQuestion): 정직 우선 — 시안 3곳 수정**(분석 버튼 "나가기"·큰 % 제거·초록 "앱 닫아도 계속"은 분석 구간만·업로드는 "앱 열어 두세요").
+- **검증**: mobile 유닛 **133**(ProcessingScreen 8)·ui 유닛 **28**(Notice success)·전체 게이트 **ALL PASS**. **시뮬레이터 라이브 실측은 후속**(로그인 세션 만료+Kakao OAuth 구동 불가 → 순서1과 동일; 모드 로직 단위 커버). 정직 버전 5상태 HTML 목업으로 디자인 확인.
+- **파일**: `apps/mobile/src/features/home/ui`(ProcessingScreen·DocScanGraphic·ProcessingScreen.test 신규)·home/index · `apps/mobile/src/features/capture/ui/PageList`(축소) · `app/index.tsx`(라우팅·onReset) · `packages/ui`(notice success·icon ShieldCheck·index·notice.test) · spec 0036 · TASKS(U1 done·U2 in-progress).
+- **다음/주의**: 순서3~5(결과·마이페이지·최근목록). **후속**: 읽기전용 페이지 목록 펼침 / "백그라운드로"(documentId 보존 재관찰) / 서버 분석-취소 엔드포인트 / 경과시간 "평소보다 오래" 문구 / 로그인 후 진행 화면 육안(reduced-motion 포함).
+
 ## 2026-10-01 · Claude · UI/UX 순서1 — 홈 화면 리디자인 (TASK-U1, #106)
 - **무엇**: 확정 홈 시안대로 홈 리디자인(4커밋). ① BrandHeader(로고칩+타이틀+48터치 안 38 프로필)·`FreeQuotaChip`(entitlement, 상태 분기)·공용 `Notice`·Badge `dot`. ② **홈 4상태 분기**(페이지 담음 / 최근0건 온보딩 Hero+HowItWorks+Notice / 최근있음 CTA+최근+Notice / 최근 로딩·실패)·`CaptureCTA` 추출. ③ 최근 섹션 `SectionHeader(title+action)` + **card shadow**(tokens 값+ui 어댑터, DocumentRow 공통→홈·/recent). ④ 페이지 담음 chrome(헤더·하단 바 잔량 슬롯, 그리드 보류).
 - **착수 전 Codex 설계 토론**(order1): 핵심 반영 — Chip 신설 반대(Badge dot+FreeQuotaChip 도메인) · BrandHeader/Hero/HowItWorks 홈 전용(단일 사용처)·Notice만 공용 · **38 시각≠48 터치** · **PageList는 세로 드래그 리스트(그리드 아님)** → 그리드 보류 · shadow ListRow 자동 금지→DocumentRow 명시 공통 · **홈 4상태 계약**(로딩·실패를 0건 온보딩으로 오인 금지) · busy를 취소 버튼에 연결 금지 · 세로 드래그를 세로 ScrollView로 안 감쌈. 사용자 결정: 그리드 보류·shadow 공통.
