@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-02 · Claude · 결과 route 판정 로직 커스텀 훅 분리 (#119)
+- **무엇**: `app/result.tsx`의 경로 판정(스토어 6개 구독·`isLive`·`imageByPageId`)을 `src/widgets/result-source/`로 추출. `useResultSource(documentId)` → 판별 유니온 `{ kind: "live" | "review" | "none" }` · 순수 함수 `isLiveResult`·`toImageByPageId`. route는 `kind` 분기 렌더 + 네비게이션만. **동작 불변**.
+- **왜**: #118과 같은 "마크업·로직 분리" 시리즈(사용자 지시). 결과 격리(소유자 일치) 판정이 테스트 불가였음.
+- **검증**: 단위 14 + 게이트 **ALL PASS**. 시뮬 실측: 최근 목록 → 결과(review 경로) → 닫기 정상. live 경로는 무료 0회라 단위로 커버.
+- **이번에 드러난 공백**: 기존 Maestro 홈·결과 시나리오(capture-empty·recent·result 등)가 홈 리디자인 전 문구라 깨져 있음 — 리디자인 태스크에서 시나리오 트리거(문구 변경→yaml 동기화)가 누락됨.
+- **파일**: `apps/mobile/src/widgets/result-source/**`(신규) · `apps/mobile/app/result.tsx` · spec 0042 · TASKS(R2).
+- **다음/주의**: #120 ProfileScreen. Maestro 시나리오 문구 동기화 별도 이슈 필요. Notion 미기록(사용자 직접 정리).
+
 ## 2026-10-02 · Claude · 홈 분석 세션 로직 커스텀 훅 분리 (#118)
 - **무엇**: `app/index.tsx`(249줄→약 75줄)의 업로드→분석 세션 로직을 `src/widgets/home-session/`로 추출. `useAnalysisSession()`(구독·effect 3개·액션 analyze/cancel/retry/reset/confirmHome) · `useHomeOnboarding()` · 순수 함수 `mergeSessionPhase()`. route는 렌더·네비게이션만. **동작 불변**.
 - **왜**: 사용자 지적 "tsx에 마크업과 비즈니스 로직 혼재 → 웹처럼 커스텀 훅 모듈화". 세션 로직·상태 병합이 테스트 불가 상태였음. 도메인별 이슈 분리: #118(홈)·#119(결과)·#120(프로필).

@@ -63,7 +63,7 @@
 | id | 제목 | 정의 | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
 | TASK-R1 | 홈 분석 세션 로직 커스텀 훅 분리 (app/index.tsx) | 라우트 얇게(frontend-architecture) | [0041](../intent/specs/0041-home-session-hook/) | Claude | **in-progress** (#118 — widgets/home-session · 단위·게이트 PASS · 로그인 후 e2e 확인 남음) | – |
-| TASK-R2 | 결과 route 판정 로직 커스텀 훅 분리 (app/result.tsx) | 〃 | – | – | todo (#119) | TASK-R1 |
+| TASK-R2 | 결과 route 판정 로직 커스텀 훅 분리 (app/result.tsx) | 〃 | [0042](../intent/specs/0042-result-source-hook/) | Claude | **in-progress** (#119 — widgets/result-source · 단위·게이트 PASS · review 경로 시뮬 실측) | TASK-R1 |
 | TASK-R3 | 프로필 화면 로직 커스텀 훅 분리 (ProfileScreen) | 〃 | – | – | todo (#120) | – |
 
 ## 하네스·거버넌스 태스크
