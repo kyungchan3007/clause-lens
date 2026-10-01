@@ -26,14 +26,25 @@ export function DocumentRow({
   const partialText = partial
     ? `일부 분석 완료 · ${item.analyzedPageCount}/${item.totalPageCount}장`
     : null;
-  // 접근성 라벨: 라벨·완료·위험·(일부 완료)·보관 기한까지 읽히게(스크린리더 회귀 방지).
-  const a11yLabel = [item.label, completedAtLabel(item.completedAt), riskText, partialText, badge.label]
+  // 제목 폴백 — 서버가 빈 label을 줘도 접근성 라벨이 이름을 잃지 않게('문서').
+  const title = item.label && item.label.trim() ? item.label : "문서";
+  // 접근성 라벨: 제목·완료·위험·(일부 완료)·보관 기한까지 읽히게(스크린리더 회귀 방지). title로 항상 비어있지 않음.
+  const a11yLabel = [title, completedAtLabel(item.completedAt), riskText, partialText, badge.label]
     .filter(Boolean)
     .join(", ");
 
+  // 썸네일 자리 — 연한 가로 라인 플레이스홀더(문서 느낌). 실제 이미지 썸네일은 후속.
+  // 장식 요소 — 의미는 행 전체 accessibilityLabel(a11yLabel)이 전달하므로 스크린리더에서 숨김.
   const leading = (
-    <View className="h-[60px] w-12 items-center justify-center rounded-xl border border-border bg-surface-alt">
-      <Icon name="FileText" size={22} color={color("textMuted")} />
+    <View
+      testID="doc-thumb-placeholder"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      className="h-[60px] w-12 justify-center gap-[4px] rounded-xl border border-border bg-surface-alt px-2"
+    >
+      <View className="h-[3px] w-full rounded-full bg-border" />
+      <View className="h-[3px] w-4/5 rounded-full bg-border" />
+      <View className="h-[3px] w-3/5 rounded-full bg-border" />
     </View>
   );
 
@@ -64,7 +75,7 @@ export function DocumentRow({
     <ListRow
       variant="card"
       elevated
-      title={item.label}
+      title={title}
       supporting={supporting}
       leading={leading}
       trailing={trailing}

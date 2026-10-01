@@ -15,7 +15,7 @@ import {
 } from "../src/features/upload";
 import { useAnalysis, useAnalysisStore } from "../src/features/analysis";
 import { getAccessToken, useAuthStore } from "../src/features/auth";
-import { RecentAnalysisSection, useDocumentsStore } from "../src/features/documents";
+import { RecentEntryButton, useDocumentsStore } from "../src/features/documents";
 
 const UPLOAD_ACTIVE = ["presigning", "uploading", "confirming"];
 
@@ -202,23 +202,23 @@ export default function Page() {
       ) : (
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ paddingBottom: 28 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 28 }}
           showsVerticalScrollIndicator={false}
         >
           <View className="px-5 pb-1 pt-1">
             <FreeQuotaChip />
           </View>
-          {onboarding ? <Hero /> : null}
+          {/* Hero는 홈의 중심 — 온보딩·최근있음 모두 표시, 남는 공간 중앙에 배치. */}
+          <View className="flex-1 justify-center">
+            <Hero />
+          </View>
           <View className="px-5 pt-3">
             <CaptureCTA />
           </View>
           {onboarding ? (
             <HowItWorks />
           ) : (
-            <RecentAnalysisSection
-              onOpen={(id) => router.push({ pathname: "/result", params: { documentId: id } })}
-              onSeeAll={() => router.push("/recent")}
-            />
+            <RecentEntryButton onSeeAll={() => router.push("/recent")} />
           )}
           <View className="px-5 pt-5">
             <Notice tone="neutral" icon="Info">
