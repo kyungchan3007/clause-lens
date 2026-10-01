@@ -25,9 +25,9 @@
 - 세로 드래그 목록을 세로 ScrollView로 감싸지 않음. 완료 전 `checks.sh` PASS(ui 포함).
 
 ## Acceptance
-- [ ] 홈 4상태 분기(페이지/최근0건 온보딩/최근있음/최근 로딩·실패) — 로딩·실패를 0건 온보딩으로 오인하지 않음.
-- [ ] `Notice`(공용)·Badge `dot` 신설(단위). `FreeQuotaChip`(entitlement, 상태 분기 보존).
-- [ ] BrandHeader(48터치 안 38 프로필)·Hero·HowItWorks(3단계) 홈 전용 신설, 시안대로.
-- [ ] card shadow: tokens 값+ui 어댑터, DocumentRow 공통 적용 — 홈·**/recent 양쪽 iOS/Android 실측**(클리핑·가장자리).
-- [ ] 최근 섹션 SectionHeader(title+action) 적용, 동작·접근성 보존.
-- [ ] 동작 보존(촬영·분석·취소 non-busy·잠금·잔량·재열람) + 단위 + 시뮬레이터 실측 + 게이트 PASS.
+- [x] 홈 4상태 분기(페이지/최근0건 온보딩/최근있음/최근 로딩·실패) — 로딩·실패를 0건 온보딩으로 오인하지 않음.
+- [x] `Notice`(공용)·Badge `dot` 신설(단위). `FreeQuotaChip`(entitlement, 상태 분기 보존).
+- [x] BrandHeader(48터치 안 38 프로필)·Hero·HowItWorks(3단계) 홈 전용 신설, 시안대로.
+- [x] card shadow: tokens 값+ui 어댑터, DocumentRow 공통 적용 — 홈·**/recent 양쪽 iOS/Android 실측**(클리핑·가장자리).
+- [x] 최근 섹션 SectionHeader(title+action) 적용, 동작·접근성 보존.
+- [x] 동작 보존(촬영·분석·취소 non-busy·잠금·잔량·재열람) + 단위 + 시뮬레이터 실측 + 게이트 PASS.

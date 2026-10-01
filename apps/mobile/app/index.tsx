@@ -170,6 +170,7 @@ export default function Page() {
       <BrandHeader onProfile={() => router.push("/profile")} />
       {hasPages ? (
         <CaptureScreen
+          quota={<FreeQuotaChip />}
           analyze={{
             phase: m.phase,
             sentCount: m.sentCount,
