@@ -176,7 +176,10 @@ export default function Page() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <BrandHeader onProfile={() => router.push("/profile")} />
+      <BrandHeader
+        onProfile={() => router.push("/profile")}
+        onHome={hasPages ? onReset : undefined}
+      />
       {hasPages && m.phase === "idle" ? (
         // idle: 담은 페이지 리뷰 + 분석하기. 진행·터미널은 아래 ProcessingScreen이 소유.
         <CaptureScreen
