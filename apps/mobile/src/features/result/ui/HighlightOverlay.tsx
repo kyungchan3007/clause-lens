@@ -28,7 +28,7 @@ export function HighlightOverlay({ clauses, image, view, selectedClauseId }: Hig
     >
       {clauses.flatMap((clause) => {
         const selected = clause.id === selectedClauseId;
-        const color = riskPresentation[clause.riskLevel].color;
+        const color = riskPresentation[clause.riskLevel].accentColor;
         return clause.boxes.map((box, i) => {
           const rect = boxToScreenRect(box, image, view);
           if (!rect) return null; // 범위 밖·면적 0은 그리지 않음

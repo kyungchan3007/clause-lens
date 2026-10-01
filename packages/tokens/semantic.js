@@ -21,10 +21,13 @@ const light = {
 
   danger: red[600],
   dangerBg: red[50],
+  dangerText: red[700], // 작은 배지 글자용(대비 ≥4.5:1). 점/강조는 danger(600)
   warning: amber[600],
   warningBg: amber[50],
+  warningText: amber[700], // 시안 보관 배지 색
   success: green[600],
   successBg: green[50],
+  successText: green[700],
 
   focus: cobalt[500],
 };
@@ -48,10 +51,13 @@ const dark = {
 
   danger: red[500],
   dangerBg: "#3F1D1D",
+  dangerText: red[500], // 다크 배경 위에선 밝은 색이 가독(점/텍스트 공용)
   warning: amber[500],
   warningBg: "#3B2A0A",
+  warningText: amber[500],
   success: green[500],
   successBg: "#0E2A17",
+  successText: green[500],
 
   focus: cobalt[400],
 };

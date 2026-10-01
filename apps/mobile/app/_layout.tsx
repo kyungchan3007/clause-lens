@@ -10,6 +10,7 @@ import { initializeKakaoSDK } from "@react-native-kakao/core";
 import { useAuthStore } from "../src/features/auth";
 import { useEntitlementSync } from "../src/features/entitlement";
 import { useDocumentsSync } from "../src/features/documents";
+import { ThemeProvider } from "../src/shared/theme";
 
 // 카카오 SDK는 앱 시작 시 1회 초기화(네이티브 앱 키는 client-public, env 주입).
 const kakaoNativeAppKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY;
@@ -21,7 +22,9 @@ export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthGate />
+        <ThemeProvider>
+          <AuthGate />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

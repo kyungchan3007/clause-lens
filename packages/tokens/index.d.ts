@@ -22,10 +22,13 @@ export interface SemanticColors {
   borderStrong: string;
   danger: string;
   dangerBg: string;
+  dangerText: string;
   warning: string;
   warningBg: string;
+  warningText: string;
   success: string;
   successBg: string;
+  successText: string;
   focus: string;
 }
 
@@ -36,3 +39,10 @@ export const fontSize: Record<string, number>;
 export const fontWeight: Record<string, string>;
 export const lineHeight: Record<string, number>;
 export const radius: Record<string, number>;
+
+// 테마 경로(0031)
+export type SemanticRole = keyof SemanticColors;
+export const ROLES: SemanticRole[];
+export function cssVarName(role: SemanticRole): string;
+export function cssVars(themeName: "light" | "dark"): Record<string, string>;
+export function color(role: SemanticRole): string;
