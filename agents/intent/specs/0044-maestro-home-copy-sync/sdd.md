@@ -50,8 +50,8 @@
 | session-restore · capture-empty · recent · profile · faq-multi · logout-cancel · profile-back | ✅ PASS | 로그인 상태 완전 자동. recent는 기록 6건 → "최근 분석 \d+건" 분기 실행 |
 | capture-add-page · capture-remove-page | ✅ PASS | OS 사진 피커 사진 탭만 수동(시뮬 좌표 탭) |
 | capture-gate | ✅ PASS | 세션 만료 후 clearState 실행 |
-| upload | ⚠️ 미실측 | 실행 중 access 만료 → "분석에 문제가 생겼어요 / 로그인이 필요해요." (앱에 refresh 자동화 없음, TTL 15분). yaml 결함 아님 |
-| analysis · result | ⚠️ 미실측 | 세션 만료 + 무료 0회(403) |
+| upload | ✅ PASS (재로그인 후) | 1차: 실행 중 access 만료 → "로그인이 필요해요."(앱 refresh 없음, TTL 15분 — yaml 무관). 사용자 재로그인 후 2차: 업로드 확정 → 분석 요청 403 → "무료 분석 횟수가 없어요" 도달 |
+| analysis · result | ⚠️ 미실측 | 계정 무료 0회(403) — 무료 횟수 있는 계정 필요 |
 | login · login-failure | 수동 | 카카오 자격증명 |
 | logout · permission-denied | 미실행 | 세션 파괴 / OS 권한 거부 수동 |
 - grep: `.maestro`에 옛 문구 잔존 없음(`계약서를 담아주세요`는 설명 주석·SCENARIOS Note에만).

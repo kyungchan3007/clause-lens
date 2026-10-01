@@ -28,5 +28,5 @@
 ## Acceptance
 - [x] 모든 yaml 단언 문자열이 현재 UI 문자열과 일치(grep 근거, sdd 매핑 표).
 - [x] SCENARIOS.md 동기화.
-- [x] 시뮬레이터 실측(로그인 상태): 자동 가능한 시나리오 PASS. (10개 PASS — sdd 검증 결과. upload·analysis·result는 세션 만료(자동 refresh 없음)+무료 0회로 미실측, login·login-failure·logout·permission-denied는 카카오 자격증명/OS 권한 수동 — 문구만 grep 근거로 동기화)
+- [x] 시뮬레이터 실측(로그인 상태): 자동 가능한 시나리오 PASS. (11개 PASS — sdd 검증 결과. analysis·result는 계정 무료 0회로 미실측, login·login-failure·logout·permission-denied는 카카오 자격증명/OS 권한 수동 — 문구만 grep 근거로 동기화)
 - [x] 게이트 `checks.sh` PASS.
