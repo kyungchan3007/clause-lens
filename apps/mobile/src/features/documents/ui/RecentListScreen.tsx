@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
-import { Icon } from "@clause-lens/ui";
+import { Icon, IconButton } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
@@ -29,16 +29,8 @@ export function RecentListScreen({
 
   return (
     <View className="flex-1 bg-background">
-      <View className="flex-row items-center gap-3 border-b border-border bg-surface px-4 py-3">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="뒤로"
-          onPress={onBack}
-          hitSlop={8}
-          className="h-9 w-9 items-center justify-center rounded-xl active:opacity-60"
-        >
-          <Icon name="ChevronLeft" size={22} color={color("text")} />
-        </Pressable>
+      <View className="flex-row items-center gap-1 border-b border-border bg-surface px-2 py-1.5">
+        <IconButton icon="ChevronLeft" accessibilityLabel="뒤로" onPress={onBack} size={22} />
         <Text className="text-lg font-bold text-foreground">최근 분석</Text>
       </View>
 
