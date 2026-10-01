@@ -21,6 +21,8 @@ interface AnalysisStore {
   totalCount: number;
   pages: PageAnalysisResult[];
   message?: string;
+  // error 세부 — "quota"면 무료 소진 전용 화면으로 분기(제네릭 error와 구분).
+  errorKind?: "quota";
 
   set: (patch: Partial<AnalysisStore>) => void;
   reset: () => void;
@@ -45,5 +47,6 @@ export const useAnalysisStore = create<AnalysisStore>((set) => ({
       totalCount: 0,
       pages: [],
       message: undefined,
+      errorKind: undefined,
     }),
 }));

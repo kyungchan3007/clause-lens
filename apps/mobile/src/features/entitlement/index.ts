@@ -3,3 +3,4 @@ export { useEntitlementStore } from "./model/entitlementStore";
 export { useEntitlementSync } from "./model/useEntitlementSync";
 export { FreeQuotaRow } from "./ui/FreeQuotaRow";
 export { FreeQuotaChip } from "./ui/FreeQuotaChip";
+export { QuotaExceededScreen } from "./ui/QuotaExceededScreen";
