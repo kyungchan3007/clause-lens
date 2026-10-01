@@ -7,5 +7,5 @@ appId: com.chan.clauselens
     visible: "카카오로 시작하기"
     timeout: 20000
 - assertVisible: "ClauseLens"
-# Capture로 진입하지 않아야 함
-- assertNotVisible: "계약서를 담아주세요"
+# 홈(로그인 후)으로 진입하지 않아야 함
+- assertNotVisible: "계약서, 찍기만 하세요"

@@ -1,19 +1,22 @@
-# S18. 업로드 — 분석하기 → presign→PUT→complete → 업로드 완료 (반자동)
+# S18. 업로드 — 분석하기 → presign→PUT→complete → 업로드 확정 (반자동)
 # 사전조건: 로그인된 상태 · 로컬 API+MinIO 기동 · Draft에 이미지 1장 이상(피커 수동)
+# ProcessingScreen(#108)에는 "업로드 완료" 문구가 없음 — 업로드 확정 즉시 분석 모드로 넘어가므로
+# 업로드 모드("계약서를 올리고 있어요") 이후 상태 중 하나를 확정 신호로 본다.
+# ⚠️ 무료 분석 0회 계정이면 업로드 확정 후 분석 요청이 403 → "무료 분석 횟수가 없어요"(업로드 자체는 성공).
 appId: com.chan.clauselens
 ---
 - launchApp:
     clearState: false
 - extendedWaitUntil:
-    visible: "계약서를 담아주세요"
+    visible: "계약서, 찍기만 하세요"
     timeout: 15000
 # 사진 추가(수동: 갤러리에서 선택 → 사진 고르기)
 - tapOn: "갤러리에서 선택"
 - extendedWaitUntil:
     visible: "분석하기"
     timeout: 30000
-# 업로드 시작 → 완료 대기
+# 업로드 시작 → 업로드 확정(분석 모드 진입 또는 터미널/무료 소진) 대기
 - tapOn: "분석하기"
 - extendedWaitUntil:
-    visible: "업로드 완료"
+    visible: "(계약서를 분석하고 있어요|분석이 끝났어요|일부만 분석됐어요|무료 분석 횟수가 없어요)"
     timeout: 60000
