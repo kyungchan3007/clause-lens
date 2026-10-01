@@ -1,32 +1,40 @@
-import { semantic } from "@clause-lens/tokens";
-import type { ClauseRiskLevel, ClauseType } from "@clause-lens/contracts";
+import { color } from "@clause-lens/tokens";
+import type { ClauseRiskLevel } from "@clause-lens/contracts";
 
-// 위험도·조항 종류의 도메인 표현(라벨·색·아이콘) 매핑. (공용 Badge는 값만 받고, 의미 매핑은 여기)
-// 색은 신규 토큰 대신 기존 semantic(danger/warning/success)에 매핑한다.
+import { riskIcon, riskLabel, riskTone, type Tone } from "../../../entities/clause";
+
+// 위험도 표현(feature) = 도메인 매핑(entities) + 토큰 색 해석(tokens color 리졸버).
+// 색은 semantic.light를 직접 집지 않고 color()로 해석(0031). 텍스트(대비 700)와
+// 하이라이트 강조(600)를 분리한다(같은 tone, 다른 최종 색 — Codex).
 
 export interface RiskPresentation {
   label: string;
-  color: string;
-  backgroundColor: string;
+  color: string; // 배지 텍스트·아이콘(대비 700대)
+  accentColor: string; // 이미지 하이라이트 강조(600)
+  backgroundColor: string; // 배지 배경(50)
   icon: string;
 }
 
-const c = semantic.light;
+const TONE_TEXT = { danger: "dangerText", warning: "warningText", success: "successText", neutral: "textMuted" } as const;
+const TONE_ACCENT = { danger: "danger", warning: "warning", success: "success", neutral: "textMuted" } as const;
+const TONE_BG = { danger: "dangerBg", warning: "warningBg", success: "successBg", neutral: "surfaceAlt" } as const;
+
+function present(level: ClauseRiskLevel): RiskPresentation {
+  const tone: Tone = riskTone(level);
+  return {
+    label: riskLabel(level),
+    color: color(TONE_TEXT[tone]),
+    accentColor: color(TONE_ACCENT[tone]),
+    backgroundColor: color(TONE_BG[tone]),
+    icon: riskIcon(level),
+  };
+}
 
 export const riskPresentation: Record<ClauseRiskLevel, RiskPresentation> = {
-  high: { label: "높음", color: c.danger, backgroundColor: c.dangerBg, icon: "TriangleAlert" },
-  medium: { label: "보통", color: c.warning, backgroundColor: c.warningBg, icon: "AlertCircle" },
-  low: { label: "낮음", color: c.success, backgroundColor: c.successBg, icon: "Info" },
+  high: present("high"),
+  medium: present("medium"),
+  low: present("low"),
 };
 
-export const clauseTypeLabel: Record<ClauseType, string> = {
-  auto_renewal: "자동연장",
-  penalty: "위약금",
-  termination_restriction: "해지·환불 제한",
-  liability: "과도한 책임·면책",
-  unilateral_change: "일방적 변경",
-  auto_payment: "자동결제",
-  privacy_broad: "광범위 개인정보 수집·제공",
-  jurisdiction: "관할·중재 강제",
-  other: "기타",
-};
+// 조항 종류 라벨은 도메인(entities)에서 재노출(기존 import 경로 호환).
+export { clauseTypeLabel } from "../../../entities/clause";

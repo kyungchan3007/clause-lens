@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as Lucide from "lucide-react-native";
-import { semantic } from "@clause-lens/tokens";
+import { color as tokenColor } from "@clause-lens/tokens";
 
 // lucide 아이콘 이름(PascalCase). 예: "Camera", "FileText", "Trash", "Plus".
 export interface IconProps {
@@ -16,5 +16,5 @@ export function Icon({ name, size = 24, color, strokeWidth = 2 }: IconProps) {
   const map = Lucide as unknown as Record<string, React.ComponentType<any>>;
   const LucideIcon = map[name];
   if (!LucideIcon) return null;
-  return <LucideIcon size={size} color={color ?? semantic.light.text} strokeWidth={strokeWidth} />;
+  return <LucideIcon size={size} color={color ?? tokenColor("text")} strokeWidth={strokeWidth} />;
 }

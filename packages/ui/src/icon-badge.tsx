@@ -1,6 +1,6 @@
 import * as React from "react";
 import { View } from "react-native";
-import { semantic } from "@clause-lens/tokens";
+import { color as tokenColor } from "@clause-lens/tokens";
 
 import { Icon } from "./icon";
 
@@ -21,7 +21,7 @@ export function IconBadge({ name, size = 36, color, className }: IconBadgeProps)
         className ?? ""
       }`}
     >
-      <Icon name={name} size={size} color={color ?? semantic.light.primary} />
+      <Icon name={name} size={size} color={color ?? tokenColor("primary")} />
     </View>
   );
 }
