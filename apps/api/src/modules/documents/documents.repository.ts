@@ -1,8 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import type { Document, Page } from "@clause-lens/db";
 import { Prisma } from "@clause-lens/db";
+import { reserveFreeAnalysis } from "@clause-lens/db/analysis";
 
 import { PrismaService } from "../../db/prisma.service";
+
+// 가용 무료 횟수 없음 — 서비스가 권한 안내(ForbiddenException)로 매핑. 접수 트랜잭션에서 throw → 전체 롤백.
+export class QuotaExceededError extends Error {
+  constructor() {
+    super("무료 분석 횟수를 모두 사용했습니다.");
+    this.name = "QuotaExceededError";
+  }
+}
 
 // 분석 job 조회 시 문서 상태 + 페이지 order/revision + (0021) 결과 치수·조항까지 포함.
 // OCR blocks는 select에서 제외(응답·쿼리 최소화, N+1 방지). 조항은 order순 일괄 조회.
@@ -154,13 +163,27 @@ export class DocumentsRepository {
     });
   }
 
-  // 접수: job + 페이지별 PageAnalysis 생성 + Document=analyzing (한 트랜잭션).
-  // 활성 job 유일성은 부분 유니크 인덱스가 강제 → 동시 생성은 P2002.
+  // 접수: 무료 1회 예약 + job + 페이지별 PageAnalysis 생성 + Document=analyzing (한 트랜잭션).
+  // 문서 행을 잠그고 기존 job(terminal 포함)을 재확인 → 동시 접수를 직렬화한다:
+  //  활성 유니크 인덱스는 queued|processing만 막아, 먼저 접수가 terminal까지 끝나면 지연된 2차 접수가
+  //  새 job을 만들어 재분석·2차 차감이 될 수 있다. 잠금 하 재확인으로 문서당 1 job을 보장(#90, 코덱스 리뷰).
+  // 가용 없으면 QuotaExceededError → 트랜잭션 롤백(job 미생성). 실차감은 terminal(#90).
   createAnalysisJob(
     documentId: string,
+    userId: string,
     pages: NewAnalysisPage[],
   ): Promise<AnalysisJobWithPages> {
     return this.prisma.$transaction(async (tx) => {
+      // 문서 행 잠금 — 같은 문서 동시 접수 직렬화(terminal 후 재분석 경쟁 차단).
+      await tx.$executeRaw`SELECT 1 FROM "Document" WHERE "id" = ${documentId} FOR UPDATE`;
+      // 잠금 하 기존 job 재확인(terminal 포함) → 있으면 재사용(새 job·예약 금지, 멱등).
+      const existing = await tx.analysisJob.findFirst({
+        where: { documentId },
+        orderBy: { createdAt: "desc" },
+        include: analysisInclude,
+      });
+      if (existing) return existing;
+
       const job = await tx.analysisJob.create({
         data: {
           documentId,
@@ -168,6 +191,8 @@ export class DocumentsRepository {
           pages: { create: pages },
         },
       });
+      const reserved = await reserveFreeAnalysis(tx, userId, job.id);
+      if (!reserved) throw new QuotaExceededError();
       await tx.document.update({
         where: { id: documentId },
         data: { status: "analyzing" },

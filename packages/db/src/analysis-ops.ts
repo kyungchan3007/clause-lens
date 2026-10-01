@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from "../generated/client";
+import { settleFreeAnalysis } from "./entitlement-ops";
 
 // 분석 파이프라인의 교차 테이블 상태 전이 — api·worker 공유 단일 소스.
 // 설계: agents/intent/specs/0020-analysis-request-polling.md §③·§⑤, 0021-ocr-risk-analysis.md §③·§⑤
@@ -115,7 +116,8 @@ async function reaggregateAndBump(
       jobStatus = "partial";
       documentStatus = "partial";
     }
-    // 무료횟수 차감 훅 지점(완료·부분실패). 실차감·예약은 TASK-005 — 여기선 전이만.
+    // 무료횟수 정산(#90): done=확정 차감, 그 외=예약 해제. 전이와 같은 tx·jobId 멱등.
+    await settleFreeAnalysis(tx, job.id, jobStatus);
   } else {
     jobStatus = "processing";
     documentStatus = "analyzing";

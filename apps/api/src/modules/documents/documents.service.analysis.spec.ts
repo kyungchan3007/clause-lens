@@ -1,6 +1,11 @@
-import { ConflictException, NotFoundException } from "@nestjs/common";
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
 
 import { DocumentsService } from "./documents.service";
+import { QuotaExceededError } from "./documents.repository";
 import type {
   AnalysisJobWithPages,
   DocumentWithPages,
@@ -118,9 +123,21 @@ describe("DocumentsService.startAnalysis", () => {
 
     const r = await svc.startAnalysis("u1", "doc1");
     expect(r).toBe(created);
-    expect(repo.createAnalysisJob).toHaveBeenCalledWith("doc1", [
+    expect(repo.createAnalysisJob).toHaveBeenCalledWith("doc1", "u1", [
       { pageId: "pg1", revision: 1 },
     ]);
+  });
+
+  it("가용 무료 횟수 없음(QuotaExceededError) → 403 Forbidden", async () => {
+    const repo = makeRepo();
+    repo.findOwnedSession.mockResolvedValue(makeDoc());
+    repo.findLatestAnalysis.mockResolvedValue(null);
+    repo.createAnalysisJob.mockRejectedValue(new QuotaExceededError());
+    const svc = new DocumentsService(repo);
+
+    await expect(svc.startAnalysis("u1", "doc1")).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
   });
 
   it("동시 접수 경쟁(P2002) → 승자 job 재조회 반환", async () => {

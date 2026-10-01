@@ -14,6 +14,20 @@
 
 ---
 
+## 2026-10-01 · Claude · entitlement 설계 토론(Codex) + 실 Postgres 실측 보완 (#90)
+- **무엇**: 착수 전 못 한 설계 토론을 사후에 Codex와(`codex exec`) 진행. 로컬 Postgres 기동 → 통합 테스트 13/13 PASS로 증거를 대고, Codex 적대 리뷰 + PR #91 AI 봇(P1 3건) 교차 검토해 **보완 4건 적용**.
+- **보완**: ① settle 멱등 계약 깨짐(실측 consumed=2) → **원자적 조건부 전이**(`UPDATE … WHERE status='reserved' RETURNING`)로 1회만. ② terminal 후 재분석 경쟁(2차 job→2차 차감, Codex 발견) → `createAnalysisJob`에 **문서 FOR UPDATE 잠금+기존 job 재확인**. ③ 무결성 CHECK(음수·초과 거부). ④ 과장 주석 교정.
+- **검증**: `packages/db/test/entitlement.integration.mjs` — T6(동시 settle→consumed 1), T7(동시 접수→job 1·charge 1) 포함 13/13. api 유닛 57 PASS. CHECK 위반 거부 실측.
+- **합의 현행 유지**: job.create→reserve 순서, 조건부 예약 READ COMMITTED 정확성, 원장+카운터 같은 tx.
+- **다음/주의**: 통합 테스트는 로컬 Postgres 필요(오프라인 게이트 밖). 하네스 결함 — `trace.auto.jsonl`이 spec 폴더라 브랜치 전환 시 폴더 게이트 오탐(별도 이슈). job 삭제 시 카운터 보정은 삭제 경로 생기면.
+
+## 2026-10-01 · Claude · 무료 분석 횟수 서버 집행 — 예약·확정·해제 (TASK-005 백엔드, #90)
+- **무엇**: 확정된 정책(#79 — done만 1회 차감·partial/failed/invalid 무차감·멱등키 `AnalysisJob.id`·3회)을 서버가 집행. **예약→확정|해제 2단계 원장**: 분석 접수(새 job 생성 tx) 시 `reserveFreeAnalysis`로 원자 예약(조건부 단일 UPDATE, 가용 없으면 `ForbiddenException` 403), terminal 전이와 같은 tx에서 `settleFreeAnalysis`로 done=확정 차감·그 외=해제. `GET /me/entitlement`로 서버 잔량 조회.
+- **왜**: done만 terminal에서 차감하면 1회 남은 사용자의 동시 접수 2건이 모두 done→음수. 접수 시 원자 예약으로 선점해 한도 초과를 막고, terminal에서 확정/해제. 멱등은 `EntitlementCharge`(jobId PK)로 — 재연결·중복 완료 이벤트에 job당 최대 1회.
+- **검증**: api 유닛 57개 PASS(신규 `entitlement-ops.spec` 13케이스 — 예약/한도 거부/멱등/동시성(가용1→1건)/done 확정/비-done 해제/중복 no-op/잔량 계산). contracts·db 빌드·mobile·api·worker 타입체크·prisma validate·기록 게이트 PASS. **Expo Doctor만 FAIL(기존 expo-constants 57.0.19 드리프트 — 백엔드와 무관, 별도 작업으로 분리)**.
+- **파일**: `packages/db/prisma/schema.prisma`(Entitlement·EntitlementCharge·enum)+마이그레이션, `packages/db/src/entitlement-ops.ts`·analysis-ops(settle 훅)·index, `apps/api/.../documents.repository`(예약·QuotaExceededError)·documents.service(403 매핑)·`modules/entitlement/*`(service·controller·module·spec)·app.module, `packages/contracts/src/entitlement.ts`, spec 폴더 `0027-entitlement-enforcement/`, 피처·TASKS.
+- **다음/주의**: **앱 잔량 표시 UI·403(quota) 흐름은 별도 이슈**(이 백엔드에 의존). 구독 우회는 TASK-006. 실 Postgres 동시성·terminal→settle 통합 실측은 인프라 기동 후 후속. expo-constants 드리프트는 별도 작업 칩.
+
 ## 2026-10-01 · Claude · expo-constants 57.0.20 정렬 — Expo Doctor 게이트 통과 (chore, #92)
 - **무엇**: `apps/mobile`의 `expo-constants`를 Expo SDK 57 요구치 `~57.0.20`로 정렬(`expo install`). 완료 게이트 Expo Doctor FAIL(드리프트 `57.0.19`) 해소 → 전체 `checks.sh` ALL PASS.
 - **왜/분리**: TASK-005(#90) 백엔드 작업 중 발견했으나 성격(모바일 의존성)이 달라 `1이슈=1브랜치=1성격`대로 별도 이슈·브랜치. 엔타이틀먼트 PR #91은 불변.

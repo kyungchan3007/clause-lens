@@ -5,6 +5,7 @@ import { DbModule } from "./db/db.module";
 import { AnalysisModule } from "./modules/analysis/analysis.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { DocumentsModule } from "./modules/documents/documents.module";
+import { EntitlementModule } from "./modules/entitlement/entitlement.module";
 import { HealthModule } from "./modules/health/health.module";
 import { UploadsModule } from "./modules/uploads/uploads.module";
 
@@ -18,6 +19,7 @@ import { UploadsModule } from "./modules/uploads/uploads.module";
     DocumentsModule,
     UploadsModule,
     AnalysisModule,
+    EntitlementModule,
   ],
 })
 export class AppModule {}
