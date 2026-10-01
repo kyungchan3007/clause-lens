@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-10-02 · Claude · 홈 분석 세션 로직 커스텀 훅 분리 (#118)
+- **무엇**: `app/index.tsx`(249줄→약 75줄)의 업로드→분석 세션 로직을 `src/widgets/home-session/`로 추출. `useAnalysisSession()`(구독·effect 3개·액션 analyze/cancel/retry/reset/confirmHome) · `useHomeOnboarding()` · 순수 함수 `mergeSessionPhase()`. route는 렌더·네비게이션만. **동작 불변**.
+- **왜**: 사용자 지적 "tsx에 마크업과 비즈니스 로직 혼재 → 웹처럼 커스텀 훅 모듈화". 세션 로직·상태 병합이 테스트 불가 상태였음. 도메인별 이슈 분리: #118(홈)·#119(결과)·#120(프로필).
+- **위치 판단**: capture·upload·analysis·auth·documents 교차 조합이라 feature에 못 둠 → FSD 상위 레이어 **widgets 첫 도입**. 네비게이션은 route 유지.
+- **검증**: 단위 25(merge 14·훅 11) + 게이트 **ALL PASS**. e2e capture-gate PASS, 로그인 이후 시나리오는 시뮬 로그아웃 상태라 미실행(수동 로그인 후 확인 필요).
+- **이번에 드러난 공백**: 브랜치 전환 전 읽은 index.tsx로 덮어써 #114 무료 소진 분기 누락 → 게이트 통과(분기 테스트 부재) → 자체 발견·복구 + 회귀 테스트. route 렌더 분기 테스트 공백.
+- **파일**: `apps/mobile/src/widgets/home-session/**`(신규) · `apps/mobile/app/index.tsx` · spec 0041 · TASKS(R1).
+- **다음/주의**: #119(result.tsx)·#120(ProfileScreen) 같은 패턴. Notion 미기록(사용자가 이슈·커밋으로 직접 정리 예정). frontend-architecture에 widgets 사용 사례 반영은 #119·#120 후 일괄.
+
 ## 2026-10-01 · Claude · 구독 예고 UI — 무료 소진(403) + 최근 목록 구독 카드 (TASK-U4a, #114)
 - **무엇**: 시안에 있으나 미구현이던 구독 예고 UI 2곳(실구독=TASK-006). ⑥ **무료 소진(403) 전용 화면**(티켓·"무료 분석 횟수가 없어요"·안내·구독 Notice(별)·확인·남은 분석 상태 보기). ⑨ **최근 목록 하단 구독 카드**("분석 결과를 계속 보관하세요"·"구독 알아보기 (곧 제공)").
 - **설계=사용자 요청+주어진 시안**(Codex 생략, "일단 구현"). 403 식별: analysisStore `errorKind="quota"` → app/index merged에 포함 → `hasPages && error && errorKind==="quota"`면 QuotaExceededScreen(기존 ProcessingScreen error 앞 분기). 확인=기존 onCancel(idle 복귀·담은 페이지 유지)·남은 상태=/recent·구독 버튼=Alert('곧 제공').
