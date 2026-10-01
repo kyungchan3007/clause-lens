@@ -5,34 +5,25 @@ import {
 } from "@clause-lens/contracts";
 import EventSource from "react-native-sse";
 
-import { HttpError } from "../../../shared/http";
+import { authedGet, authedPost, baseUrl } from "../../../shared/api/client";
 
 // 분석 API 클라이언트. 계약(@clause-lens/contracts)으로 응답을 런타임 검증.
 // 토큰·URL은 로그로 남기지 않는다(guardrail). SSE 토큰은 헤더로만(쿼리 금지).
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-
 // 공유 HttpError 재노출(entitlement 등과 동일 클래스 → status 분기 일관).
-export { HttpError };
+export { HttpError } from "../../../shared/http";
 
-function baseUrl(): string {
-  if (!API_BASE_URL) {
-    throw new Error("EXPO_PUBLIC_API_BASE_URL 누락 — apps/mobile/.env 확인");
-  }
-  return API_BASE_URL;
-}
-
-// 분석 요청(멱등) — jobId 즉시 반환.
+// 분석 요청(멱등) — jobId 즉시 반환. 바디 없는 POST(Authorization만).
 export async function requestAnalysis(
   accessToken: string,
   documentId: string,
 ): Promise<AnalysisStatusResponse> {
-  const res = await fetch(`${baseUrl()}/documents/${documentId}/analyze`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!res.ok) throw new HttpError(res.status);
-  return analyzeResponseSchema.parse(await res.json());
+  return authedPost(
+    `/documents/${documentId}/analyze`,
+    accessToken,
+    undefined,
+    analyzeResponseSchema,
+  );
 }
 
 // 상태 조회(진실의 기준) — 재진입·재연결 fallback.
@@ -40,11 +31,11 @@ export async function fetchStatus(
   accessToken: string,
   documentId: string,
 ): Promise<AnalysisStatusResponse> {
-  const res = await fetch(`${baseUrl()}/documents/${documentId}/analysis`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!res.ok) throw new HttpError(res.status);
-  return analysisStatusResponseSchema.parse(await res.json());
+  return authedGet(
+    `/documents/${documentId}/analysis`,
+    accessToken,
+    analysisStatusResponseSchema,
+  );
 }
 
 export interface StreamHandlers {
