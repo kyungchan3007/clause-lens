@@ -2,8 +2,9 @@ import { Injectable } from "@nestjs/common";
 import {
   GetObjectCommand,
   HeadObjectCommand,
-  S3Client,
+  type S3Client,
 } from "@aws-sdk/client-s3";
+import { createS3ClientFromEnv, processEnvReader } from "@clause-lens/infra";
 
 import { ValidationError } from "../lib/errors";
 import { StoragePort, type GetObjectOpts } from "../ports/storage.port";
@@ -17,15 +18,8 @@ export class S3StorageAdapter extends StoragePort {
   constructor() {
     super();
     this.bucket = reqEnv("S3_BUCKET");
-    this.client = new S3Client({
-      endpoint: reqEnv("S3_ENDPOINT"),
-      region: process.env.S3_REGION ?? "us-east-1",
-      forcePathStyle: (process.env.S3_FORCE_PATH_STYLE ?? "true") !== "false",
-      credentials: {
-        accessKeyId: reqEnv("S3_ACCESS_KEY"),
-        secretAccessKey: reqEnv("S3_SECRET_KEY"),
-      },
-    });
+    // 생성 블록은 @clause-lens/infra로 통합(process.env 기반 EnvReader).
+    this.client = createS3ClientFromEnv(processEnvReader);
   }
 
   async getObject(key: string, opts: GetObjectOpts): Promise<Uint8Array> {

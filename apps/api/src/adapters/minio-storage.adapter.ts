@@ -5,9 +5,10 @@ import {
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
-  S3Client,
+  type S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { createS3ClientFromEnv } from "@clause-lens/infra";
 
 import {
   type CopyParams,
@@ -26,15 +27,10 @@ export class MinioStorageAdapter extends StoragePort {
   constructor(config: ConfigService) {
     super();
     this.bucket = config.getOrThrow<string>("S3_BUCKET");
-    this.client = new S3Client({
-      endpoint: config.getOrThrow<string>("S3_ENDPOINT"),
-      region: config.get<string>("S3_REGION") ?? "us-east-1",
-      forcePathStyle:
-        (config.get<string>("S3_FORCE_PATH_STYLE") ?? "true") !== "false",
-      credentials: {
-        accessKeyId: config.getOrThrow<string>("S3_ACCESS_KEY"),
-        secretAccessKey: config.getOrThrow<string>("S3_SECRET_KEY"),
-      },
+    // 생성 블록은 @clause-lens/infra로 통합. ConfigService를 EnvReader로 어댑트.
+    this.client = createS3ClientFromEnv({
+      required: (k) => config.getOrThrow<string>(k),
+      optional: (k) => config.get<string>(k),
     });
   }
 

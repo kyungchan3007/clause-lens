@@ -7,7 +7,7 @@ import { Observable, Subject } from "rxjs";
 import type IORedis from "ioredis";
 
 import { AnalysisNotificationPort } from "../ports/analysis-notification.port";
-import { channelPrefix, createRedis } from "./redis.config";
+import { channelPrefix, createRedis } from "@clause-lens/infra";
 
 interface Entry {
   subject: Subject<void>;
