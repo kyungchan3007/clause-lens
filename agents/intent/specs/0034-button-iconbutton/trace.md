@@ -13,4 +13,9 @@
 - **사용자 결정**: 0b-2 착수(Codex 토론부터). Button md 최소 높이=48(Android 일관, Claude 결정·Codex 권장).
 
 ## 막힘 / 되돌림
-- (구현 중 기록)
+- Button render-prop children으로 pressed 오버레이(absolute View) — 비활성 시 미표시. className/style 표면 제거(허용 native props만).
+- react-test-renderer: accessibilityRole/state는 composite+host 중복 → `.some`으로 단정.
+- 이관 시 import 잔재(RecentListScreen Pressable 다시시도·app/index) 타입에러 → 사용 남은 것만 유지.
+- 잔여 semantic.light 정리: PageList·PageItem·FaqSection·FreeQuotaRow(아이콘)·app/index → color(). PageItem Trash2는 레지스트리 밖이나 Icon 문자열 fallback으로 렌더(IconButton/Button만 IconName 강제).
+- 커밋 3단계(1 Button·IconButton+이관 / 2 SectionHeader·EmptyState+capture / 3 색 정리+peer). nativewind peer ^4.2.6(lockfile 4.2.6 불변).
+- **시뮬레이터 로그인 이후 실측(EmptyState·IconButton)은 세션 만료로 미수행 — 번들 클린 로드+단위+게이트로 커버, 로그인 후 육안은 후속.** 되돌림 없음.

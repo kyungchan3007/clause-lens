@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { Icon, SectionHeader } from "@clause-lens/ui";
-import { semantic } from "@clause-lens/tokens";
+import { color } from "@clause-lens/tokens";
 
 import { FAQ_ITEMS } from "../model/faq";
 
@@ -46,7 +46,7 @@ export function FaqSection() {
                 <Icon
                   name={isOpen ? "ChevronUp" : "ChevronDown"}
                   size={18}
-                  color={semantic.light.textMuted}
+                  color={color("textMuted")}
                 />
               </Pressable>
               {isOpen ? (

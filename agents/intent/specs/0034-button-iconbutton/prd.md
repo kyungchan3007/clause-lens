@@ -24,9 +24,9 @@
 - base=develop(0a·0b-1 포함). 완료 전 `checks.sh` PASS(ui 포함).
 
 ## Acceptance
-- [ ] Button: className·style·무제한 spread 차단(허용 native props만), `size`(min-h·Android 48)·`fullWidth`(기본 배치 보존)·`busy`/`disabled`(a11y state·입력 차단)·상태색(Text/Icon/spinner). 기존 caller(disabled 포함) 회귀 없음. 단위 테스트.
-- [ ] IconButton: 실제 영역 ≥48×48·accessibilityLabel 필수·아이콘 레지스트리(잘못된 이름 방지). app/index·RecentListScreen 이관.
-- [ ] SectionHeader `variant`(label/title)+`action`(형제 button), 여백 이중 안 됨. 단위 테스트.
-- [ ] EmptyState(표시 전용) 신설·capture 두 경로 보존(0건 extra 경로 유지). 너비 축소 없음.
-- [ ] 잔여 `semantic.light` 직접 참조 0건(FaqSection 포함), FreeQuotaRow 상태 분기 보존.
-- [ ] nativewind peer `^4.2.6`. 단위(ui+mobile) + 시뮬레이터 실측 + 게이트 PASS.
+- [x] Button: className·style·무제한 spread 차단(허용 native props만), `size`(min-h·Android 48)·`fullWidth`(기본 배치 보존)·`busy`/`disabled`(a11y state·입력 차단)·상태색(Text/Icon/spinner). 기존 caller(disabled 포함) 회귀 없음. 단위 테스트.
+- [x] IconButton: 실제 영역 ≥48×48·accessibilityLabel 필수·아이콘 레지스트리(잘못된 이름 방지). app/index·RecentListScreen 이관.
+- [x] SectionHeader `variant`(label/title)+`action`(형제 button), 여백 이중 안 됨. 단위 테스트.
+- [x] EmptyState(표시 전용) 신설·capture 두 경로 보존(0건 extra 경로 유지). 너비 축소 없음.
+- [x] 잔여 `semantic.light` 직접 참조 0건(FaqSection 포함), FreeQuotaRow 상태 분기 보존.
+- [x] nativewind peer `^4.2.6`. 단위(ui+mobile) + 시뮬레이터 실측 + 게이트 PASS.

@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { Icon } from "@clause-lens/ui";
-import { semantic } from "@clause-lens/tokens";
+import { color } from "@clause-lens/tokens";
 
 import { useEntitlementStore } from "../model/entitlementStore";
 
@@ -16,7 +16,7 @@ export function FreeQuotaRow() {
       accessibilityRole="summary"
       className="min-h-[56px] flex-row items-center gap-3 border-y border-border bg-surface px-4"
     >
-      <Icon name="Ticket" size={20} color={semantic.light.textMuted} />
+      <Icon name="Ticket" size={20} color={color("textMuted")} />
       <Text className="flex-1 text-base text-foreground">남은 무료 분석</Text>
 
       {status === "loading" ? (
