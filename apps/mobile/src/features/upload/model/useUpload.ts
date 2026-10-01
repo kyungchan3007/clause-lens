@@ -170,7 +170,9 @@ export function useUpload() {
   // 취소: 실행 무효화(runId bump) + 진행 중 전송 중단. 서버 반영은 재시도 때 확인.
   const cancel = useCallback(() => {
     const store = useUploadStore.getState();
-    store.set({ runId: runGuard.nextRun(), phase: "idle", message: "취소했어요." });
+    // 취소 시점 세대 캡처(cancel은 동기 — 스냅샷과 등가), 다른 필드와 원자적 묶음 set.
+    const next = runGuard.nextRun();
+    store.set({ runId: next, phase: "idle", message: "취소했어요." });
     void activeTask?.cancelAsync().catch(() => {});
     activeTask = null;
   }, []);

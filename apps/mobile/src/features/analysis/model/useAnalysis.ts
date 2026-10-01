@@ -169,10 +169,11 @@ export function useAnalysis() {
   );
 
   const cancel = useCallback((): void => {
+    // 취소 시점 세대를 먼저 캡처 → reset 구현(runId 미변경)에 의존하지 않고 타이밍·결과 보존.
+    const next = runGuard.nextRun();
     teardown();
     useAnalysisStore.getState().reset();
-    // reset()은 runId를 보존하므로 이후 bump = (기존 runId)+1 — 원래 순서와 결과 동일.
-    runGuard.bumpRun();
+    useAnalysisStore.getState().set({ runId: next });
   }, []);
 
   return { start, cancel };
