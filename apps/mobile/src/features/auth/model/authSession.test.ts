@@ -58,6 +58,15 @@ describe("authSession.refreshAccess", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
+  it("세션이 없으면(이미 정리됨) onAuthLost 호출 + AuthRefreshRejectedError (상태 일관성)", async () => {
+    mockLoad.mockResolvedValue(null);
+    const onLost = jest.fn();
+    setOnAuthLost(onLost);
+
+    await expect(refreshAccess("stale")).rejects.toBeInstanceOf(AuthRefreshRejectedError);
+    expect(onLost).toHaveBeenCalledTimes(1);
+  });
+
   it("확정 인증 실패(refresh 거부) → 세션 정리 + onAuthLost, throw", async () => {
     mockLoad.mockResolvedValue(session("stale"));
     jest.spyOn(authApi, "refresh").mockRejectedValue(new AuthRefreshRejectedError());

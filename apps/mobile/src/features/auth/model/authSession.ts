@@ -39,7 +39,10 @@ export function refreshAccess(prevAccessToken: string): Promise<string> {
 async function doRefresh(prevAccessToken: string): Promise<string> {
   const current = await loadSession();
   if (!current) {
-    // 세션이 없다(이미 로그아웃됨) → 더 할 게 없음. 무효화 알림은 중복 방지로 생략.
+    // 세션이 없다(이미 로그아웃·외부 정리) → 재발급 불가. 대개 이미 비인증이지만,
+    // 외부에서 세션만 지운 경로도 있으므로 상태 일관성을 위해 무효화 알림을 보낸다
+    // (onAuthLost는 멱등 — 이미 unauthenticated면 set은 no-op).
+    onAuthLost?.();
     throw new AuthRefreshRejectedError();
   }
   // 다른 요청이 이미 갱신해 토큰이 바뀜 → 네트워크 없이 현재 토큰으로 재시도(늦은 401).

@@ -62,5 +62,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 // 자동 토큰 갱신 배선(#126): 공통 HTTP 계층이 401 시 세션 매니저로 refresh·재시도하게 하고,
 // 확정 인증 실패(refresh 거부) 시 세션 매니저가 스토어 상태만 비인증으로 전이시킨다
 // (서버 logout을 부르는 signOut과 분리 — 이미 거부된 세션에 재요청하지 않기 위함).
-configureAuthGateway({ refreshAccess });
+// refreshAccess를 직접 넘기지 않고 지연 조회 래퍼로 감싼다 — 모듈 평가 순서/순환 의존에
+// 영향받지 않도록(401 발생 시점에 현재 바인딩을 호출). refreshAccess는 함수 선언이라 항상 정의됨.
+configureAuthGateway({ refreshAccess: (prevAccessToken) => refreshAccess(prevAccessToken) });
 setOnAuthLost(() => useAuthStore.setState({ status: "unauthenticated", user: null }));
