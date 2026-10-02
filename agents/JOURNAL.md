@@ -23,6 +23,36 @@
 - **파일**: `features/analysis/model/{analysisStore,useAnalysis}.ts` · `widgets/result-source/{lib,model}` · `shared/model/useResultSessionReset.ts`(신규) · `app/_layout.tsx` · spec 0061.
 - **다음/주의**: PR #160(머지 대기). 재진입 영속=TASK-006, 같은 사용자 재로그인 세션 generation=후속. 남은 이슈 #63.
 
+## 2026-10-02 · Claude · 앱 access 토큰 자동 갱신 (#126)
+- **무엇**: 공통 HTTP 계층(`shared/api/client.ts`)에서 401 → refresh → 원 요청 1회 재시도. 세션 매니저(`features/auth/model/authSession.ts`, 신규)가 single-flight·세대 비교·무효화 소유. `authApi.refresh` + `AuthRefreshRejectedError`(401/403=확정 거부, 그 외=일시 장애). authStore가 게이트웨이·onAuthLost 배선(서버 logout 부르는 signOut과 분리).
+- **왜**: 서버 `/auth/refresh`는 있으나 앱 미호출 → access 15분 TTL 후 업로드 중 401·강제 로그아웃(#123 Maestro 재현). 이슈 첫 완료조건이 구현 없이 체크된 거짓 완료였음.
+- **설계**: 착수 전 Codex 토론 — client 전송+재시도/세션 매니저 동시성/refresh는 base fetch(루프 차단)/확정 인증 실패만 세션 정리(일시 장애는 유지). spec 0060.
+- **게이트**: PASS (단위 15 신규 + checks.sh ALL PASS). PR #159 머지. 리뷰 P1 4건 반영(스코프·기본값·순서).
+- **파일**: `shared/api/client.ts` · `features/auth/{api/authApi,model/authSession,model/authStore}.ts` · spec 0060.
+- **다음/주의**: Maestro 15분 실측=e2e 일괄, 토큰 인자 제거 전면 리팩터=후속. Notion(01·03·13 ADR-10·주차) 기록 완료.
+
+## 2026-10-02 · Claude · 원문 고정(request.md) + PR 리뷰 원문 대조 (#155)
+- **무엇**: `pnpm request <이슈>`로 이슈 본문을 `specs/<폴더>/request.md`에 1회 복사(불변). 가드(`decideEdit`)가 기존 request.md 수정 차단 + 게이트(`inspectTaskFolder`)가 0059부터 존재 필수. PR AI 리뷰(`pr-ai-review.mjs`)가 연결 이슈 본문+request.md를 입력으로 받아 요구별 대조(순수 모듈 `lib/review-prompt.mjs` 분리·테스트).
+- **왜**: 요약 전달 시 결함 누락(harness-lab 46%/결함34 → 원문 고정 100%/0). PR 리뷰가 원문을 안 보던 구조.
+- **설계**: Codex 토론 — 전체 복사/불변+존재 강제/리뷰는 이슈+request.md 둘 다/AGENTS+branch-and-issue 문서화. spec 0059.
+- **게이트**: PASS (단위 17 신규 + checks.sh ALL PASS). PR #158 머지. 리뷰 P1(스코프) 오탐 대응.
+- **파일**: `agents/harness/evals/request.mjs`(신규) · `records.mjs` · `.github/scripts/{pr-ai-review.mjs,lib/review-prompt.mjs}` · AGENTS.md · branch-and-issue.md · spec 0059.
+- **다음/주의**: ② 실동작은 이 PR 리뷰로 확인됨. Notion(10 하네스 DB·주차) 기록 완료.
+
+## 2026-10-02 · Claude · 잔재 폴더 게이트 오탐 해소 (#154)
+- **무엇**: 자동 기록(trace.auto)을 spec 폴더 밖 `.harness/trace/`로 이동(원인 제거) + 게이트가 미추적 trace.auto류만 있는 잔재 폴더를 스킵(fail-open — 비-git·git 오류면 잔재로 안 봄). `check-task-records`가 스킵 시 stderr 로그.
+- **왜**: 브랜치 전환 시 미추적 trace.auto.jsonl만 남은 폴더를 게이트가 "prd/sdd 없는 spec"으로 오탐 FAIL(반복 재발).
+- **게이트**: PASS. PR #157 머지. 리뷰 P1(git throw·trim·스킵 은닉) 대응(git() 내장 방어 + fail-open 보강).
+- **파일**: `hooks/trace.mjs` · `lib/records.mjs` · `evals/check-task-records.mjs` · `.gitignore` · spec 0058.
+- **다음/주의**: Notion(10 하네스 DB·주차) 기록 완료.
+
+## 2026-10-02 · Claude · 체크박스 동기화·폴더형 spec 검사 (#153)
+- **무엇**: `pnpm issue-sync`·done 게이트가 폴더형 spec(prd.md의 `### Acceptance`)을 인식하도록 수정(`acceptanceSourceForIssue`). `replaceIssueAcceptance`가 뒤따르는 `###` 섹션을 삼키지 않게 경계 수정.
+- **왜**: issue-sync가 단일 파일 spec만 가정해 폴더형(0025~)에서 동작 안 함.
+- **게이트**: PASS. PR #156 머지. 리뷰 반영.
+- **파일**: `lib/records.mjs` · `evals/issue-sync.mjs` · spec 0057.
+- **다음/주의**: Notion(10 하네스 DB·주차) 기록 완료.
+
 ## 2026-10-02 · Claude · 프로필 화면 로직 커스텀 훅 분리 (#120)
 - **무엇**: `features/profile/ui/ProfileScreen.tsx`의 로직(포커스 시 잔량 재조회·로그아웃 확인 Alert·1:1 문의 안내·로그인 수단 라벨)을 `features/profile/model/useProfile()` + 순수 함수 `lib/providerLabelOf()`로 추출. ProfileScreen은 렌더 전용. **동작 불변**.
 - **위치 판단**: #118·#119와 달리 widgets 불가 — ProfileScreen이 features 레이어라 widgets 훅 import는 역방향. 같은 슬라이스 model로(기존 ui의 auth·entitlement 교차 import는 model로 이동, 신규 아님).
