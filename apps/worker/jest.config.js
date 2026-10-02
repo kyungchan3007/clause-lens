@@ -1,11 +1,7 @@
 /** @type {import('jest').Config} */
+const preset = require("../../packages/config/jest-preset");
+
 module.exports = {
-  moduleFileExtensions: ["js", "json", "ts"],
+  ...preset,
   rootDir: "src",
-  testRegex: ".*\\.spec\\.ts$",
-  transform: {
-    "^.+\\.ts$": ["ts-jest", { tsconfig: "<rootDir>/../tsconfig.spec.json" }],
-  },
-  testEnvironment: "node",
-  resetMocks: true,
 };
