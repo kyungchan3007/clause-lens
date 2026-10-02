@@ -1,5 +1,5 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { Badge } from "@clause-lens/ui";
+import { Text, View } from "react-native";
+import { Badge, LoadingIndicator, RetryInline } from "@clause-lens/ui";
 
 import { useEntitlementStore } from "../model/entitlementStore";
 
@@ -17,22 +17,22 @@ export function FreeQuotaChip() {
   if (status === "loading" && !data) {
     return (
       <View className="flex-row items-center gap-1.5 self-start">
-        <ActivityIndicator size="small" accessibilityLabel="무료 분석 잔량 확인 중" />
+        <LoadingIndicator size="small" label="무료 분석 잔량 확인 중" />
       </View>
     );
   }
 
   if (status === "error" && !data) {
     return (
-      <Pressable
-        accessibilityRole="button"
+      <RetryInline
+        onRetry={() => void refresh()}
+        label="잔량 불러오기 실패 · 다시 시도"
         accessibilityLabel="무료 분석 잔량 다시 불러오기"
-        onPress={() => void refresh()}
         hitSlop={8}
         className="self-start active:opacity-60"
       >
         <Badge label="잔량 불러오기 실패 · 다시 시도" tone="danger" />
-      </Pressable>
+      </RetryInline>
     );
   }
 
