@@ -57,4 +57,4 @@ pnpm issue-sync --close  # PR이 합쳐졌는데 이슈가 열려 있으면 닫�
 - 이슈 연결 여부는 GitHub에만 있어 오프라인 게이트로는 확인 불가 → `pnpm issue-link`를 PR 전에 실행.
 - fix와 새 이슈의 경계(세 질문)는 사람·에이전트 판단이다. 기계가 판정하지 않는다.
 - **0001~0022는 이슈 번호 요구 이전** 태스크라 면제. 0023부터 강제.
-- ClauseLens spec은 아직 **단일 파일**(`NNNN-슬러그.md`). 폴더형(prd/sdd/trace 분리)은 이식 3·4에서 판단.
+- ClauseLens spec은 0001~0024가 **단일 파일**(`NNNN-슬러그.md`), 0025부터 **폴더형**(`NNNN-슬러그/prd·sdd·trace`, 이식 3/4 #84). 체크박스 원본은 단일 파일은 그 파일의, 폴더형은 `prd.md`의 `### Acceptance`. `pnpm issue-sync`·done 게이트 모두 두 형태를 해석한다(#153).

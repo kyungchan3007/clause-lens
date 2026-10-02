@@ -25,6 +25,30 @@ test("replaceIssueAcceptance — 완료 조건 체크리스트만 교체, 다른
   assert.doesNotMatch(next, /옛날 항목/); // 옛 체크박스 제거
 });
 
+test("replaceIssueAcceptance — ### 완료 조건 제자리 교체 (#153 결함3)", () => {
+  const body = "## 요약\n설명\n\n### 완료 조건\n- [ ] 옛 항목\n\n### 예상 허점\n- 허점설명\n";
+  const next = replaceIssueAcceptance(body, [{ text: "새 A", checked: true }]);
+  assert.match(next, /### 완료 조건\n- \[x\] 새 A/); // 같은 ### 레벨로 제자리 교체
+  assert.doesNotMatch(next, /옛 항목/); // 옛 체크박스 제거
+  assert.match(next, /### 예상 허점\n- 허점설명/); // 뒤 ### 섹션 보존
+  assert.equal((next.match(/### 완료 조건/g) || []).length, 1); // 덧붙이지 않음
+});
+
+test("replaceIssueAcceptance — 뒤따르는 ### 섹션의 체크박스를 삼키지 않음 (경계 회귀)", () => {
+  const body = "### 완료 조건\n- [ ] 옛 항목\n\n### 체크리스트\n- [x] 지키면 안 되는 체크\n- [ ] 미체크도 보존\n";
+  const next = replaceIssueAcceptance(body, [{ text: "새 A", checked: false }]);
+  assert.match(next, /### 체크리스트\n- \[x\] 지키면 안 되는 체크\n- \[ \] 미체크도 보존/);
+  assert.doesNotMatch(next, /옛 항목/);
+  assert.match(next, /### 완료 조건\n- \[ \] 새 A/);
+});
+
+test("replaceIssueAcceptance — ### 완료 조건 뒤 ## 섹션도 보존", () => {
+  const body = "### 완료 조건\n- [ ] 옛\n\n## 다음 단계\n- [x] 계속\n";
+  const next = replaceIssueAcceptance(body, [{ text: "새", checked: true }]);
+  assert.match(next, /## 다음 단계\n- \[x\] 계속/);
+  assert.match(next, /### 완료 조건\n- \[x\] 새/);
+});
+
 test("replaceIssueAcceptance — 완료 조건 섹션 없으면 추가", () => {
   const body = "## 요약\n설명만 있음\n";
   const next = replaceIssueAcceptance(body, [{ text: "A", checked: false }]);
