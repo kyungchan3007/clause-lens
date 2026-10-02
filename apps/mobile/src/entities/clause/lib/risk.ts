@@ -1,12 +1,16 @@
 import type { ClauseRiskLevel, ClauseType } from "@clause-lens/contracts";
+import type { Tone } from "@clause-lens/ui";
 
 // 위험도 도메인 매핑(0031) — 서버 위험도(ClauseRiskLevel)를 표현용 tone·라벨·아이콘으로.
 // hex를 반환하지 않는다: 색은 소비자가 tone → 토큰(color()/className)으로 해석(테마·SVG 재해석 가능).
 // result·documents가 공용으로 사용(기능 간 직접 참조 금지 → entities 레이어).
 
-export type Tone = "danger" | "warning" | "success" | "neutral";
+// Tone 단일 출처(#145): 표현용 tone 타입은 ui가 소유, 도메인은 재노출만 한다.
+// import type이라 런타임 결합 없음(ui는 여전히 도메인을 import하지 않음). 위험도는 info를 내지 않는다.
+export type { Tone };
 
-export function riskTone(level: ClauseRiskLevel): Tone {
+// severity 미상(null/undefined)도 허용 — 홈/목록 요약(top severity 없음)이 바로 넘길 수 있게.
+export function riskTone(level: ClauseRiskLevel | null | undefined): Tone {
   switch (level) {
     case "high":
       return "danger";

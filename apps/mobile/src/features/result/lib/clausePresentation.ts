@@ -1,5 +1,5 @@
-import { color } from "@clause-lens/tokens";
 import type { ClauseRiskLevel } from "@clause-lens/contracts";
+import { toneAccent, toneBackground, toneForeground } from "@clause-lens/ui";
 
 import { riskIcon, riskLabel, riskTone, type Tone } from "../../../entities/clause";
 
@@ -16,18 +16,16 @@ export interface RiskPresentation {
   icon: string;
 }
 
-const TONE_TEXT = { danger: "dangerText", warning: "warningText", success: "successText", neutral: "textMuted" } as const;
-const TONE_ACCENT = { danger: "danger", warning: "warning", success: "success", neutral: "textMuted" } as const;
-const TONE_BG = { danger: "dangerBg", warning: "warningBg", success: "successBg", neutral: "surfaceAlt" } as const;
-
+// tone→색 매핑은 ui 헬퍼(toneForeground/Accent/Background)가 단일 소유(#145).
+// 텍스트(대비 700)·강조(600)·배경(50)을 각각 해석 — role 값은 기존 로컬 맵과 1:1 동일.
 function present(level: ClauseRiskLevel): RiskPresentation {
   const tone: Tone = riskTone(level);
   return {
     label: riskLabel(level),
     tone,
-    color: color(TONE_TEXT[tone]),
-    accentColor: color(TONE_ACCENT[tone]),
-    backgroundColor: color(TONE_BG[tone]),
+    color: toneForeground(tone),
+    accentColor: toneAccent(tone),
+    backgroundColor: toneBackground(tone),
     icon: riskIcon(level),
   };
 }
