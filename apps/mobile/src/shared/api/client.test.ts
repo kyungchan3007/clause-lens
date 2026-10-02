@@ -1,4 +1,10 @@
-import { HttpError, authedGet, authedPost, baseUrl } from "./client";
+import {
+  HttpError,
+  authedGet,
+  authedPost,
+  baseUrl,
+  configureAuthGateway,
+} from "./client";
 
 // EXPO_PUBLIC_API_BASE_URL은 jest.setup.js에서 http://localhost:3000으로 설정됨.
 const BASE = "http://localhost:3000";
@@ -96,5 +102,74 @@ describe("client.authedPost", () => {
     await expect(
       authedPost("/x", "t", { a: 1 }, passthrough),
     ).rejects.toBeInstanceOf(HttpError);
+  });
+});
+
+// 자동 토큰 갱신(#126) — 게이트웨이 주입 시 401 → refresh → 1회 재시도.
+describe("client 401 자동 갱신", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+    configureAuthGateway(null); // 다른 테스트에 누수 방지
+  });
+
+  it("401 → refreshAccess(이전 토큰)로 새 토큰 받아 1회 재시도 후 성공", async () => {
+    const spy = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(errStatus(401)) // 1차: 만료
+      .mockResolvedValueOnce(okJson({ ok: 1 })); // 재시도: 성공
+    const refreshAccess = jest.fn(async () => "fresh");
+    configureAuthGateway({ refreshAccess });
+
+    const r = await authedGet("/me/thing", "stale", passthrough);
+
+    expect(r).toEqual({ ok: 1 });
+    expect(refreshAccess).toHaveBeenCalledWith("stale");
+    expect(spy).toHaveBeenCalledTimes(2);
+    // 재시도는 새 토큰으로.
+    const retryInit = spy.mock.calls[1][1] as RequestInit;
+    expect((retryInit.headers as Record<string, string>).Authorization).toBe(
+      "Bearer fresh",
+    );
+  });
+
+  it("게이트웨이 미주입이면 401은 재시도 없이 HttpError(401)", async () => {
+    const spy = jest.spyOn(global, "fetch").mockResolvedValue(errStatus(401));
+    await expect(authedGet("/x", "t", passthrough)).rejects.toBeInstanceOf(
+      HttpError,
+    );
+    expect(spy).toHaveBeenCalledTimes(1); // 재시도 없음
+  });
+
+  it("재시도도 401이면 추가 refresh 없이 HttpError(401) (루프 차단)", async () => {
+    const spy = jest.spyOn(global, "fetch").mockResolvedValue(errStatus(401));
+    const refreshAccess = jest.fn(async () => "fresh");
+    configureAuthGateway({ refreshAccess });
+
+    await expect(authedGet("/x", "stale", passthrough)).rejects.toBeInstanceOf(
+      HttpError,
+    );
+    expect(refreshAccess).toHaveBeenCalledTimes(1); // refresh는 한 번만
+    expect(spy).toHaveBeenCalledTimes(2); // 원요청 + 재시도 1회뿐
+  });
+
+  it("비401 오류는 refresh 없이 그대로 전파", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue(errStatus(500));
+    const refreshAccess = jest.fn(async () => "fresh");
+    configureAuthGateway({ refreshAccess });
+
+    await expect(authedPost("/x", "t", { a: 1 }, passthrough)).rejects.toBeInstanceOf(
+      HttpError,
+    );
+    expect(refreshAccess).not.toHaveBeenCalled();
+  });
+
+  it("refreshAccess가 throw(확정 인증 실패)하면 그 에러를 전파", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue(errStatus(401));
+    const refreshAccess = jest.fn(async () => {
+      throw new Error("auth lost");
+    });
+    configureAuthGateway({ refreshAccess });
+
+    await expect(authedGet("/x", "t", passthrough)).rejects.toThrow(/auth lost/);
   });
 });
