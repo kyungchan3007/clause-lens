@@ -7,6 +7,11 @@ import { join } from "node:path";
 export const SPECS_DIR = "agents/intent/specs";
 export const TASKS_FILE = "agents/orchestration/TASKS.md";
 
+// 자동 기록(trace.auto) 저장 위치 — spec 폴더 밖(브랜치 전환 잔재 방지, #154). git 미추적.
+export const TRACE_AUTO_DIR = ".harness/trace";
+// 과거 spec 폴더 안에 남을 수 있던 자동 기록 파일 이름(잔재 판정용)
+export const AUTO_TRACE_BASENAMES = ["trace.auto.jsonl"];
+
 // 이 번호부터 spec에 GitHub 이슈 번호가 필수 (0001~0022는 이슈 도입 전이라 면제)
 export const ISSUE_REQUIRED_FROM = "0023";
 
@@ -199,6 +204,24 @@ export function listTaskFolders(projectDir) {
 export function readFolderFile(projectDir, folder, name) {
   const p = join(projectDir, SPECS_DIR, folder, name);
   return existsSync(p) ? readFileSync(p, "utf8") : undefined;
+}
+
+/**
+ * 브랜치 전환 잔재 폴더인가 — 게이트가 건너뛸 대상(#154).
+ * 기준(좁게): prd·sdd·trace가 전부 없고, 폴더 안이 git 미추적 자동기록(trace.auto.jsonl류)뿐.
+ * - 필수 기록(prd/sdd/trace)이 하나라도 있으면 "작업 중 폴더" → 검사 대상(false).
+ * - 자동기록 외 파일/하위 폴더가 있거나, 추적되는 파일이 있으면 잔재로 보지 않음(false) → 진짜 누락 유지.
+ * (A안으로 원인을 없앴지만, 과거/타 경로 잔재에 대비해 방어로 둔다.)
+ */
+export function isResidualAutoTraceFolder(projectDir, folder) {
+  const dir = join(projectDir, SPECS_DIR, folder);
+  if (!existsSync(dir)) return false;
+  if (["prd.md", "sdd.md", "trace.md"].some((n) => existsSync(join(dir, n)))) return false;
+  const entries = readdirSync(dir, { withFileTypes: true });
+  if (entries.length === 0) return false; // 빈 폴더는 잔재로 보지 않음(기존 FAIL 동작 유지)
+  if (!entries.every((e) => e.isFile() && AUTO_TRACE_BASENAMES.includes(e.name))) return false;
+  // git에 추적되는 파일이 하나라도 있으면(의도된 파일) 잔재가 아님
+  return git(projectDir, ["ls-files", `${SPECS_DIR}/${folder}`]) === "";
 }
 
 /** 이슈 번호로 폴더 spec 찾기 (prd.md의 이슈 번호 기준) */

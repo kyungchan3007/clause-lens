@@ -30,7 +30,7 @@
 - 머지 후: `pnpm issue-sync --close`(`Closes #N`이 못 닫은 이슈 닫기). 완료 조건의 **단일 원본 = spec의 ### Acceptance**, 이슈는 복사본.
 
 **과정 기록·강제(#84):** 규칙 상세는 [commit-and-issue.md](commit-and-issue.md).
-- **spec 형식: 0025부터 폴더** `agents/intent/specs/NNNN-슬러그/{prd,sdd,trace}.md` (+ 자동 기록 `trace.auto.jsonl`). 0001~0024 단일 파일은 면제.
+- **spec 형식: 0025부터 폴더** `agents/intent/specs/NNNN-슬러그/{prd,sdd,trace}.md`. 자동 기록은 spec 폴더 밖 `.harness/trace/<폴더>.jsonl`(git 미추적, #154 — 브랜치 전환 잔재 방지). 0001~0024 단일 파일은 면제.
 - **Claude Code hook**(`.claude/settings.json`): 도구 사용 **자동 기록**(trace) · 이슈 브랜치·prd·sdd 없이 코드 수정 **차단**(guard) · 코드 바꾸고 trace 없이 종료 **돌려보냄**(stop-check). 게이트: `check-task-records`.
 - **Codex는 Claude hook 미적용** → 완료 검사(`checks.sh`)로만 강제. 훅 시험은 **복사본에서**(라이브 기록 오염 방지).
 

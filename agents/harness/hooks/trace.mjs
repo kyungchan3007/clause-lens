@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// Claude Code hook: 도구 호출·프롬프트를 현재 작업 폴더의 trace.auto.jsonl에 한 줄씩 남긴다.
-// 브랜치가 <접두사>/<이슈번호>-* 이고 그 이슈의 spec 폴더가 있으면 그 폴더에, 아니면 커밋되지 않는 위치에 쓴다.
+// Claude Code hook: 도구 호출·프롬프트를 자동 기록 파일에 한 줄씩 남긴다.
+// 브랜치가 <접두사>/<이슈번호>-* 이고 그 이슈의 spec 폴더가 있으면 .harness/trace/<폴더>.jsonl에,
+// 아니면 커밋되지 않는 미배정 위치에 쓴다. (#154: spec 폴더 밖으로 — 브랜치 전환 잔재 방지)
 // 어떤 경우에도 exit 0 — 기록 실패가 에이전트 작업을 막으면 안 된다.
 import { appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { branchIssueNumber, currentBranch, folderForIssue, SPECS_DIR } from "../lib/records.mjs";
+import { branchIssueNumber, currentBranch, folderForIssue, TRACE_AUTO_DIR } from "../lib/records.mjs";
 
 export const UNASSIGNED_FILE = "agents/harness/hooks/.unassigned.jsonl";
 const MAX_TEXT = 200;
@@ -82,10 +83,10 @@ export function toEntry(input, projectDir, now = new Date()) {
   return entry;
 }
 
-/** 기록할 파일(프로젝트 기준 상대 경로)을 정한다: 이슈의 spec 폴더가 있으면 거기, 없으면 미배정 파일 */
+/** 기록할 파일(프로젝트 기준 상대 경로)을 정한다: 이슈의 spec 폴더가 있으면 .harness/trace/<폴더>.jsonl, 없으면 미배정 파일 */
 export function resolveTraceFile(projectDir, branch) {
   const folder = folderForIssue(projectDir, branchIssueNumber(branch));
-  return folder ? `${SPECS_DIR}/${folder}/trace.auto.jsonl` : UNASSIGNED_FILE;
+  return folder ? `${TRACE_AUTO_DIR}/${folder}.jsonl` : UNASSIGNED_FILE;
 }
 
 /** 현재 작업의 자동 기록 파일에 한 줄을 남긴다 (guard가 차단을 기록할 때도 쓴다) */

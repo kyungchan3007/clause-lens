@@ -37,11 +37,14 @@ test("toEntry — UserPromptSubmit은 프롬프트를 sanitize", () => {
   assert.match(e.detail, /\[REDACTED\]/);
 });
 
-test("resolveTraceFile — 이슈 폴더 있으면 폴더, 없으면 미배정", () => {
+test("resolveTraceFile — 이슈 폴더 있으면 spec 밖 .harness/trace, 없으면 미배정 (#154)", () => {
   const root = mkdtempSync(join(tmpdir(), "cl-trace-"));
   mkdirSync(join(root, "agents/intent/specs/0025-a"), { recursive: true });
   writeFileSync(join(root, "agents/intent/specs/0025-a/prd.md"), "# 0025\n> **이슈:** #84\n");
-  assert.equal(resolveTraceFile(root, "chore/84-x"), "agents/intent/specs/0025-a/trace.auto.jsonl");
+  const file = resolveTraceFile(root, "chore/84-x");
+  assert.equal(file, ".harness/trace/0025-a.jsonl");
+  // spec 폴더 안이 아니어야 한다(브랜치 전환 잔재 방지)
+  assert.ok(!file.includes("agents/intent/specs/"));
   assert.equal(resolveTraceFile(root, "chore/999-none"), UNASSIGNED_FILE);
   assert.equal(resolveTraceFile(root, "develop"), UNASSIGNED_FILE);
 });
