@@ -24,12 +24,9 @@ let streamClose: (() => void) | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let reopenTimer: ReturnType<typeof setTimeout> | null = null;
 
-// 실행 세대 가드 — stale 콜백/취소 무효화(useUpload와 공통 구현).
+// 실행 세대 가드 — stale 판정(isAlive)만. 세대 증가는 store.bumpRunWith 전용 경로.
 // teardown(타이머·스트림 자원 정리)은 feature 자원이라 아래에 그대로 둔다.
-const runGuard = createRunGuard(
-  () => useAnalysisStore.getState().runId,
-  (runId) => useAnalysisStore.getState().set({ runId }),
-);
+const runGuard = createRunGuard(() => useAnalysisStore.getState().runId);
 
 function teardown(): void {
   streamClose?.();
@@ -131,9 +128,12 @@ export function useAnalysis() {
   const start = useCallback(
     async (documentId: string, getAuth: GetAnalysisAuth): Promise<void> => {
       teardown();
-      const runId = runGuard.nextRun();
       useAnalysisStore.getState().reset();
-      useAnalysisStore.getState().set({ runId, documentId, phase: "requesting" });
+      // reset은 runId를 보존하므로, 그 뒤 bumpRunWith가 현재 세대+1을 documentId·phase와
+      // 한 set으로 원자적 반영(기존 reset → set({ runId: nextRun(), ... }) 등가 · set 횟수 동일).
+      const runId = useAnalysisStore
+        .getState()
+        .bumpRunWith({ documentId, phase: "requesting" });
 
       const auth = await getAuth();
       if (!runGuard.isAlive(runId)) return;
@@ -170,11 +170,11 @@ export function useAnalysis() {
   );
 
   const cancel = useCallback((): void => {
-    // 취소 시점 세대를 먼저 캡처 → reset 구현(runId 미변경)에 의존하지 않고 타이밍·결과 보존.
-    const next = runGuard.nextRun();
     teardown();
+    // reset은 runId를 보존하므로, 그 뒤 bumpRunWith가 현재 세대+1을 set → 취소 시점 세대 증가.
+    // 기존 reset → set({ runId: nextRun() })와 최종 runId·set 횟수 동일(reset이 runId 미변경).
     useAnalysisStore.getState().reset();
-    useAnalysisStore.getState().set({ runId: next });
+    useAnalysisStore.getState().bumpRunWith({});
   }, []);
 
   return { start, cancel };
