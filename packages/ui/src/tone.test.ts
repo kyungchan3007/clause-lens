@@ -1,18 +1,28 @@
 import { semantic } from "@clause-lens/tokens";
 
-import { toneAccent, toneClasses, toneForeground, type Tone } from "./tone";
+import { toneAccent, toneBackground, toneClasses, toneForeground, type Tone } from "./tone";
 
 const TONES: Tone[] = ["neutral", "danger", "warning", "success", "info"];
 
-describe("toneClasses / toneForeground / toneAccent", () => {
-  it("모든 tone이 container·text className과 전경/강조 hex를 반환", () => {
+describe("toneClasses / toneForeground / toneAccent / toneBackground", () => {
+  it("모든 tone이 container·text className과 전경/강조/배경 hex를 반환", () => {
     for (const tone of TONES) {
       const c = toneClasses(tone);
       expect(c.container).toMatch(/^bg-/);
       expect(c.text).toMatch(/^text-/);
       expect(toneForeground(tone)).toMatch(/^#[0-9A-Fa-f]{6}$/);
       expect(toneAccent(tone)).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(toneBackground(tone)).toMatch(/^#[0-9A-Fa-f]{6}$/);
     }
+  });
+
+  // 배경 role 고정(#145) — clausePresentation 로컬 TONE_BG와 1:1 동일해야 동작 불변.
+  it("toneBackground가 tone별 배경 role 색을 정확히 해석", () => {
+    expect(toneBackground("neutral")).toBe(semantic.light.surfaceAlt);
+    expect(toneBackground("danger")).toBe(semantic.light.dangerBg);
+    expect(toneBackground("warning")).toBe(semantic.light.warningBg);
+    expect(toneBackground("success")).toBe(semantic.light.successBg);
+    expect(toneBackground("info")).toBe(semantic.light.tint);
   });
 });
 

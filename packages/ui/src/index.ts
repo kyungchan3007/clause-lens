@@ -4,7 +4,7 @@ export { ListRow } from "./list-row";
 export type { ListRowProps, ListRowVariant } from "./list-row";
 export { StatusDot } from "./status-dot";
 export type { StatusDotProps } from "./status-dot";
-export { toneClasses, toneForeground, toneAccent, type Tone } from "./tone";
+export { toneClasses, toneForeground, toneAccent, toneBackground, type Tone } from "./tone";
 export { Button } from "./button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./button";
 export { IconButton } from "./icon-button";

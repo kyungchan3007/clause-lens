@@ -1,14 +1,10 @@
 import { Text, View } from "react-native";
 import type { DocumentListItem } from "@clause-lens/contracts";
-import { Badge, Icon, ListRow, StatusDot, type Tone } from "@clause-lens/ui";
+import { Badge, Icon, ListRow, StatusDot } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
-import { completedAtLabel, retentionBadge, riskSummary, type RiskSeverity } from "../lib/retentionBadge";
-
-// 위험 최고 severity → tone(StatusDot·텍스트 의미). 없으면 중립.
-function severityTone(top: RiskSeverity): Tone {
-  return top === "high" ? "danger" : top === "medium" ? "warning" : top === "low" ? "success" : "neutral";
-}
+import { riskTone } from "../../../entities/clause";
+import { completedAtLabel, retentionBadge, riskSummary } from "../lib/retentionBadge";
 
 // 재열람 문서 1행(홈 최근·목록 공용). 공용 ListRow 조립 — 배지·chevron 포함 행 전체 터치.
 export function DocumentRow({
@@ -20,7 +16,8 @@ export function DocumentRow({
 }) {
   const badge = retentionBadge(item.retainUntil);
   const { total, top } = riskSummary(item.risk);
-  const tone = severityTone(top);
+  // top severity(null=위험 없음) → tone. riskTone이 null/undefined를 neutral로 폴백(#145).
+  const tone = riskTone(top);
   const riskText = total > 0 ? `위험 ${total}건` : "위험 없음";
   const partial = item.status === "partial";
   const partialText = partial

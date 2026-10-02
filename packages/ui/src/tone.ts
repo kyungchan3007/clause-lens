@@ -40,3 +40,16 @@ const TONE_ACCENT_ROLE = {
 export function toneAccent(tone: Tone): string {
   return color(TONE_ACCENT_ROLE[tone]);
 }
+
+// 배경색 hex(연한 배경 50대) — 배지/칩/하이라이트 배경. toneClasses의 container(className)와
+// 같은 의미를 색 prop(hex)으로 노출. 전경(toneForeground)과 쌍으로 대비 보장.
+const TONE_BG_ROLE = {
+  neutral: "surfaceAlt",
+  danger: "dangerBg",
+  warning: "warningBg",
+  success: "successBg",
+  info: "tint",
+} as const;
+export function toneBackground(tone: Tone): string {
+  return color(TONE_BG_ROLE[tone]);
+}
