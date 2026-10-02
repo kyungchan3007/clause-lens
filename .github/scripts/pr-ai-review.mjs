@@ -256,7 +256,7 @@ function extractJsonBlock(text) {
 // - request.md: PR 변경 파일에서 경로를 찾아 head SHA의 내용을 조회.
 // 모두 best-effort — 실패해도 리뷰는 계속되고, 프롬프트에서 "검증 한계"로 표시된다.
 // repo 좌표(owner·repo·prNumber)는 **명시적 인자**로 받는다(모듈 상수 클로저 의존 제거 — 주입 가능·테스트 용이).
-async function fetchOriginalRequest({ owner, repo, prNumber }, pr, files) {
+async function fetchOriginalRequest({ owner, repo, prNumber } = {}, pr, files) {
   const result = { issueNumber: null, issueTitle: "", issueBody: "", requestMd: "" };
 
   // 1) 연결 이슈
