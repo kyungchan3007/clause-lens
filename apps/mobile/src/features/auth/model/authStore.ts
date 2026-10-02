@@ -1,7 +1,9 @@
 import { create } from "zustand";
 
+import { configureAuthGateway } from "../../../shared/api/client";
 import * as authApi from "../api/authApi";
 import type { SessionUser } from "../api/authApi";
+import { refreshAccess, setOnAuthLost } from "./authSession";
 import {
   clearSession,
   loadSession,
@@ -35,7 +37,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await authApi.fetchMe(session.accessToken);
       set({ status: "authenticated", user });
     } catch {
-      // 만료·검증 실패 → 재로그인 유도(refresh 자동화는 후속).
+      // 부팅 검증(/auth/me) 실패 → 재로그인 유도. 런타임 API 호출의 만료(401)는
+      // 공통 계층이 자동 refresh·재시도로 처리한다(#126, authSession).
       set({ status: "unauthenticated", user: null });
     }
   },
@@ -55,3 +58,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ status: "unauthenticated", user: null });
   },
 }));
+
+// 자동 토큰 갱신 배선(#126): 공통 HTTP 계층이 401 시 세션 매니저로 refresh·재시도하게 하고,
+// 확정 인증 실패(refresh 거부) 시 세션 매니저가 스토어 상태만 비인증으로 전이시킨다
+// (서버 logout을 부르는 signOut과 분리 — 이미 거부된 세션에 재요청하지 않기 위함).
+// 무효화 핸들러(onAuthLost)를 **게이트웨이 등록보다 먼저** 설정한다 — 401 재시도 경로가
+// 활성화되기 전에 핸들러가 항상 준비되도록(핸들러 미설정 상태로 refresh가 도는 창을 제거).
+setOnAuthLost(() => useAuthStore.setState({ status: "unauthenticated", user: null }));
+// refreshAccess는 직접 넘기지 않고 지연 조회 래퍼로 감싼다 — 모듈 평가 순서/순환 의존에
+// 영향받지 않도록(401 발생 시점에 현재 바인딩을 호출). refreshAccess는 함수 선언이라 항상 정의됨.
+configureAuthGateway({ refreshAccess: (prevAccessToken) => refreshAccess(prevAccessToken) });

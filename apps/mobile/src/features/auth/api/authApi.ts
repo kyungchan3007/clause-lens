@@ -30,6 +30,32 @@ export async function loginWithKakao(kakaoAccessToken: string): Promise<AuthResu
   return (await res.json()) as AuthResult;
 }
 
+// refresh 토큰이 서버에 거부됨(확정 인증 실패) — 세션을 정리하고 재로그인해야 하는 경우.
+// 네트워크·5xx 같은 일시 장애와 구분하기 위한 전용 에러(세션은 유지).
+export class AuthRefreshRejectedError extends Error {
+  constructor() {
+    super("refresh token rejected");
+    this.name = "AuthRefreshRejectedError";
+  }
+}
+
+// access 재발급 — refresh 토큰으로 새 세션(access·refresh·user)을 받는다.
+// 401(또는 403) = 확정 거부 → AuthRefreshRejectedError. 그 외 비정상 = 일시 장애(일반 에러).
+export async function refresh(refreshToken: string): Promise<AuthResult> {
+  const res = await fetch(`${baseUrl()}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+  });
+  if (res.status === 401 || res.status === 403) {
+    throw new AuthRefreshRejectedError();
+  }
+  if (!res.ok) {
+    throw new Error(`세션 갱신 실패 (${res.status})`);
+  }
+  return (await res.json()) as AuthResult;
+}
+
 // 세션 복원 시 서버로 검증(토큰 존재만으로 인증 처리하지 않기 위함).
 export async function fetchMe(accessToken: string): Promise<SessionUser> {
   const res = await fetch(`${baseUrl()}/auth/me`, {
