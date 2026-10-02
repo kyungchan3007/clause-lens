@@ -143,6 +143,9 @@ export function useAnalysis() {
           .set({ phase: "error", message: "로그인이 필요해요" });
         return;
       }
+      // 소유자 스탬프(#76) — 인증 신원과 동일 시점에 기록. 결과 가시성 격리의 기준.
+      // (스탬프 전 공백 동안은 userId===ownerUserId가 거짓이라 가시성 차단 — 안전.)
+      useAnalysisStore.getState().set({ ownerUserId: auth.userId });
 
       try {
         const status = await requestAnalysis(auth.accessToken, documentId);

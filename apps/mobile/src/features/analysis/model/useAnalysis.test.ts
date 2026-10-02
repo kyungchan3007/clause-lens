@@ -61,6 +61,17 @@ describe("useAnalysis.start", () => {
     expect(streamMock).not.toHaveBeenCalled();
   });
 
+  it("시작 시 소유자(userId) 스탬프 — 결과 가시성 격리(#76)", async () => {
+    requestMock.mockResolvedValue(
+      status({ status: "done", stateVersion: 1, pages: [] }),
+    );
+    const { result } = renderHook(() => useAnalysis());
+    await act(async () => {
+      await result.current.start("doc1", auth); // auth = { accessToken, userId: "u1" }
+    });
+    expect(useAnalysisStore.getState().ownerUserId).toBe("u1");
+  });
+
   it("접수 403 → 무료 횟수 없음 안내(그 외 오류와 구분)", async () => {
     requestMock.mockRejectedValue(new HttpError(403));
     const { result } = renderHook(() => useAnalysis());
