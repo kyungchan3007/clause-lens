@@ -32,9 +32,17 @@ for (const name of listSpecs(root)) {
 for (const folder of listTaskFolders(root)) {
   // 브랜치 전환 잔재(미추적 trace.auto.jsonl류만 있는 폴더)는 오탐이므로 건너뜀 (#154).
   // 진짜 누락(prd/sdd 없이 작업 중·추적 파일 있는 폴더)은 아래에서 그대로 FAIL.
-  // 왜 스킵했는지 추적 가능하도록 로그를 남긴다(오탐·검사 약화 디버깅용).
+  // 스킵은 "조용한 PASS"가 아니다: isResidualAutoTraceFolder가 ① prd/sdd/trace 全無
+  // ② 폴더 안이 자동기록(trace.auto류)뿐 ③ git에서 미추적 임을 모두 확인했을 때만 true.
+  //   - 비-git·git 오류면 fail-open(false) → 아래 inspectTaskFolder가 누락을 FAIL로 잡음.
+  //   - 추적되는 파일이 있으면 false → 역시 FAIL. 즉 진짜 누락이 PASS로 새지 않는다.
+  // 그럼에도 스킵 사실·근거를 stderr(console.warn)로 남겨 CI 로그에서 눈에 띄게 한다
+  // (console.log/stdout은 요약에 묻힐 수 있어 warn 사용).
   if (isResidualAutoTraceFolder(root, folder)) {
-    console.log(`  (skip) ${SPECS_DIR}/${folder}: 브랜치 전환 잔재(미추적 trace.auto류만) — #154`);
+    console.warn(
+      `  ⚠️ (skip) ${SPECS_DIR}/${folder}: 브랜치 전환 잔재로 판정해 검사 제외 ` +
+        `(근거: prd/sdd/trace 없음 + 미추적 trace.auto류뿐, git 확인) — #154`,
+    );
     continue;
   }
   problems.push(...inspectTaskFolder(root, folder).map((p) => `${folder}: ${p}`));
