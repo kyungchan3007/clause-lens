@@ -1,5 +1,5 @@
 // 이슈·체크박스 기록 판정 — 게이트(check-issue-records)와 네트워크 명령(issue-link·issue-sync)이 공유.
-// harness-lab에서 발췌·적응(폴더형·역할·trace 제외). ClauseLens는 단일 파일 spec + base=develop.
+// harness-lab에서 발췌·적응. ClauseLens spec은 0001~0024 단일 파일 + 0025~ 폴더형(prd/sdd/trace), base=develop.
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -151,15 +151,23 @@ export function inspectIssueRecords(projectDir) {
   const tasksPath = join(projectDir, TASKS_FILE);
   const tasks = existsSync(tasksPath) ? readFileSync(tasksPath, "utf8") : "";
   const specNames = listSpecs(projectDir);
+  const folderNames = listTaskFolders(projectDir);
   for (const id of doneSpecIds(tasks)) {
-    const name = specNames.find((n) => specId(n) === id);
-    if (!name) continue;
-    const abandoned = parseChecklist(acceptanceSection(readSpec(projectDir, name))).filter(
-      (i) => !i.checked && !i.reasoned,
-    );
+    // 단일 파일 spec 우선, 없으면 폴더형(prd.md) — 둘 다 done 미체크를 검사
+    const fileName = specNames.find((n) => specId(n) === id);
+    const folder = folderNames.find((n) => specId(n) === id);
+    let rel, text;
+    if (fileName) {
+      rel = `${SPECS_DIR}/${fileName}`;
+      text = readSpec(projectDir, fileName);
+    } else if (folder) {
+      rel = `${SPECS_DIR}/${folder}/prd.md`;
+      text = readFolderFile(projectDir, folder, "prd.md");
+    } else continue;
+    const abandoned = parseChecklist(acceptanceSection(text)).filter((i) => !i.checked && !i.reasoned);
     for (const item of abandoned) {
       problems.push(
-        `${SPECS_DIR}/${name}: done 태스크인데 사유 없이 미체크된 완료 조건 — "${item.text.slice(0, 60)}" (체크하거나 "(후속 #번호)"처럼 사유를 적으세요)`,
+        `${rel}: done 태스크인데 사유 없이 미체크된 완료 조건 — "${item.text.slice(0, 60)}" (체크하거나 "(후속 #번호)"처럼 사유를 적으세요)`,
       );
     }
   }
@@ -196,6 +204,19 @@ export function readFolderFile(projectDir, folder, name) {
 /** 이슈 번호로 폴더 spec 찾기 (prd.md의 이슈 번호 기준) */
 export function folderForIssue(projectDir, issue) {
   return listTaskFolders(projectDir).find((f) => issueNumberOf(readFolderFile(projectDir, f, "prd.md")) === String(issue));
+}
+
+/**
+ * 이슈 번호로 Acceptance 원본을 찾는다 — 단일 파일 spec과 폴더형(prd.md) 모두 지원.
+ * 단일 파일 우선, 없으면 폴더형(prd.md의 ### Acceptance)을 본다.
+ * @returns {{ name: string, text: string|undefined, kind: "file"|"folder" }|undefined}
+ */
+export function acceptanceSourceForIssue(projectDir, issue) {
+  const fileName = specForIssue(projectDir, issue);
+  if (fileName) return { name: fileName, text: readSpec(projectDir, fileName), kind: "file" };
+  const folder = folderForIssue(projectDir, issue);
+  if (folder) return { name: `${folder}/prd.md`, text: readFolderFile(projectDir, folder, "prd.md"), kind: "folder" };
+  return undefined;
 }
 
 const SDD_KEYWORDS = ["접근", "대안", "검증"];

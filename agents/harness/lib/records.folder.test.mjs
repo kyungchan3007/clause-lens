@@ -4,11 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import {
+  acceptanceSourceForIssue,
   checkFolderPrd,
   checkFolderSdd,
   checkFolderTrace,
   decideEdit,
   folderForIssue,
+  inspectIssueRecords,
   inspectTaskFolder,
   isRecordPath,
   listTaskFolders,
@@ -42,6 +44,69 @@ test("listTaskFolders·folderForIssue", () => {
   assert.equal(folderForIssue(root, "84"), "0025-a");
   assert.equal(folderForIssue(root, "90"), "0026-b");
   assert.equal(folderForIssue(root, "999"), undefined);
+});
+
+test("acceptanceSourceForIssue — 폴더형 spec을 찾고 prd.md를 원본으로 (#153 결함1)", () => {
+  const root = tmpProject();
+  writeFolder(root, "0057-folder-spec-sync", {
+    "prd.md": "# 0057 — 동기화\n- **이슈:** #153\n### Acceptance\n- [x] 끝낸 것\n- [ ] 남은 것 (후속)\n",
+  });
+  const src = acceptanceSourceForIssue(root, "153");
+  assert.equal(src.kind, "folder");
+  assert.equal(src.name, "0057-folder-spec-sync/prd.md");
+  assert.match(src.text, /끝낸 것/);
+  assert.equal(acceptanceSourceForIssue(root, "999"), undefined);
+});
+
+test("acceptanceSourceForIssue — 단일 파일 spec 유지 (회귀)", () => {
+  const root = tmpProject();
+  writeFileSync(
+    join(root, "agents/intent/specs/0023-x.md"),
+    "# 0023\n> **관련 태스크**: #40\n### Acceptance\n- [ ] 할 것\n",
+  );
+  const src = acceptanceSourceForIssue(root, "40");
+  assert.equal(src.kind, "file");
+  assert.equal(src.name, "0023-x.md");
+  assert.match(src.text, /할 것/);
+});
+
+test("inspectIssueRecords — 폴더형 spec의 done 미체크도 검사 (#153 결함2)", () => {
+  const root = tmpProject();
+  writeFolder(root, "0057-folder-spec-sync", {
+    "prd.md": "# 0057 — 동기화\n- **이슈:** #153\n### Acceptance\n- [ ] 그냥 빠뜨린 항목\n",
+  });
+  writeFileSync(
+    join(root, "agents/orchestration/TASKS.md"),
+    "| TASK-A | x | y | [0057](../intent/specs/0057-folder-spec-sync/) | Claude | **done** | - |\n",
+  );
+  const problems = inspectIssueRecords(root);
+  assert.ok(problems.some((p) => /0057-folder-spec-sync\/prd\.md.*사유 없이 미체크/.test(p)));
+});
+
+test("inspectIssueRecords — 단일 파일 spec done 미체크 검사 유지 (회귀)", () => {
+  const root = tmpProject();
+  writeFileSync(
+    join(root, "agents/intent/specs/0023-x.md"),
+    "# 0023\n> **관련 태스크**: #40\n### Acceptance\n- [ ] 그냥 빠뜨린 항목\n",
+  );
+  writeFileSync(
+    join(root, "agents/orchestration/TASKS.md"),
+    "| TASK-A | x | y | [0023](../intent/specs/0023-x.md) | Claude | **done** | - |\n",
+  );
+  const problems = inspectIssueRecords(root);
+  assert.ok(problems.some((p) => /0023-x\.md.*사유 없이 미체크/.test(p)));
+});
+
+test("inspectIssueRecords — 사유 있는 미체크·체크는 통과 (폴더형)", () => {
+  const root = tmpProject();
+  writeFolder(root, "0057-folder-spec-sync", {
+    "prd.md": "# 0057 — 동기화\n- **이슈:** #153\n### Acceptance\n- [x] 끝낸 것\n- [ ] 남은 것 (후속 #200)\n",
+  });
+  writeFileSync(
+    join(root, "agents/orchestration/TASKS.md"),
+    "| TASK-A | x | y | [0057](../intent/specs/0057-folder-spec-sync/) | Claude | **done** | - |\n",
+  );
+  assert.ok(!inspectIssueRecords(root).some((p) => /사유 없이 미체크/.test(p)));
 });
 
 test("checkFolderPrd — 제목 잔재·체크박스·이슈번호", () => {

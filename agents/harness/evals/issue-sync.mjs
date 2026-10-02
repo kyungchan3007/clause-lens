@@ -8,7 +8,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { acceptanceSection, branchIssueNumber, currentBranch, parseChecklist, readSpec, specForIssue } from "../lib/records.mjs";
+import { acceptanceSection, acceptanceSourceForIssue, branchIssueNumber, currentBranch, parseChecklist } from "../lib/records.mjs";
 
 const norm = (t) => t.replace(/\s+/g, " ").trim();
 
@@ -16,13 +16,26 @@ export function renderChecklist(items) {
   return items.map((i) => `- [${i.checked ? "x" : " "}] ${i.text}`).join("\n");
 }
 
-/** 이슈 본문의 "## 완료 조건"(또는 "## Acceptance") 체크리스트를 spec 목록으로 교체 (다른 섹션은 그대로) */
+/**
+ * 이슈 본문의 "완료 조건"(또는 "Acceptance") 체크리스트를 spec 목록으로 제자리 교체 (다른 섹션은 그대로).
+ * 제목은 `## `·`### ` 모두 인식하고, 섹션 끝 경계를 같은 레벨 이하(#{1..level}) 제목 또는 `---`로 잡아
+ * 뒤따르는 다른 `###` 섹션(과 그 체크박스)을 삼키지 않는다. (records.mjs acceptanceSection과 동일 규칙)
+ */
 export function replaceIssueAcceptance(issueBody, specItems) {
-  const m = /(^##[ \t]*(?:완료 조건|Acceptance)[^\n]*\n)([\s\S]*?)(?=^## |^---|$(?![\s\S]))/m.exec(issueBody);
   const block = renderChecklist(specItems);
-  if (!m) return `${issueBody.replace(/\s*$/, "")}\n\n## 완료 조건\n${block}\n`;
-  const rest = m[2].split("\n").filter((l) => !/^\s*[-*] \[( |x|X)\] /.test(l)).join("\n").trim();
-  return issueBody.slice(0, m.index) + m[1] + block + "\n" + (rest ? `${rest}\n` : "") + "\n" + issueBody.slice(m.index + m[0].length).replace(/^\n+/, "");
+  const head = /^(#{2,3})[ \t]*(?:완료 조건|Acceptance)[^\n]*$/m.exec(issueBody);
+  if (!head) return `${issueBody.replace(/\s*$/, "")}\n\n## 완료 조건\n${block}\n`;
+  const level = head[1].length;
+  const before = issueBody.slice(0, head.index); // 제목 앞 (원형 보존)
+  const headingLine = head[0]; // 제목 줄 (개행 없음)
+  const body = issueBody.slice(head.index + headingLine.length); // 제목 뒤 (맨 앞 \n 포함)
+  const stop = new RegExp(`^#{1,${level}}[ \\t]|^---[ \\t]*$`, "m").exec(body);
+  const section = stop ? body.slice(0, stop.index) : body;
+  const after = (stop ? body.slice(stop.index) : "").replace(/^\n+/, "");
+  // 섹션 안의 체크박스 아닌 줄은 보존 (부가 설명 등)
+  const kept = section.split("\n").filter((l) => l.trim() && !/^\s*[-*] \[( |x|X)\] /.test(l)).join("\n").trim();
+  const rebuilt = `${headingLine}\n${block}\n${kept ? `${kept}\n` : ""}`;
+  return `${before}${rebuilt}${after ? `\n${after}` : ""}`;
 }
 
 /** spec과 이슈 체크리스트 비교 → 어긋난 항목 목록 */
@@ -52,10 +65,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const branch = currentBranch(root);
   const issue = branchIssueNumber(branch);
   if (!issue) fail(`브랜치명에 이슈 번호가 없습니다: ${branch}`);
-  const specName = specForIssue(root, issue);
-  if (!specName) fail(`이슈 #${issue}를 가리키는 spec이 없습니다 (spec에 "> **관련 태스크**: #${issue}")`);
-  const specItems = parseChecklist(acceptanceSection(readSpec(root, specName)));
-  if (specItems.length === 0) fail(`${specName}의 ### Acceptance에 체크박스가 없습니다`);
+  const src = acceptanceSourceForIssue(root, issue);
+  if (!src) fail(`이슈 #${issue}를 가리키는 spec이 없습니다 (단일 파일 "> **관련 태스크**: #${issue}" 또는 폴더 prd.md "- **이슈:** #${issue}")`);
+  const specName = src.name;
+  const specItems = parseChecklist(acceptanceSection(src.text));
+  if (specItems.length === 0) fail(`${specName}의 Acceptance에 체크박스가 없습니다`);
   const { body, state } = JSON.parse(gh(["issue", "view", issue, "--json", "body,state"]));
   const issueItems = parseChecklist(acceptanceSection(body));
 
