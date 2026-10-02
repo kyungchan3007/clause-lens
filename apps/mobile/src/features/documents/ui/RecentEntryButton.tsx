@@ -1,5 +1,5 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { Icon } from "@clause-lens/ui";
+import { Pressable, Text, View } from "react-native";
+import { Icon, LoadingIndicator, RetryInline } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
@@ -15,7 +15,7 @@ export function RecentEntryButton({ onSeeAll }: { onSeeAll: () => void }) {
     return (
       <View className="px-5 pt-2">
         <View className="items-center rounded-2xl border border-border bg-surface py-4">
-          <ActivityIndicator accessibilityLabel="불러오는 중" />
+          <LoadingIndicator label="불러오는 중" />
         </View>
       </View>
     );
@@ -23,13 +23,11 @@ export function RecentEntryButton({ onSeeAll }: { onSeeAll: () => void }) {
   if (status === "error") {
     return (
       <View className="px-5 pt-2">
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void refresh()}
+        <RetryInline
+          onRetry={() => void refresh()}
+          label="최근 분석을 불러오지 못했어요 · 다시 시도"
           className="items-center rounded-2xl border border-border bg-surface py-4 active:opacity-70"
-        >
-          <Text className="text-sm text-danger">최근 분석을 불러오지 못했어요 · 다시 시도</Text>
-        </Pressable>
+        />
       </View>
     );
   }

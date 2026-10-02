@@ -1,5 +1,5 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { Icon } from "@clause-lens/ui";
+import { Text, View } from "react-native";
+import { Icon, LoadingIndicator, RetryInline } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
 import { useEntitlementStore } from "../model/entitlementStore";
@@ -20,11 +20,9 @@ export function FreeQuotaRow() {
       <Text className="flex-1 text-base text-foreground">남은 무료 분석</Text>
 
       {status === "loading" ? (
-        <ActivityIndicator accessibilityLabel="불러오는 중" />
+        <LoadingIndicator label="불러오는 중" />
       ) : status === "error" ? (
-        <Pressable accessibilityRole="button" onPress={() => void refresh()}>
-          <Text className="text-sm text-danger">불러오지 못했어요 · 다시 시도</Text>
-        </Pressable>
+        <RetryInline onRetry={() => void refresh()} label="불러오지 못했어요 · 다시 시도" />
       ) : data ? (
         <View className="flex-row items-center gap-2">
           <Text className="text-base font-bold text-foreground">

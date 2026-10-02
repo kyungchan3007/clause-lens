@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
-import { Icon, IconButton } from "@clause-lens/ui";
+import { FlatList, Text, View } from "react-native";
+import { Icon, IconButton, LoadingIndicator, RetryInline } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
@@ -37,18 +37,17 @@ export function RecentListScreen({
 
       {status === "loading" ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator accessibilityLabel="불러오는 중" />
+          <LoadingIndicator label="불러오는 중" />
         </View>
       ) : status === "error" && items.length === 0 ? (
         <View className="flex-1 items-center justify-center gap-3 px-6">
           <Text className="text-sm text-danger">목록을 불러오지 못했어요</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void refresh()}
+          <RetryInline
+            onRetry={() => void refresh()}
+            label="다시 시도"
             className="rounded-xl bg-primary px-4 py-2 active:opacity-80"
-          >
-            <Text className="text-sm font-semibold text-white">다시 시도</Text>
-          </Pressable>
+            textClassName="text-sm font-semibold text-white"
+          />
         </View>
       ) : (
         <View className="flex-1">
@@ -77,7 +76,7 @@ export function RecentListScreen({
           ListFooterComponent={
             loadingMore ? (
               <View className="py-4">
-                <ActivityIndicator accessibilityLabel="더 불러오는 중" />
+                <LoadingIndicator label="더 불러오는 중" />
               </View>
             ) : !nextCursor && items.length > 0 ? (
               <Text className="py-4 text-center text-xs text-foreground-muted">

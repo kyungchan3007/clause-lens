@@ -19,3 +19,5 @@ export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
 export { Notice } from "./notice";
 export type { NoticeProps, NoticeTone } from "./notice";
+export { LoadingIndicator, RetryInline } from "./async-state";
+export type { LoadingIndicatorProps, RetryInlineProps } from "./async-state";
