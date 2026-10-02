@@ -1,7 +1,8 @@
 import { renderHook } from "@testing-library/react-native";
 
+import { HttpError } from "../../../shared/http";
 import * as uploadApi from "../api/uploadApi";
-import { useUpload, type UploadPageSnapshot } from "./useUpload";
+import { describeError, useUpload, type UploadPageSnapshot } from "./useUpload";
 import { useUploadStore } from "./uploadStore";
 
 jest.mock("../api/uploadApi", () => ({
@@ -96,5 +97,32 @@ describe("useUpload.start", () => {
     await result.current.start(snap, getAuth);
     expect(useUploadStore.getState().phase).toBe("error");
     expect(useUploadStore.getState().pages[0].retryable).toBe(true);
+  });
+});
+
+describe("describeError (401/409 전용 문구, 그 외 제네릭)", () => {
+  const GENERIC = "업로드 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.";
+
+  it("401(auth)은 로그인 문구", () => {
+    expect(describeError(new HttpError(401))).toBe("로그인이 필요해요.");
+  });
+
+  it("409(conflict)는 재시도 문구", () => {
+    expect(describeError(new HttpError(409))).toBe(
+      "이미 처리 중이거나 만료된 세션이에요. 다시 시도해주세요.",
+    );
+  });
+
+  it("403·비HttpError·네트워크는 제네릭 문구(기존 동작 보존)", () => {
+    expect(describeError(new HttpError(403))).toBe(GENERIC);
+    expect(describeError(new Error("network"))).toBe(GENERIC);
+    expect(describeError(undefined)).toBe(GENERIC);
+  });
+
+  it("크로스모듈 HttpError(구조만 같은 객체)도 status로 분류한다", () => {
+    expect(describeError({ status: 401 })).toBe("로그인이 필요해요.");
+    expect(describeError({ status: 409 })).toBe(
+      "이미 처리 중이거나 만료된 세션이에요. 다시 시도해주세요.",
+    );
   });
 });

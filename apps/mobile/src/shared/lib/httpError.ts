@@ -8,9 +8,19 @@ import { HttpError } from "../http";
 // 그 외 status·HttpError 아님(네트워크·스키마 등) = unknown(제네릭 처리).
 export type HttpErrorKind = "quota" | "gone" | "auth" | "conflict" | "unknown";
 
+// HttpError(shared/http)를 1차로 식별하되, 번들 경계로 생성자가 달라져 instanceof가
+// 실패할 수 있으므로 `status: number`를 가진 객체는 구조적으로도 받아들인다(크로스모듈 폴백).
+// status가 없는 에러(네트워크·스키마 등)는 undefined → unknown(제네릭).
+function statusOf(e: unknown): number | undefined {
+  if (e instanceof HttpError) return e.status;
+  if (e && typeof e === "object" && typeof (e as { status?: unknown }).status === "number") {
+    return (e as { status: number }).status;
+  }
+  return undefined;
+}
+
 export function classifyHttpError(e: unknown): HttpErrorKind {
-  if (!(e instanceof HttpError)) return "unknown";
-  switch (e.status) {
+  switch (statusOf(e)) {
     case 403:
       return "quota";
     case 410:

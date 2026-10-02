@@ -313,7 +313,7 @@ function bumpSent(): void {
 
 // HTTP/스키마 오류를 사용자 문구로(원문·상태 로깅 금지). 분류는 공통(classifyHttpError), 문구는 upload 소유.
 // auth(401)·conflict(409)만 전용 문구, 그 외(quota/gone/unknown·네트워크 등)는 제네릭 — 기존 분기와 동일.
-function describeError(e: unknown): string {
+export function describeError(e: unknown): string {
   switch (classifyHttpError(e)) {
     case "auth":
       return "로그인이 필요해요.";

@@ -30,4 +30,16 @@ describe("classifyHttpError", () => {
     expect(classifyHttpError(undefined)).toBe("unknown");
     expect(classifyHttpError(null)).toBe("unknown");
   });
+
+  it("instanceof 실패(크로스모듈)에도 numeric status 객체를 구조적으로 분류한다", () => {
+    // 번들 경계로 생성자가 달라 instanceof가 실패해도 status로 폴백.
+    expect(classifyHttpError({ status: 403 })).toBe("quota");
+    expect(classifyHttpError({ status: 410 })).toBe("gone");
+    expect(classifyHttpError({ status: 401 })).toBe("auth");
+    expect(classifyHttpError({ status: 409 })).toBe("conflict");
+    expect(classifyHttpError({ status: 500 })).toBe("unknown");
+    // status가 없거나 숫자가 아니면 unknown.
+    expect(classifyHttpError({ code: "x" })).toBe("unknown");
+    expect(classifyHttpError({ status: "401" })).toBe("unknown");
+  });
 });
