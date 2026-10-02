@@ -9,7 +9,7 @@ export const accessResponseSchema = z.object({
   analysis: z.object({
     source: z.enum(["free", "subscription"]),
     remaining: z.number().int().nonnegative(),
-    limit: z.number().int().nonnegative(), // 월 쿼터(구독) 또는 무료 부여량
+    monthlyQuota: z.number().int().nonnegative(), // 월 쿼터(구독) 또는 무료 부여량
   }),
 });
 export type AccessResponse = z.infer<typeof accessResponseSchema>;

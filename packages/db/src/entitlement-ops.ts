@@ -204,7 +204,7 @@ export async function settleAnalysis(
 
 export interface AnalysisAccessView {
   storage: { canSave: boolean };
-  analysis: { source: "free" | "subscription"; remaining: number; limit: number };
+  analysis: { source: "free" | "subscription"; remaining: number; monthlyQuota: number };
 }
 
 // 권한 조회 — 보관 가능 여부 + 분석 잔여(구독이면 월 쿼터, 아니면 무료). 서버가 진실.
@@ -222,13 +222,13 @@ export async function getAnalysisAccess(
       analysis: {
         source: "subscription",
         remaining: subscriptionQuotaRemaining(used),
-        limit: SUBSCRIPTION_MONTHLY_QUOTA,
+        monthlyQuota: SUBSCRIPTION_MONTHLY_QUOTA,
       },
     };
   }
   const ent = await getEntitlement(prisma, userId);
   return {
     storage: { canSave: false },
-    analysis: { source: "free", remaining: ent.freeRemaining, limit: ent.freeGranted },
+    analysis: { source: "free", remaining: ent.freeRemaining, monthlyQuota: ent.freeGranted },
   };
 }

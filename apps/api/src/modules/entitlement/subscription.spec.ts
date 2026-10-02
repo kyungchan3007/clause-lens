@@ -199,13 +199,13 @@ describe("getAnalysisAccess", () => {
     charges.set("s0", { jobId: "s0", userId: "u1", status: "consumed", source: "SUBSCRIPTION", createdAt: NOW, settledAt: NOW });
     const a = await getAnalysisAccess(prisma, "u1", NOW);
     expect(a.storage.canSave).toBe(true);
-    expect(a.analysis).toEqual({ source: "subscription", remaining: SUBSCRIPTION_MONTHLY_QUOTA - 1, limit: SUBSCRIPTION_MONTHLY_QUOTA });
+    expect(a.analysis).toEqual({ source: "subscription", remaining: SUBSCRIPTION_MONTHLY_QUOTA - 1, monthlyQuota: SUBSCRIPTION_MONTHLY_QUOTA });
   });
 
   it("비구독 → 보관 불가 + 무료 잔량", async () => {
     const { prisma } = makeTx({ subs: [], granted: 3 });
     const a = await getAnalysisAccess(prisma, "u1", NOW);
     expect(a.storage.canSave).toBe(false);
-    expect(a.analysis).toEqual({ source: "free", remaining: 3, limit: 3 });
+    expect(a.analysis).toEqual({ source: "free", remaining: 3, monthlyQuota: 3 });
   });
 });
