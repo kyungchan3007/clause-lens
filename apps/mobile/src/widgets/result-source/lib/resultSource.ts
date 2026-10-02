@@ -1,24 +1,38 @@
 import type { ResultImage } from "../../../features/result";
 import type { UploadPageState } from "../../../features/upload";
 
-export interface LiveResultInput {
+export interface ResultGateInput {
   requestedDocId?: string;
   userId?: string;
   analysisDocId?: string;
+  analysisOwner?: string;
   uploadDocId?: string;
   uploadOwner?: string;
   pageCount: number;
 }
 
-// 방금 분석한 문서인가(메모리 스냅샷 + 소유자 일치) — 이미지 포함 결과. 다른 계정의 메모리 결과 노출 방지.
-export function isLiveResult(s: LiveResultInput): boolean {
+// 결과 가시성(#76) — 방금 분석한 문서의 메모리 결과를 보여줄지. **분석 소유자** 기준.
+// 교차 사용자 격리의 1차 방어: 현재 사용자 != 분석 소유자면 이전 계정 결과를 막는다(매 판정).
+// null===null 통과 금지(userId·analysisOwner가 모두 없으면 차단).
+export function canUseAnalysisSnapshot(s: ResultGateInput): boolean {
   return (
     !!s.requestedDocId &&
-    s.analysisDocId === s.requestedDocId &&
-    s.uploadDocId === s.requestedDocId &&
     !!s.userId &&
-    s.userId === s.uploadOwner &&
+    s.analysisDocId === s.requestedDocId &&
+    s.userId === s.analysisOwner &&
     s.pageCount > 0
+  );
+}
+
+// 이미지 오버레이(#76) — 업로드 시점 이미지 스냅샷을 결과에 올릴지. **업로드 소유자** 기준.
+// 가시성(canUseAnalysisSnapshot)을 통과한 뒤에만 검사한다(호출부 순서 고정).
+// 실패하면 이미지 없이 조항 목록-only로 우아하게 저하.
+export function canUseUploadImages(s: ResultGateInput): boolean {
+  return (
+    !!s.requestedDocId &&
+    !!s.userId &&
+    s.uploadDocId === s.requestedDocId &&
+    s.userId === s.uploadOwner
   );
 }
 

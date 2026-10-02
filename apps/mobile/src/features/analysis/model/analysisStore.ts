@@ -15,6 +15,7 @@ interface AnalysisStore {
   phase: AnalysisPhase;
   runId: number; // 실행 세대 — stale 콜백/취소 판별
   documentId?: string;
+  ownerUserId?: string; // 분석 시작 시점 소유자 — 결과 가시성 격리(#76)
   jobId?: string;
   stateVersion: number; // 마지막 적용 버전(역순 도착 방지)
   doneCount: number;
@@ -53,6 +54,7 @@ export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
     set({
       phase: "idle",
       documentId: undefined,
+      ownerUserId: undefined,
       jobId: undefined,
       stateVersion: 0,
       doneCount: 0,

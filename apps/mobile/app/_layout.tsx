@@ -10,6 +10,7 @@ import { initializeKakaoSDK } from "@react-native-kakao/core";
 import { useAuthStore } from "../src/features/auth";
 import { useEntitlementSync } from "../src/features/entitlement";
 import { useDocumentsSync } from "../src/features/documents";
+import { useResultSessionReset } from "../src/shared/model/useResultSessionReset";
 import { ThemeProvider } from "../src/shared/theme";
 
 // 카카오 SDK는 앱 시작 시 1회 초기화(네이티브 앱 키는 client-public, env 주입).
@@ -39,6 +40,8 @@ function AuthGate() {
   useEntitlementSync();
   // 인증·분석 완료에 맞춰 재열람 문서 목록 동기화.
   useDocumentsSync();
+  // 로그아웃·계정 변경 시 결과(분석·업로드) 메모리 리셋 — 세션 경계 격리(#76).
+  useResultSessionReset();
 
   useEffect(() => {
     restore();
