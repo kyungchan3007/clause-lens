@@ -255,10 +255,8 @@ function extractJsonBlock(text) {
 // - 연결 이슈 본문: closingIssuesReferences(GraphQL) → 실패 시 브랜치명(#번호)로 폴백.
 // - request.md: PR 변경 파일에서 경로를 찾아 head SHA의 내용을 조회.
 // 모두 best-effort — 실패해도 리뷰는 계속되고, 프롬프트에서 "검증 한계"로 표시된다.
-// 참고: owner·repo·prNumber·githubGraphQL·githubRequest는 모두 모듈 최상위(23~24행 등)에 정의돼
-//       이 모듈 함수가 클로저로 참조한다(ReferenceError 아님). GraphQL 인자는 문자열 조립이 아니라
-//       variables 객체로 전달한다.
-async function fetchOriginalRequest(pr, files) {
+// repo 좌표(owner·repo·prNumber)는 **명시적 인자**로 받는다(모듈 상수 클로저 의존 제거 — 주입 가능·테스트 용이).
+async function fetchOriginalRequest({ owner, repo, prNumber }, pr, files) {
   const result = { issueNumber: null, issueTitle: "", issueBody: "", requestMd: "" };
 
   // 1) 연결 이슈
@@ -458,7 +456,7 @@ async function main() {
   }
 
   // 원문 고정(#155): 연결 이슈 본문·request.md를 판정 기준 원문으로 수집해 프롬프트에 포함.
-  const originalRequest = await fetchOriginalRequest(pr, files);
+  const originalRequest = await fetchOriginalRequest({ owner, repo, prNumber }, pr, files);
   const prompt = buildReviewPrompt(pr, reviewFiles, { incremental, rangeCommits, priorFindings, originalRequest });
   const result = await requestOpenAIReview(prompt);
 
