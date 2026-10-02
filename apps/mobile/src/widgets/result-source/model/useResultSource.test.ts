@@ -16,7 +16,7 @@ const page = { pageId: "p1", status: "done" } as never;
 const seedLive = () =>
   act(() => {
     useAuthStore.setState({ user: { id: "u1" } } as never);
-    useAnalysisStore.getState().set({ documentId: "doc1", pages: [page] });
+    useAnalysisStore.getState().set({ documentId: "doc1", ownerUserId: "u1", pages: [page] });
     useUploadStore.getState().set({
       documentId: "doc1",
       ownerUserId: "u1",
@@ -67,6 +67,27 @@ describe("useResultSource", () => {
     const { result } = renderHook(() => useResultSource("doc1"));
     expect(result.current.kind).toBe("live");
     act(() => useAuthStore.setState({ user: { id: "u2" } } as never));
+    expect(result.current).toEqual({ kind: "review", documentId: "doc1" });
+  });
+
+  it("분석만 내 것이고 업로드 스냅샷이 다른 문서면 live·목록-only(이미지 없음)", () => {
+    seedLive();
+    // 업로드 스냅샷만 다른 문서로(같은 사용자, 새 문서 진행 후 이전 결과 열람).
+    act(() => useUploadStore.getState().set({ documentId: "docX" }));
+    const { result } = renderHook(() => useResultSource("doc1"));
+    expect(result.current).toEqual({
+      kind: "live",
+      documentId: "doc1",
+      pages: [page],
+      imageByPageId: {}, // 목록-only 저하
+    });
+  });
+
+  it("업로드 소유자만 현재 사용자여도 이전 분석(소유자 다름)이면 review(격리)", () => {
+    seedLive();
+    // 이전 계정(u2)의 분석이 남아 있고 로그인은 u1, 업로드도 u1 것 → 가시성은 분석 기준이라 차단.
+    act(() => useAnalysisStore.getState().set({ ownerUserId: "u2" }));
+    const { result } = renderHook(() => useResultSource("doc1"));
     expect(result.current).toEqual({ kind: "review", documentId: "doc1" });
   });
 
