@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-10-02 · Claude · 결과 격리 세션 하드닝 (#76)
+- **무엇**: 결과 화면 교차 사용자 격리를 2축으로 분리 — 가시성=분석 소유자(`canUseAnalysisSnapshot`), 이미지 오버레이=업로드 소유자(`canUseUploadImages`). `analysisStore.ownerUserId` 추가·`useAnalysis.start`에서 인증 userId로 스탬프. 로그아웃·계정 변경 시 `useResultSessionReset`(신규, `_layout` 마운트)가 analysis·upload reset. 업로드 스냅샷 불일치/부재 시 `imageByPageId={}`로 목록-only 저하.
+- **왜**: 격리의 유일 방어가 업로드 소유자 하나였고(load-bearing), analysisStore엔 소유자 없음·로그아웃 시 미리셋. PR #75 리뷰 P1 후속(#76).
+- **설계**: 착수 전 Codex 토론 — 2축 분리 + 2중 방어(스탬프=가시성 경계·매 판정, 리셋=메모리 위생). 리셋은 전용 훅(useAccountResourceSync는 account-scoped 전용이라 변형). 근거 spec 0061 sdd/trace.
+- **게이트**: PASS (mobile 36 + checks.sh ALL PASS).
+- **이번에 드러난 공백**: 완료 RECORD 단계(issue-sync·JOURNAL·노션)를 "게이트+PR"에서 끝났다고 반복 누락 → loop.md 자기점검을 매 태스크 강제(메모리 반영). gh issue develop가 기존 브랜치 재연결 불가라 issue-link 실패(실제 종료는 PR Closes).
+- **파일**: `features/analysis/model/{analysisStore,useAnalysis}.ts` · `widgets/result-source/{lib,model}` · `shared/model/useResultSessionReset.ts`(신규) · `app/_layout.tsx` · spec 0061.
+- **다음/주의**: PR #160(머지 대기). 재진입 영속=TASK-006, 같은 사용자 재로그인 세션 generation=후속. 남은 이슈 #63.
+
 ## 2026-10-02 · Claude · 프로필 화면 로직 커스텀 훅 분리 (#120)
 - **무엇**: `features/profile/ui/ProfileScreen.tsx`의 로직(포커스 시 잔량 재조회·로그아웃 확인 Alert·1:1 문의 안내·로그인 수단 라벨)을 `features/profile/model/useProfile()` + 순수 함수 `lib/providerLabelOf()`로 추출. ProfileScreen은 렌더 전용. **동작 불변**.
 - **위치 판단**: #118·#119와 달리 widgets 불가 — ProfileScreen이 features 레이어라 widgets 훅 import는 역방향. 같은 슬라이스 model로(기존 ui의 auth·entitlement 교차 import는 model로 이동, 신규 아님).
