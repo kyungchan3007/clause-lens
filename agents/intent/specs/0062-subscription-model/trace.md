@@ -17,7 +17,7 @@
 - R1: 구독 쿼터 reserve는 소프트 한도(count-then-insert) — 엄격 원자화는 후속. 무료는 기존 원자성 유지.
 
 ### 구현 기록
-- 스키마: `Subscription`(platform/period/status·currentPeriodEnd·externalId @@unique·verifiedAt) + `EntitlementCharge.source(ChargeSource @default FREE)` + User.subscriptions. 마이그레이션은 공유 dev DB 체크섬 불일치로 migrate dev 불가 → `prisma migrate diff --from-schema-datamodel(HEAD) --to-schema-datamodel`(순수, DB 미접촉)로 SQL 생성해 20261002000000_add_subscription에 기록 + generate.
+- 스키마: `Subscription`(platform/period/status·currentPeriodEnd·externalId @@unique·verifiedAt) + `EntitlementCharge.source(ChargeSource @default FREE)` + User.subscriptions. 마이그레이션 SQL은 `prisma migrate diff --from-schema-datamodel(HEAD) --to-schema-datamodel`로 생성해 20261002000000_add_subscription에 기록. 그 뒤 **사용자 승인하에 `prisma migrate reset --force`로 dev DB 전체 재적용·검증**(기존 체크섬 드리프트 해소, 7개 마이그레이션 clean apply, status "up to date" 확인).
 - 순수 `subscription-ops.ts`: isEffectivelyActive·canSaveDocuments·monthWindowStart(UTC월)·subscriptionQuotaRemaining·SUBSCRIPTION_MONTHLY_QUOTA=50.
 - `entitlement-ops.ts`: reserveAnalysis(구독 쿼터 우선→소진 시 reserveFreeAnalysis 폴백, source 기록)·settleAnalysis(FREE→기존 카운터 / SUBSCRIPTION→charge 상태만, 멱등)·getAnalysisAccess(보관·분석 잔여). 구독 쿼터=charge 행 수(source+window).
 - 호출부: documents.repository(reserveFreeAnalysis→reserveAnalysis) · analysis-ops(settleFreeAnalysis→settleAnalysis). 기존 함수는 유지(하위 호환).
