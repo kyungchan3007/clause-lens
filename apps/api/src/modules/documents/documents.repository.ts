@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import type { Document, Page } from "@clause-lens/db";
 import { Prisma } from "@clause-lens/db";
 import {
-  reserveFreeAnalysis,
+  reserveAnalysis,
   listRecentDocuments,
   type RecentDocumentsCursor,
   type RecentDocumentsPage,
@@ -206,7 +206,7 @@ export class DocumentsRepository {
           pages: { create: pages },
         },
       });
-      const reserved = await reserveFreeAnalysis(tx, userId, job.id);
+      const reserved = await reserveAnalysis(tx, userId, job.id);
       if (!reserved) throw new QuotaExceededError();
       await tx.document.update({
         where: { id: documentId },

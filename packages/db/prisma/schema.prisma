@@ -32,6 +32,7 @@ model User {
   documents          Document[]
   entitlement        Entitlement?
   entitlementCharges EntitlementCharge[]
+  subscriptions      Subscription[]
 
   @@unique([provider, providerUserId])
 }
@@ -257,16 +258,64 @@ enum EntitlementChargeStatus {
   released // partial/failed/stale/worker_failed terminal — 예약 해제(무차감)
 }
 
+// 분석 접수 승인 근거(TASK-006 #162) — 구독 월 쿼터 vs 무료. 접수 당시 고정(ADR-12).
+enum ChargeSource {
+  FREE // 무료 횟수(Entitlement 카운터)
+  SUBSCRIPTION // 구독 월 쿼터(charge 행 수로 계산)
+}
+
 // 무료 횟수 원장(job당 1행 = 멱등키). settle은 status==reserved일 때만 작동 → 중복 완료 이벤트에 no-op.
 model EntitlementCharge {
   jobId     String                  @id // 멱등키 = AnalysisJob.id (1 job = 최대 1 차감)
   userId    String
   status    EntitlementChargeStatus @default(reserved)
+  source    ChargeSource            @default(FREE) // 접수 근거(#162): FREE=무료 카운터, SUBSCRIPTION=구독 월 쿼터
   createdAt DateTime                @default(now()) @db.Timestamptz(3)
   settledAt DateTime?               @db.Timestamptz(3) // consumed/released 확정 시각
 
   job  AnalysisJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
   user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // 구독 월 쿼터 집계용(source=SUBSCRIPTION·window 내 reserved|consumed 건수)
   @@index([userId, status])
+  @@index([userId, source, createdAt])
+}
+
+// 구독(TASK-006 #162) — 장기 보관 권한 + 분석 월 쿼터의 근거. 실제 행 생성·검증은 결제 연동(#165).
+// 상태는 공급자(IAP/RevenueCat) 동기화로 갱신. 무료 잔액(Entitlement)과 분리.
+model Subscription {
+  id               String               @id @default(cuid())
+  userId           String
+  platform         SubscriptionPlatform
+  productId        String // 스토어 상품 id
+  period           SubscriptionPeriod
+  status           SubscriptionStatus   @default(active)
+  externalId       String // 외부 구독 식별자(원본 구독 id)
+  currentPeriodEnd DateTime             @db.Timestamptz(3)
+  autoRenew        Boolean              @default(true)
+  verifiedAt       DateTime             @db.Timestamptz(3) // 공급자 검증 시각
+  createdAt        DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime             @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([platform, externalId]) // 계정 간 중복 귀속 방지
+  @@index([userId, status])
+}
+
+enum SubscriptionPlatform {
+  APP_STORE
+  PLAY
+  TEST // 결제 연동 전 시드·테스트용
+}
+
+enum SubscriptionPeriod {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  active // 유효(결제 정상)
+  grace // 결제 유예(여전히 접근 — ADR-06 삭제 유예 30일과 별개)
+  expired // 만료(접근 없음)
 }
