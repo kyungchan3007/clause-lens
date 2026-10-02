@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,6 +14,7 @@ import {
   inspectIssueRecords,
   inspectTaskFolder,
   isRecordPath,
+  isResidualAutoTraceFolder,
   listTaskFolders,
 } from "./records.mjs";
 
@@ -144,6 +146,54 @@ test("inspectTaskFolder — done인데 사유 없는 미체크 차단", () => {
   });
   writeFileSync(join(root, "agents/orchestration/TASKS.md"), "| TASK-H3 | x | y | [0025](../intent/specs/0025-a/) | Claude | **done** | - |\n");
   assert.ok(inspectTaskFolder(root, "0025-a").some((p) => p.includes("사유 없이 미체크")));
+});
+
+// ── #154: 브랜치 전환 잔재 폴더 건너뛰기(B안) ──────────────────
+function gitInit(root) {
+  const run = (...args) => execFileSync("git", ["-C", root, ...args], { stdio: "ignore" });
+  run("init");
+  run("config", "user.email", "t@t");
+  run("config", "user.name", "t");
+}
+
+test("isResidualAutoTraceFolder — 미추적 trace.auto.jsonl만 있는 폴더는 잔재로 판정(건너뜀)", () => {
+  const root = tmpProject();
+  gitInit(root);
+  writeFolder(root, "0042-x", { "trace.auto.jsonl": '{"ts":"1"}\n' }); // 미추적
+  assert.equal(isResidualAutoTraceFolder(root, "0042-x"), true);
+});
+
+test("isResidualAutoTraceFolder — prd/sdd 없이 '추적'되는 파일이 있으면 잔재 아님(여전히 FAIL, 회귀)", () => {
+  const root = tmpProject();
+  gitInit(root);
+  writeFolder(root, "0043-y", { "notes.md": "작업 중\n" });
+  execFileSync("git", ["-C", root, "add", "agents/intent/specs/0043-y/notes.md"], { stdio: "ignore" });
+  assert.equal(isResidualAutoTraceFolder(root, "0043-y"), false);
+  // 잔재가 아니므로 inspectTaskFolder가 prd/sdd/trace 누락을 그대로 잡는다
+  const problems = inspectTaskFolder(root, "0043-y");
+  assert.ok(problems.some((p) => p.includes("prd.md")));
+});
+
+test("isResidualAutoTraceFolder — prd가 있으면(작업 중 폴더) 잔재 아님 → 진짜 누락 유지", () => {
+  const root = tmpProject();
+  writeFolder(root, "0044-z", { "prd.md": "# 0044\n> **이슈:** #300\n## Acceptance\n- [ ] x\n" });
+  assert.equal(isResidualAutoTraceFolder(root, "0044-z"), false);
+  assert.ok(inspectTaskFolder(root, "0044-z").some((p) => p.includes("sdd.md"))); // sdd 누락 여전히 FAIL
+});
+
+test("isResidualAutoTraceFolder — 자동기록 외 파일이 섞여 있으면 잔재로 보지 않음(안전)", () => {
+  const root = tmpProject();
+  gitInit(root);
+  writeFolder(root, "0045-w", { "trace.auto.jsonl": "{}\n", "extra.txt": "뭔가\n" });
+  assert.equal(isResidualAutoTraceFolder(root, "0045-w"), false);
+});
+
+test("isResidualAutoTraceFolder — 비-git 환경은 fail-open(잔재로 보지 않음 → 누락 은닉 방지)", () => {
+  const root = tmpProject(); // gitInit 안 함 → git 사용 불가
+  writeFolder(root, "0046-v", { "trace.auto.jsonl": '{"ts":"1"}\n' });
+  // 추적 여부를 알 수 없으므로 잔재로 단정하지 않는다(false). 게이트가 진짜 누락을 계속 FAIL로 잡음.
+  assert.equal(isResidualAutoTraceFolder(root, "0046-v"), false);
+  assert.ok(inspectTaskFolder(root, "0046-v").some((p) => p.includes("prd.md")));
 });
 
 test("decideEdit — 기록 경로 허용 · 코드 경로는 이슈 브랜치 없으면 차단", () => {

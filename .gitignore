@@ -51,5 +51,8 @@ packages/db/analysis/
 
 # 하네스 자동 기록(미배정 — 태스크 폴더 없을 때)
 agents/harness/hooks/.unassigned.jsonl
+# 자동 기록(trace.auto) — spec 폴더 밖(#154, 브랜치 전환 잔재 방지)
+.harness/trace/
+# 과거 잔재(spec 폴더 안 자동 기록) — 남아 있어도 커밋되지 않게 유지
 agents/intent/specs/**/trace.auto.jsonl
 agents/harness/hooks/.recall-state.json*
