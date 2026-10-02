@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-02 · Claude · 구독 상태·권한 모델 (TASK-006 ①, #162)
+- **무엇**: `Subscription` 엔티티 + `EntitlementCharge.source`(FREE|SUBSCRIPTION) + 순수 권한/월쿼터 로직(`subscription-ops`) + `reserveAnalysis`/`settleAnalysis`(근거 선택·정산) + `GET /me/access`. 결제·보관전환·실삭제는 ②#163·③#164·④#165.
+- **설계**: ADR-12(Codex 2026-10-02) — 혜택=보관 무제한+분석 월 50, 결제=IAP+RevenueCat(SubscriptionProvider 포트). 구독 쿼터=charge 행 수(캘린더월 UTC), 접수 근거 고정.
+- **게이트**: PASS (api 28건 + checks.sh ALL PASS). 마이그레이션은 공유 dev DB 체크섬 불일치로 `migrate diff`(순수·DB 미접촉)로 SQL 생성.
+- **이번에 드러난 공백**: 구독 쿼터 reserve가 소프트 한도(count-then-insert, R1) — 엄격 원자화(카운터/락)는 후속. 공유 dev DB 마이그레이션 드리프트 → diff 방식 사용.
+- **파일**: `packages/db/{prisma/schema.prisma,src/subscription-ops.ts,src/entitlement-ops.ts,src/analysis-ops.ts}` · `apps/api/.../documents.repository.ts`·`entitlement.{controller,service}.ts` · `packages/contracts/src/access.ts` · spec 0062.
+- **다음/주의**: PR(머지 대기). 구독 행은 ④가 생성 — 지금은 시드 단위 테스트로 검증. 이어서 ②#163 보관 전환.
+
 ## 2026-10-02 · Claude · 결과 격리 세션 하드닝 (#76)
 - **무엇**: 결과 화면 교차 사용자 격리를 2축으로 분리 — 가시성=분석 소유자(`canUseAnalysisSnapshot`), 이미지 오버레이=업로드 소유자(`canUseUploadImages`). `analysisStore.ownerUserId` 추가·`useAnalysis.start`에서 인증 userId로 스탬프. 로그아웃·계정 변경 시 `useResultSessionReset`(신규, `_layout` 마운트)가 analysis·upload reset. 업로드 스냅샷 불일치/부재 시 `imageByPageId={}`로 목록-only 저하.
 - **왜**: 격리의 유일 방어가 업로드 소유자 하나였고(load-bearing), analysisStore엔 소유자 없음·로그아웃 시 미리셋. PR #75 리뷰 P1 후속(#76).

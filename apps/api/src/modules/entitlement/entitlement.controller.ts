@@ -14,4 +14,10 @@ export class EntitlementController {
   getMine(@CurrentUser() user: AuthUser) {
     return this.entitlement.getMine(user.userId);
   }
+
+  // 접근 권한(보관 가능·분석 잔여) — 구독이면 월 쿼터, 아니면 무료(#162).
+  @Get("access")
+  getAccess(@CurrentUser() user: AuthUser) {
+    return this.entitlement.getAccess(user.userId);
+  }
 }

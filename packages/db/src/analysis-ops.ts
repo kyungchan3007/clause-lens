@@ -2,7 +2,7 @@ import { coerceAnalysisErrorCode } from "@clause-lens/contracts";
 import type { Box, ClauseRiskLevel } from "@clause-lens/contracts";
 
 import { PrismaClient, Prisma } from "../generated/client";
-import { settleFreeAnalysis } from "./entitlement-ops";
+import { settleAnalysis } from "./entitlement-ops";
 
 // Box·위험도 유니온은 @clause-lens/contracts 단일 소스를 재노출(값·shape 불변, drift 차단, #131).
 export type { Box } from "@clause-lens/contracts";
@@ -141,7 +141,7 @@ async function reaggregateAndBump(
       documentStatus = "partial";
     }
     // 무료횟수 정산(#90): done=확정 차감, 그 외=예약 해제. 전이와 같은 tx·jobId 멱등.
-    await settleFreeAnalysis(tx, job.id, jobStatus);
+    await settleAnalysis(tx, job.id, jobStatus);
     // 재열람 보관 기한 설정(0030): done|partial 최초 확정 시 completedAt·retainUntil 1회.
     // `completedAt IS NULL` 가드로 중복 완료·재집계가 기한을 연장하지 못하게 한다(멱등).
     // failed는 재열람 대상이 아니므로 설정하지 않음(null 유지 → 목록·게이트에서 제외).
