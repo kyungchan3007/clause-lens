@@ -188,6 +188,14 @@ test("isResidualAutoTraceFolder — 자동기록 외 파일이 섞여 있으면 
   assert.equal(isResidualAutoTraceFolder(root, "0045-w"), false);
 });
 
+test("isResidualAutoTraceFolder — 비-git 환경은 fail-open(잔재로 보지 않음 → 누락 은닉 방지)", () => {
+  const root = tmpProject(); // gitInit 안 함 → git 사용 불가
+  writeFolder(root, "0046-v", { "trace.auto.jsonl": '{"ts":"1"}\n' });
+  // 추적 여부를 알 수 없으므로 잔재로 단정하지 않는다(false). 게이트가 진짜 누락을 계속 FAIL로 잡음.
+  assert.equal(isResidualAutoTraceFolder(root, "0046-v"), false);
+  assert.ok(inspectTaskFolder(root, "0046-v").some((p) => p.includes("prd.md")));
+});
+
 test("decideEdit — 기록 경로 허용 · 코드 경로는 이슈 브랜치 없으면 차단", () => {
   const root = tmpProject(); // git 아님 → currentBranch ""
   assert.equal(decideEdit(root, "agents/intent/specs/0025-a/prd.md").allow, true);

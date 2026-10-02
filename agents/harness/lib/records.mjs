@@ -220,6 +220,10 @@ export function isResidualAutoTraceFolder(projectDir, folder) {
   const entries = readdirSync(dir, { withFileTypes: true });
   if (entries.length === 0) return false; // 빈 폴더는 잔재로 보지 않음(기존 FAIL 동작 유지)
   if (!entries.every((e) => e.isFile() && AUTO_TRACE_BASENAMES.includes(e.name))) return false;
+  // git을 못 쓰면(비-git·오류로 git()이 "" 반환) 추적 여부를 알 수 없다.
+  // 이때 fail-open: 잔재로 보지 않아(return false) 게이트가 진짜 누락(prd/sdd 부재)을
+  // 계속 FAIL로 잡게 한다. (fail-closed로 스킵하면 비-git 환경에서 누락을 은닉)
+  if (git(projectDir, ["rev-parse", "--is-inside-work-tree"]) !== "true") return false;
   // git에 추적되는 파일이 하나라도 있으면(의도된 파일) 잔재가 아님
   return git(projectDir, ["ls-files", `${SPECS_DIR}/${folder}`]) === "";
 }

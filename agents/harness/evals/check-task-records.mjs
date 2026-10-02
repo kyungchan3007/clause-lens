@@ -32,7 +32,11 @@ for (const name of listSpecs(root)) {
 for (const folder of listTaskFolders(root)) {
   // 브랜치 전환 잔재(미추적 trace.auto.jsonl류만 있는 폴더)는 오탐이므로 건너뜀 (#154).
   // 진짜 누락(prd/sdd 없이 작업 중·추적 파일 있는 폴더)은 아래에서 그대로 FAIL.
-  if (isResidualAutoTraceFolder(root, folder)) continue;
+  // 왜 스킵했는지 추적 가능하도록 로그를 남긴다(오탐·검사 약화 디버깅용).
+  if (isResidualAutoTraceFolder(root, folder)) {
+    console.log(`  (skip) ${SPECS_DIR}/${folder}: 브랜치 전환 잔재(미추적 trace.auto류만) — #154`);
+    continue;
+  }
   problems.push(...inspectTaskFolder(root, folder).map((p) => `${folder}: ${p}`));
 }
 
