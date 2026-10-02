@@ -163,6 +163,30 @@ describe("AnalysisProcessor.process (0021)", () => {
     expect(confirmFailMock).toHaveBeenCalledWith(expect.anything(), { jobId: "job1", outcome: { pageId: "pg1", ok: false, errorCode: "ocr_failed", retryable: false } });
   });
 
+  it("OCR stub 영구 오류(stub_disabled_in_production) → 계약 밖 코드는 analysis_failed로 치환 종결(#133)", async () => {
+    const recognize = jest
+      .fn()
+      .mockRejectedValue(new OcrPermanentError("stub_disabled_in_production"));
+    const { processor } = makeProcessor(makeJob([{ pageId: "pg1", status: "pending" }]), { ocr: { recognize } });
+    await processor.process(job());
+    expect(confirmFailMock).toHaveBeenCalledWith(expect.anything(), {
+      jobId: "job1",
+      outcome: { pageId: "pg1", ok: false, errorCode: "analysis_failed", retryable: false },
+    });
+  });
+
+  it("분석 stub 영구 오류(stub_disabled_in_production) → 계약 밖 코드는 analysis_failed로 치환 종결(#133)", async () => {
+    const analyze = jest
+      .fn()
+      .mockRejectedValue(new AnalysisPermanentError("stub_disabled_in_production"));
+    const { processor } = makeProcessor(makeJob([{ pageId: "pg1", status: "pending" }]), { analyzer: { analyze } });
+    await processor.process(job());
+    expect(confirmFailMock).toHaveBeenCalledWith(expect.anything(), {
+      jobId: "job1",
+      outcome: { pageId: "pg1", ok: false, errorCode: "analysis_failed", retryable: false },
+    });
+  });
+
   it("완료된 페이지 skip · 종결된 job no-op", async () => {
     const { processor, ocr } = makeProcessor(makeJob([{ pageId: "pg1", status: "done" }]));
     await processor.process(job());

@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { coerceAnalysisErrorCode, type AnalysisErrorCode } from "@clause-lens/contracts";
 import {
   confirmAnalysisResultTx,
   confirmPageAnalysisTx,
@@ -19,7 +20,7 @@ import {
   SCHEMA_VERSION,
   type WorkerConfig,
 } from "./config";
-import { AnalysisPermanentError, ValidationError, type WorkerErrorCode } from "./lib/errors";
+import { AnalysisPermanentError, ValidationError } from "./lib/errors";
 import { mapClauses } from "./lib/box-mapper";
 import { validateImage } from "./lib/image-validator";
 import { NotificationPublisher } from "./notification.publisher";
@@ -37,7 +38,8 @@ export interface AnalysisJobRef {
 
 interface FailDecision {
   retryLater: boolean; // true면 페이지 pending 유지 + job 재시도 신호
-  errorCode: WorkerErrorCode; // @clause-lens/contracts 기반(+스텁 전용) — drift 차단(#131)
+  // 공개 계약(AnalysisErrorCode)으로 좁힘 — 영속·응답에 계약 밖 코드(stub 등) 유출 차단(#133).
+  errorCode: AnalysisErrorCode;
   retryable: boolean;
 }
 
@@ -207,10 +209,11 @@ function classify(e: unknown, isLastAttempt: boolean): FailDecision {
     return { retryLater: false, errorCode: e.code, retryable: false };
   }
   if (e instanceof OcrPermanentError) {
-    return { retryLater: false, errorCode: e.code, retryable: false };
+    // e.code는 WorkerErrorCode(스텁 전용 코드 포함) — 계약 밖이면 안전 기본값으로 치환(#133).
+    return { retryLater: false, errorCode: coerceAnalysisErrorCode(e.code), retryable: false };
   }
   if (e instanceof AnalysisPermanentError) {
-    return { retryLater: false, errorCode: e.code, retryable: false };
+    return { retryLater: false, errorCode: coerceAnalysisErrorCode(e.code), retryable: false };
   }
   if (e instanceof OcrTransientError) {
     return isLastAttempt

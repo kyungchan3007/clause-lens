@@ -1,3 +1,4 @@
+import { coerceAnalysisErrorCode } from "@clause-lens/contracts";
 import type { Box, ClauseRiskLevel } from "@clause-lens/contracts";
 
 import { PrismaClient, Prisma } from "../generated/client";
@@ -229,7 +230,8 @@ export function confirmPageAnalysisTx(
             where: { id: page.id },
             data: {
               status: "failed",
-              errorCode: outcome.errorCode,
+              // 영속 경계 가드(#133): 공개 계약 밖 코드(stub 등)는 안전 기본값으로 치환.
+              errorCode: coerceAnalysisErrorCode(outcome.errorCode),
               retryable: outcome.retryable,
               attempts: { increment: 1 },
               confirmedAt: new Date(),

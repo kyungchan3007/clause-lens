@@ -38,6 +38,23 @@ export const ANALYSIS_ERROR_CODES = [
 ] as const;
 export const analysisErrorCodeSchema = z.enum(ANALYSIS_ERROR_CODES);
 
+// ── errorCode 영속/응답 가드(#133) ──
+// 공개 계약(ANALYSIS_ERROR_CODES) 밖 코드(worker 전용 stub_disabled_in_production·임의 문자열 등)가
+// DB 저장·API 응답에 새지 않도록 하는 런타임 경계. valid 코드는 그대로 통과(동작 불변),
+// 계약 밖 값은 안전한 기본 AnalysisErrorCode로 치환한다. persist/worker 경계에서 호출.
+export function isAnalysisErrorCode(code: unknown): code is AnalysisErrorCode {
+  return (
+    typeof code === "string" &&
+    (ANALYSIS_ERROR_CODES as readonly string[]).includes(code)
+  );
+}
+export function coerceAnalysisErrorCode(
+  code: unknown,
+  fallback: AnalysisErrorCode = "analysis_failed",
+): AnalysisErrorCode {
+  return isAnalysisErrorCode(code) ? code : fallback;
+}
+
 // ── 위험 조항(Clause Result) 계약 (0021 / TASK-004) ──
 export const clauseRiskLevelSchema = z.enum(["high", "medium", "low"]);
 // 조항 타입 9종 — 앱·API·worker 공유 단일 소스(값·순서 고정; DB enum 저장과 문자열 일치).
