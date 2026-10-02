@@ -29,6 +29,9 @@ gh issue create --repo <owner>/clause-lens --title "..." --body-file <본문>
 gh issue develop <이슈번호> --repo <owner>/clause-lens --base develop --name <접두사>/<이슈번호>-슬러그
 git fetch <remote> && git checkout <접두사>/<이슈번호>-슬러그
 
+# 착수 — spec 폴더(prd 포함) 생성 후 원문 고정 (#155)
+pnpm request <이슈번호>   # 이슈 본문을 specs/<폴더>/request.md로 1회 복사(불변)
+
 # 기존 이슈의 fix
 gh issue develop <원이슈> --base develop --name fix/<원이슈>-슬러그
 gh issue comment <원이슈> --body "fix: <무엇을 왜> (브랜치 fix/<원이슈>-슬러그)"
@@ -42,11 +45,24 @@ pnpm issue-sync --check  # 어긋나면 실패
 pnpm issue-sync --close  # PR이 합쳐졌는데 이슈가 열려 있으면 닫음 (사유 없는 미체크가 있으면 거부)
 ```
 
+## 원문 고정 (request.md, #155)
+
+**판정 기준은 원문이다.** 요구 충족 판정의 기준은 `agents/intent/specs/<폴더>/request.md`(착수 시점 이슈 본문 원문)이고, `prd`·`sdd`는 이를 옮긴 **파생 문서**다. 옮기며 틀리면 이후 단계가 전부 틀린 기준으로 간다 — 그래서 원문을 고정한다.
+
+- **생성 시점**: spec 폴더(특히 `prd.md`에 `- **이슈:** #번호`)를 만든 **직후**, `pnpm request <이슈>`.
+- **전체 복사**: 이슈 본문을 **자르지 않고 전부** 복사한다(`---`/`### 완료 회고` 기준 절단 안 함 — 요구 유실 방지).
+- **고정 경로**: 항상 `specs/<폴더>/request.md`. 모든 역할 지시(가드·게이트·PR 리뷰·교차검증)가 이 경로를 가리킨다.
+- **불변**: 한 번 생성되면 수정·삭제가 가드로 차단된다. **요구가 바뀌어도 원문을 덮어쓰지 않는다** — 변경 근거를 `prd`/`sdd`/`trace`에 적어 연결한다(승인된 요구 변경임을 명시).
+- **PR 리뷰 대조**: PR AI 리뷰는 연결 이슈 본문(최신)과 `request.md`(착수 기준)를 입력으로 받아, 변경 코드를 **요구별로 충족/누락/위반/판단불가** 대조한다. 둘이 다르면 "요구 변경 확인 필요"로 보고(자동 교체 안 함).
+- **교차검증(Codex)**: 설계 토론·교차검증에서도 판정 기준은 `request.md` 원문이며 `prd`/`sdd`는 파생임을 전제로 한다.
+
 ## 하네스가 강제하는 것
 
 | 장치 | 내용 |
 | --- | --- |
-| 완료 게이트(`checks.sh`) | **0023부터** spec에 이슈 번호가 없으면 FAIL · **done** 태스크의 연결 spec에 **사유 없는 미체크**가 있으면 FAIL |
+| 완료 게이트(`checks.sh`) | **0023부터** spec에 이슈 번호가 없으면 FAIL · **done** 태스크의 연결 spec에 **사유 없는 미체크**가 있으면 FAIL · **0059부터** `request.md`가 없으면 FAIL(#155) |
+| `pnpm request <이슈>` | 이슈 본문을 `request.md`로 1회 복사(전체·불변). 이미 있으면 덮어쓰지 않음 (#155) |
+| 기록 가드(PreToolUse) | 이미 있는 `request.md` 수정·덮어쓰기를 차단(불변). 최초 생성만 허용 (#155) |
 | `pnpm issue-link` | 현재 브랜치가 spec의 이슈에 **실제로 연결**됐는지 GitHub로 확인 (네트워크 → 게이트 밖, PR 전) |
 | `pnpm issue-sync` | 완료 조건의 원본은 spec 하나, 이슈는 복사본으로 맞춤 · `--check` 어긋남 검사 · `--close` 머지 후 닫기 |
 

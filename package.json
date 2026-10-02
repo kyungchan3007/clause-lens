@@ -10,6 +10,7 @@
     "mobile": "pnpm --filter @clause-lens/mobile",
     "check": "bash agents/harness/evals/checks.sh",
     "issue-link": "node agents/harness/evals/issue-link.mjs",
+    "request": "node agents/harness/evals/request.mjs",
     "issue-sync": "node agents/harness/evals/issue-sync.mjs",
     "usage": "node agents/harness/usage/usage.mjs",
     "prepare": "git config core.hooksPath .githooks || true",
