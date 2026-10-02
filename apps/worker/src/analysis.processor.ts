@@ -206,7 +206,8 @@ function fingerprint(finalKey: string): string {
 
 function classify(e: unknown, isLastAttempt: boolean): FailDecision {
   if (e instanceof ValidationError) {
-    return { retryLater: false, errorCode: e.code, retryable: false };
+    // e.code는 타입상 valid(Extract)지만, 모든 e.code 분기를 coerce로 통일(런타임 보증 일관).
+    return { retryLater: false, errorCode: coerceAnalysisErrorCode(e.code), retryable: false };
   }
   if (e instanceof OcrPermanentError) {
     // e.code는 WorkerErrorCode(스텁 전용 코드 포함) — 계약 밖이면 안전 기본값으로 치환(#133).
