@@ -1,3 +1,5 @@
+import { buildReviewPrompt, parseChangedLines } from "./lib/review-prompt.mjs";
+
 const {
   GITHUB_TOKEN,
   GITHUB_REPOSITORY,
@@ -81,115 +83,6 @@ async function githubGraphQL(query, variables) {
     throw new Error(`GitHub GraphQL errors: ${JSON.stringify(json.errors)}`);
   }
   return json.data;
-}
-
-function truncate(text, maxChars) {
-  if (!text) return "";
-  if (text.length <= maxChars) return text;
-  return `${text.slice(0, maxChars)}\n... [truncated]`;
-}
-
-function parseChangedLines(patch) {
-  const changedLines = new Set();
-  if (!patch) return changedLines;
-
-  let currentNewLine = null;
-
-  for (const line of patch.split("\n")) {
-    if (line.startsWith("@@")) {
-      const match = /@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
-      currentNewLine = match ? Number.parseInt(match[1], 10) : null;
-      continue;
-    }
-
-    if (currentNewLine == null || line.startsWith("\\")) {
-      continue;
-    }
-
-    if (line.startsWith("+") && !line.startsWith("+++")) {
-      changedLines.add(currentNewLine);
-      currentNewLine += 1;
-      continue;
-    }
-
-    if (line.startsWith("-") && !line.startsWith("---")) {
-      continue;
-    }
-
-    currentNewLine += 1;
-  }
-
-  return changedLines;
-}
-
-function buildReviewPrompt(pr, files, { incremental, rangeCommits = [], priorFindings = [] } = {}) {
-  const patchable = files.filter((file) => file.patch && file.status !== "removed");
-  const reviewedFiles = patchable
-    .slice(0, 12)
-    .map((file) => {
-      const changedLines = [...parseChangedLines(file.patch)].slice(0, 200).join(", ");
-      return [
-        `FILE: ${file.filename}`,
-        `STATUS: ${file.status}`,
-        `ADDITIONS: ${file.additions} DELETIONS: ${file.deletions}`,
-        `CHANGED_LINES_ON_RIGHT: ${changedLines || "none"}`,
-        "PATCH:",
-        truncate(file.patch, 6000),
-      ].join("\n");
-    })
-    .join("\n\n");
-
-  const skippedCount = patchable.length - Math.min(patchable.length, 12);
-
-  // 이번 구간(직전 리뷰 이후)의 커밋 메시지 = "무엇을 왜 바꿨고 어떻게 검증했는지"의 기록.
-  const commitLog = rangeCommits
-    .slice(0, 30)
-    .map((c) => `- ${(c.message ?? "").split("\n")[0]}\n${truncate((c.message ?? "").split("\n").slice(1).join("\n").trim(), 1000)}`.trim())
-    .join("\n");
-
-  // 이전 리뷰 지적 + 답변 + resolved 여부 — 반복 방지용(답변을 반드시 보게 함).
-  const priorLog = priorFindings
-    .slice(0, 40)
-    .map((f) => {
-      const head = `- [${f.path}:${f.line ?? "?"}] (resolved: ${f.resolved ? "yes" : "no"})`;
-      const finding = `  지적: ${truncate(f.finding, 400)}`;
-      const replies =
-        f.replies && f.replies.length > 0
-          ? `  답변: ${truncate(f.replies.join(" / "), 700)}`
-          : "  답변: (없음)";
-      return [head, finding, replies].join("\n");
-    })
-    .join("\n");
-
-  return [
-    "이 Pull Request를 엄격한 시니어 엔지니어처럼 리뷰하라.",
-    "버그, 회귀, 보안 문제, 깨진 UX 흐름, 누락된 가드만 다뤄라.",
-    "스타일, 네이밍, 취향 차이 코멘트는 금지.",
-    "반드시 patch 에서 실제로 바뀐 라인만 지적하라.",
-    incremental
-      ? "아래 FILES 는 '직전 리뷰 이후 새로 변경된 부분'이다. 이 증분만 리뷰하라."
-      : "",
-    "아래 '이미 처리된 지적'을 **반드시 먼저 확인**하라. 각 항목의 '답변'과 'resolved' 상태를 읽고, 이미 제기됐거나 답변/커밋으로 해결·기각·검증된 사항은 **절대 다시 지적하지 마라**.",
-    "resolved: yes 이거나 답변이 달린 항목, 또는 답변/커밋이 '의도된 결정'·'사실오류'·'과설계라 미채택'·'이미 상한/방지됨'이라고 반박한 항목은 재지적 금지. 같은 파일의 같은 성격 유사 지적도 금지.",
-    "이전 답변에 새 근거로 반박하고 싶어도 findings 에 넣지 말고 침묵하라(반복 루프 방지).",
-    "P1(실제 버그·회귀·보안 취약점·데이터 손실)에만 집중하라. 스타일·프로세스·문서 정합성·정책 강제 여부 같은 메타 코멘트나 확신이 약한 지적은 findings 에 넣지 마라.",
-    "findings 는 최대 6개까지만 반환하라.",
-    "액션 가능한 이슈가 없으면 findings 를 빈 배열로 반환하라.",
-    "title 과 body 는 모두 한국어로 작성하라.",
-    "",
-    `PR TITLE: ${pr.title}`,
-    `PR BODY:\n${pr.body ?? "(empty)"}`,
-    "",
-    "이번 구간 커밋 메시지 (변경·검증·근거):",
-    commitLog || "(없음)",
-    "",
-    "이미 처리된 지적 (제기·답변·resolved 완료 — 절대 반복 금지, 답변을 먼저 확인하라):",
-    priorLog || "(없음)",
-    "",
-    incremental ? "FILES (직전 리뷰 이후 변경분):" : "FILES:",
-    reviewedFiles || "(no patchable files)",
-    skippedCount > 0 ? `\n${skippedCount} additional changed files were omitted for brevity.` : "",
-  ].join("\n");
 }
 
 async function requestOpenAIReview(prompt) {
@@ -358,6 +251,68 @@ function extractJsonBlock(text) {
   return null;
 }
 
+// 원문 고정(#155): 리뷰 판정 기준이 되는 "원래 요청"을 수집한다.
+// - 연결 이슈 본문: closingIssuesReferences(GraphQL) → 실패 시 브랜치명(#번호)로 폴백.
+// - request.md: PR 변경 파일에서 경로를 찾아 head SHA의 내용을 조회.
+// 모두 best-effort — 실패해도 리뷰는 계속되고, 프롬프트에서 "검증 한계"로 표시된다.
+// repo 좌표(owner·repo·prNumber)는 **명시적 인자**로 받는다(모듈 상수 클로저 의존 제거 — 주입 가능·테스트 용이).
+async function fetchOriginalRequest({ owner, repo, prNumber } = {}, pr, files) {
+  const result = { issueNumber: null, issueTitle: "", issueBody: "", requestMd: "" };
+
+  // 1) 연결 이슈
+  try {
+    const data = await githubGraphQL(
+      `query($owner:String!,$repo:String!,$pr:Int!){
+        repository(owner:$owner,name:$repo){
+          pullRequest(number:$pr){
+            closingIssuesReferences(first:5){ nodes{ number title body } }
+          }
+        }
+      }`,
+      { owner, repo, pr: prNumber },
+    );
+    const nodes = data?.repository?.pullRequest?.closingIssuesReferences?.nodes ?? [];
+    if (nodes.length > 0) {
+      result.issueNumber = nodes[0].number;
+      result.issueTitle = nodes[0].title ?? "";
+      result.issueBody = nodes[0].body ?? "";
+    }
+  } catch (e) {
+    console.log(`연결 이슈(GraphQL) 조회 실패(${e.message}) — 브랜치명으로 폴백.`);
+  }
+  // 폴백: 브랜치명에서 이슈 번호 추출(예: feat/155-slug).
+  if (!result.issueNumber) {
+    const m = /(?:^|\/)(\d+)-/.exec(pr.head?.ref ?? "");
+    if (m) {
+      try {
+        const issue = await githubRequest(`/repos/${owner}/${repo}/issues/${m[1]}`);
+        result.issueNumber = issue.number;
+        result.issueTitle = issue.title ?? "";
+        result.issueBody = issue.body ?? "";
+      } catch (e) {
+        console.log(`이슈 #${m[1]} 조회 실패(${e.message}).`);
+      }
+    }
+  }
+
+  // 2) request.md — PR 변경 파일에서 경로를 찾아 head SHA 내용 조회.
+  try {
+    const reqFile = (files ?? []).find((f) => /^agents\/intent\/specs\/[^/]+\/request\.md$/.test(f.filename));
+    if (reqFile) {
+      const content = await githubRequest(
+        `/repos/${owner}/${repo}/contents/${encodeURI(reqFile.filename)}?ref=${pr.head.sha}`,
+      );
+      if (content?.content) {
+        result.requestMd = Buffer.from(content.content, content.encoding || "base64").toString("utf8");
+      }
+    }
+  } catch (e) {
+    console.log(`request.md 조회 실패(${e.message}).`);
+  }
+
+  return result;
+}
+
 async function main() {
   const pr = await githubRequest(`/repos/${owner}/${repo}/pulls/${prNumber}`);
 
@@ -500,7 +455,9 @@ async function main() {
     console.log(`이전 스레드(답변/resolved) 조회 실패(${e.message}) — 맥락 없이 진행.`);
   }
 
-  const prompt = buildReviewPrompt(pr, reviewFiles, { incremental, rangeCommits, priorFindings });
+  // 원문 고정(#155): 연결 이슈 본문·request.md를 판정 기준 원문으로 수집해 프롬프트에 포함.
+  const originalRequest = await fetchOriginalRequest({ owner, repo, prNumber }, pr, files);
+  const prompt = buildReviewPrompt(pr, reviewFiles, { incremental, rangeCommits, priorFindings, originalRequest });
   const result = await requestOpenAIReview(prompt);
 
   const inlineComments = [];

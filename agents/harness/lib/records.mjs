@@ -185,6 +185,17 @@ export function inspectIssueRecords(projectDir) {
 
 export const FOLDER_REQUIRED_FROM = "0025";
 
+// 원문 고정(#155): 태스크 폴더의 request.md는 착수 시점 이슈 본문 원문 — 한 번 생성되면 불변.
+export const REQUEST_FILE = "request.md";
+// 도입 이후 신규 spec부터 request.md 존재 필수(기존 0025~0058은 면제).
+export const REQUEST_REQUIRED_FROM = "0059";
+const REQUEST_PATH_RE = /^agents\/intent\/specs\/[^/]+\/request\.md$/;
+
+/** agents/intent/specs/<폴더>/request.md 경로인가(#155). */
+export function isRequestPath(relPath) {
+  return REQUEST_PATH_RE.test(relPath);
+}
+
 // 코드 수정 전에도 항상 허용하는 기록 경로
 export const RECORD_PREFIXES = ["agents/intent/", "agents/orchestration/", "agents/JOURNAL.md", "LEARNINGS.md"];
 
@@ -279,6 +290,15 @@ export function inspectTaskFolder(projectDir, folder, { requireTrace = true } = 
   const sdd = readFolderFile(projectDir, folder, "sdd.md");
   if (sdd === undefined) problems.push(`${SPECS_DIR}/${folder}/sdd.md 가 없습니다 (템플릿: agents/intent/templates/sdd.md)`);
   else problems.push(...checkFolderSdd(sdd).map((p) => `sdd.md: ${p}`));
+  // 원문 고정(#155): 도입 이후 신규 spec은 request.md(이슈 본문 원문)가 있어야 한다.
+  if (id >= REQUEST_REQUIRED_FROM) {
+    const request = readFolderFile(projectDir, folder, REQUEST_FILE);
+    if (request === undefined) {
+      problems.push(`${SPECS_DIR}/${folder}/${REQUEST_FILE} 가 없습니다 — 원문 고정: \`pnpm request <이슈>\`로 이슈 본문을 복사하세요 (#155)`);
+    } else if (request.trim().length === 0) {
+      problems.push(`${REQUEST_FILE}: 원문이 비어 있습니다`);
+    }
+  }
   if (requireTrace) {
     const trace = readFolderFile(projectDir, folder, "trace.md");
     if (trace === undefined) problems.push(`${SPECS_DIR}/${folder}/trace.md 가 없습니다`);
@@ -306,6 +326,16 @@ function branchGuideMessage(relPath, branch) {
 /** 코드 수정 허용 여부(PreToolUse). 차단이면 이유를 돌려준다. */
 export function decideEdit(projectDir, relPath) {
   if (relPath.startsWith("..") || relPath.startsWith("/")) return { allow: true };
+  // 원문 보호(#155)는 isRecordPath 무조건 허용보다 **먼저** 판정한다(request.md도 기록 경로라서).
+  // 이미 존재하는 request.md 수정/덮어쓰기는 차단(불변). 최초 생성(미존재)은 허용.
+  if (isRequestPath(relPath) && existsSync(join(projectDir, relPath))) {
+    return {
+      allow: false,
+      reason:
+        `[원문 고정] ${relPath} 수정 차단: request.md는 착수 시점 이슈 본문 원문으로 불변입니다(#155).\n` +
+        "요구가 바뀌었으면 원문을 덮어쓰지 말고 prd/sdd/trace에 변경 근거를 남겨 연결하세요.",
+    };
+  }
   if (isRecordPath(relPath)) return { allow: true };
 
   const branch = currentBranch(projectDir);
