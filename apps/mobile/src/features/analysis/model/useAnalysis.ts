@@ -3,11 +3,11 @@ import type { AnalysisStatusResponse } from "@clause-lens/contracts";
 
 import {
   fetchStatus,
-  HttpError,
   openStatusStream,
   requestAnalysis,
 } from "../api/analysisApi";
 import { createRunGuard } from "../../../shared/lib/runGuard";
+import { classifyHttpError } from "../../../shared/lib/httpError";
 import { useAnalysisStore, type AnalysisPhase } from "./analysisStore";
 
 // 호출 직전 토큰·소유자 취득(장기 캡처 금지) — upload의 getAuth 재사용 가능.
@@ -155,7 +155,8 @@ export function useAnalysis() {
         if (!runGuard.isAlive(runId)) return;
         // 접수 403 = 가용 무료 횟수 없음(소유권 실패=404·업로드 전=409). 예약 때문일 수도 있어
         // "모두 사용"으로 단정하지 않는다. 잔량 갱신은 상위 동기화 훅이 phase=error에서 수행.
-        const isQuota = e instanceof HttpError && e.status === 403;
+        // 분류는 공통(classifyHttpError), 문구·errorKind는 analysis 소유.
+        const isQuota = classifyHttpError(e) === "quota";
         const message = isQuota
           ? "현재 사용할 수 있는 무료 분석 횟수가 없어요"
           : "분석 요청에 실패했어요";
