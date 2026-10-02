@@ -24,11 +24,18 @@ interface AnalysisStore {
   // error 세부 — "quota"면 무료 소진 전용 화면으로 분기(제네릭 error와 구분).
   errorKind?: "quota";
 
-  set: (patch: Partial<AnalysisStore>) => void;
+  // runId는 외부에서 raw로 못 바꾼다(스테일 가드 우회 방지) — 세대 증가는 bumpRunWith 전용 경로로만.
+  set: (patch: AnalysisPatch) => void;
+  // 세대(runId) +1과 다른 필드 변경을 한 set으로 원자적 반영하고 새 세대를 반환한다.
+  // 기존 `set({ runId: nextRun(), ...patch })`(start/cancel)의 캡슐화 대체 — 원자성·set 횟수 동일.
+  bumpRunWith: (patch: AnalysisPatch) => number;
   reset: () => void;
 }
 
-export const useAnalysisStore = create<AnalysisStore>((set) => ({
+// 외부 set/bumpRunWith에는 runId를 넣지 못하게 막는다(세대는 bumpRunWith만 올린다).
+export type AnalysisPatch = Omit<Partial<AnalysisStore>, "runId">;
+
+export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
   phase: "idle",
   runId: 0,
   stateVersion: 0,
@@ -37,6 +44,11 @@ export const useAnalysisStore = create<AnalysisStore>((set) => ({
   pages: [],
 
   set: (patch) => set(patch),
+  bumpRunWith: (patch) => {
+    const next = get().runId + 1;
+    set({ ...patch, runId: next }); // runId를 마지막에 둬 patch가 덮지 못하게(타입으로도 차단).
+    return next;
+  },
   reset: () =>
     set({
       phase: "idle",

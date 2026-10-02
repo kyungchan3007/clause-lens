@@ -7,12 +7,9 @@ import { createRunGuard } from "../../../shared/lib/runGuard";
 import { classifyHttpError } from "../../../shared/lib/httpError";
 import { useUploadStore } from "./uploadStore";
 
-// 실행 세대 가드 — stale 콜백/취소 무효화(useAnalysis와 공통 구현).
+// 실행 세대 가드 — stale 판정(isAlive)만. 세대 증가는 store.bumpRunWith 전용 경로.
 // 타이머/스트림 같은 자원 정리는 없고 runId 세대만 관리한다.
-const runGuard = createRunGuard(
-  () => useUploadStore.getState().runId,
-  (runId) => useUploadStore.getState().set({ runId }),
-);
+const runGuard = createRunGuard(() => useUploadStore.getState().runId);
 
 // app 레이어가 주입: 호출 직전 현재 토큰·소유자. 장기 캡처 금지.
 export interface UploadAuth {
@@ -46,11 +43,10 @@ export function useUpload() {
       const store = useUploadStore.getState();
       if ((ACTIVE_PHASES as readonly string[]).includes(store.phase)) return; // 실행 잠금(첫 await 이전)
 
-      const myRun = runGuard.nextRun();
       const clientRequestId = store.clientRequestId ?? genClientRequestId();
-      useUploadStore.getState().set({
+      // 세대 +1과 초기화 필드를 한 set으로 원자적 반영(기존 set({ runId: nextRun(), ... }) 등가).
+      const myRun = useUploadStore.getState().bumpRunWith({
         phase: "presigning",
-        runId: myRun,
         clientRequestId,
         documentId: undefined,
         ownerUserId: undefined,
@@ -124,9 +120,10 @@ export function useUpload() {
       if ((ACTIVE_PHASES as readonly string[]).includes(store.phase)) return;
       if (!store.documentId) return start(snapshots, getAuth);
 
-      const myRun = runGuard.nextRun();
       const documentId = store.documentId;
-      useUploadStore.getState().set({ phase: "uploading", runId: myRun, message: undefined });
+      const myRun = useUploadStore
+        .getState()
+        .bumpRunWith({ phase: "uploading", message: undefined });
 
       try {
         const auth = await getAuth();
@@ -169,10 +166,10 @@ export function useUpload() {
 
   // 취소: 실행 무효화(runId bump) + 진행 중 전송 중단. 서버 반영은 재시도 때 확인.
   const cancel = useCallback(() => {
-    const store = useUploadStore.getState();
-    // 취소 시점 세대 캡처(cancel은 동기 — 스냅샷과 등가), 다른 필드와 원자적 묶음 set.
-    const next = runGuard.nextRun();
-    store.set({ runId: next, phase: "idle", message: "취소했어요." });
+    // 취소 시점 세대 +1과 phase·message를 한 set으로 원자적 반영(기존 단일 set 등가).
+    useUploadStore
+      .getState()
+      .bumpRunWith({ phase: "idle", message: "취소했어요." });
     void activeTask?.cancelAsync().catch(() => {});
     activeTask = null;
   }, []);
