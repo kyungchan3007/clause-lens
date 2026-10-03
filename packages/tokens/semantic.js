@@ -19,6 +19,10 @@ const light = {
   border: neutral[200],
   borderStrong: neutral[300],
 
+  // 중립 배지(낮음 위험·보조 칩) — 보조 표면(100)·보조 텍스트(600). surfaceAlt/textMuted보다 한 단계 진함.
+  neutralBg: neutral[100],
+  neutralText: neutral[600],
+
   danger: red[600],
   dangerBg: red[50],
   dangerText: red[700], // 작은 배지 글자용(대비 ≥4.5:1). 점/강조는 danger(600)
@@ -48,6 +52,9 @@ const dark = {
 
   border: neutral[700],
   borderStrong: neutral[600],
+
+  neutralBg: neutral[700],
+  neutralText: neutral[300],
 
   danger: red[500],
   dangerBg: "#3F1D1D",

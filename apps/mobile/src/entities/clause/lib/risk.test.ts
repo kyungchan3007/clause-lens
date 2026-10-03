@@ -4,7 +4,7 @@ describe("riskTone", () => {
   it("위험도 → tone 매핑", () => {
     expect(riskTone("high")).toBe("danger");
     expect(riskTone("medium")).toBe("warning");
-    expect(riskTone("low")).toBe("success");
+    expect(riskTone("low")).toBe("neutral");
   });
   it("hex가 아니라 tone을 반환한다", () => {
     expect(riskTone("high")).not.toMatch(/^#/);

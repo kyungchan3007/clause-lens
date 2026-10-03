@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-03 · Claude · 분석 결과 화면 리디자인 (#167)
+- **무엇**: 확정 시안대로 결과·하이라이트 화면 비주얼 리디자인 — 헤더(닫기+페이지 네비 알약)·섹션 헤더("확인이 필요한 조항 N"+힌트)·이미지 카드·조항 배지 점·0건 안심 EmptyState·항상 참고 고지 푸터. 로직(좌표·상태·스냅샷) 불변.
+- **설계**: Codex 토론 반영(sdd §2 대안). Pager 공용 승격(1-based·total===1만 정적·0 숨김), riskTone(low) success→neutral(초록=안심 보존)+토큰 neutralBg/neutralText 역할 추가, SectionHeader hint·EmptyState tone 최소 확장, 이미지 바깥카드/안쪽 측정뷰 분리(좌표 정합).
+- **게이트**: PASS (checks.sh ALL PASS — mobile 272·ui·harness 등). pager 단위 6건 신규.
+- **이번에 드러난 공백**: 낮음 위험 표현이 success(초록)였음 → 안심/0건과 의미 충돌 → neutral로 통일. color() light 고정이라 다크 미보장(후속). 시안 색(slate100/600)이 기존 neutral(50/500)과 불일치 → 역할 추가.
+- **파일**: `packages/tokens/{semantic.js,tailwind-preset.js,index.d.ts}` · `packages/ui/src/{pager,section-header,empty-state,icon-badge,tone}.*` · `apps/mobile/src/entities/clause/lib/risk.*` · `apps/mobile/src/features/result/ui/{ResultScreen,ResultHeader,ClauseCard,HighlightOverlay}.tsx` · `.maestro/result.yaml` · spec 0045.
+- **다음/주의**: 시뮬 육안 검증(포트폴리오 스크린샷) 남음. PR(머지 대기). 노션 15·16 내용칸 정리는 Query 한도 풀리면.
+
 ## 2026-10-02 · Claude · 구독 상태·권한 모델 (TASK-006 ①, #162)
 - **무엇**: `Subscription` 엔티티 + `EntitlementCharge.source`(FREE|SUBSCRIPTION) + 순수 권한/월쿼터 로직(`subscription-ops`) + `reserveAnalysis`/`settleAnalysis`(근거 선택·정산) + `GET /me/access`. 결제·보관전환·실삭제는 ②#163·③#164·④#165.
 - **설계**: ADR-12(Codex 2026-10-02) — 혜택=보관 무제한+분석 월 50, 결제=IAP+RevenueCat(SubscriptionProvider 포트). 구독 쿼터=charge 행 수(캘린더월 UTC), 접수 근거 고정.

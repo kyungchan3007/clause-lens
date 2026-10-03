@@ -20,6 +20,8 @@ export interface SemanticColors {
   textInverse: string;
   border: string;
   borderStrong: string;
+  neutralBg: string;
+  neutralText: string;
   danger: string;
   dangerBg: string;
   dangerText: string;

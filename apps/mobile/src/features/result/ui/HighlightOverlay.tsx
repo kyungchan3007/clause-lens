@@ -39,11 +39,12 @@ export function HighlightOverlay({ clauses, image, view, selectedClauseId }: Hig
               y={rect.y}
               width={rect.width}
               height={rect.height}
-              rx={2}
+              rx={3}
               stroke={color}
               strokeWidth={selected ? 3 : 1.5}
+              strokeOpacity={selected ? 1 : 0.6}
               fill={color}
-              fillOpacity={selected ? 0.28 : 0.12}
+              fillOpacity={selected ? 0.28 : 0.14}
             />
           );
         });
