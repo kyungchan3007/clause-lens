@@ -18,7 +18,7 @@ describe("toneClasses / toneForeground / toneAccent / toneBackground", () => {
 
   // 배경 role 고정(#145) — clausePresentation 로컬 TONE_BG와 1:1 동일해야 동작 불변.
   it("toneBackground가 tone별 배경 role 색을 정확히 해석", () => {
-    expect(toneBackground("neutral")).toBe(semantic.light.surfaceAlt);
+    expect(toneBackground("neutral")).toBe(semantic.light.neutralBg);
     expect(toneBackground("danger")).toBe(semantic.light.dangerBg);
     expect(toneBackground("warning")).toBe(semantic.light.warningBg);
     expect(toneBackground("success")).toBe(semantic.light.successBg);
@@ -41,7 +41,7 @@ function ratio(a: string, b: string): number {
 
 // Badge가 실제로 쓰는 전경(text 역할)·배경(container 역할) 쌍.
 const BADGE_PAIR: Record<Tone, [keyof typeof semantic.light, keyof typeof semantic.light]> = {
-  neutral: ["textMuted", "surfaceAlt"],
+  neutral: ["neutralText", "neutralBg"],
   danger: ["dangerText", "dangerBg"],
   warning: ["warningText", "warningBg"],
   success: ["successText", "successBg"],

@@ -22,3 +22,6 @@ appId: com.chan.clauselens
 - extendedWaitUntil:
     visible: "분석 결과"
     timeout: 15000
+# 리디자인(0045): 섹션 헤더 + 항상 보이는 참고 고지 푸터. (위험도 배지 점·페이지 네비 알약·0건 안심 EmptyState는 육안)
+- assertVisible: "확인이 필요한 조항"
+- assertVisible: "분석 결과는 참고용이며 법률 자문을 대체하지 않아요."

@@ -17,7 +17,8 @@ export function riskTone(level: ClauseRiskLevel | null | undefined): Tone {
     case "medium":
       return "warning";
     case "low":
-      return "success";
+      // 저위험도 "플래그된 조항"은 중립(회색). 초록(success)은 '안심/0건' 전용(시안·0045).
+      return "neutral";
     default:
       return "neutral";
   }

@@ -7,7 +7,7 @@ export type Tone = "neutral" | "danger" | "warning" | "success" | "info";
 
 // 배지 등 컨테이너/텍스트 className(0a vars 테마 경로로 해석). 대비: 텍스트는 *Text(700대).
 const TONE_CLASSES: Record<Tone, { container: string; text: string }> = {
-  neutral: { container: "bg-surface-alt", text: "text-foreground-muted" },
+  neutral: { container: "bg-surface-subtle", text: "text-foreground-subtle" },
   danger: { container: "bg-danger-bg", text: "text-danger-text" },
   warning: { container: "bg-warning-bg", text: "text-warning-text" },
   success: { container: "bg-success-bg", text: "text-success-text" },
@@ -19,7 +19,7 @@ export function toneClasses(tone: Tone): { container: string; text: string } {
 
 // 아이콘·텍스트 전경색 hex(색 prop용). 배지 글자와 같은 대비색.
 const TONE_FG_ROLE = {
-  neutral: "textMuted",
+  neutral: "neutralText",
   danger: "dangerText",
   warning: "warningText",
   success: "successText",
@@ -44,7 +44,7 @@ export function toneAccent(tone: Tone): string {
 // 배경색 hex(연한 배경 50대) — 배지/칩/하이라이트 배경. toneClasses의 container(className)와
 // 같은 의미를 색 prop(hex)으로 노출. 전경(toneForeground)과 쌍으로 대비 보장.
 const TONE_BG_ROLE = {
-  neutral: "surfaceAlt",
+  neutral: "neutralBg",
   danger: "dangerBg",
   warning: "warningBg",
   success: "successBg",

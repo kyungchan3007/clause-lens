@@ -15,6 +15,8 @@ export { IconBadge } from "./icon-badge";
 export type { IconBadgeProps } from "./icon-badge";
 export { SectionHeader } from "./section-header";
 export type { SectionHeaderProps, SectionHeaderVariant } from "./section-header";
+export { Pager } from "./pager";
+export type { PagerProps } from "./pager";
 export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
 export { Notice } from "./notice";

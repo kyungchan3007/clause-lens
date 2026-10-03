@@ -26,7 +26,7 @@ export function ClauseCard({ clause, selected, onPress }: ClauseCardProps) {
     >
       <View className="flex-row items-center justify-between gap-2">
         <Text className="flex-1 text-sm font-semibold text-foreground">{clause.title}</Text>
-        <Badge label={risk.label} tone={risk.tone} icon={risk.icon} />
+        <Badge label={risk.label} tone={risk.tone} dot />
       </View>
       <Text className="text-xs text-foreground-muted">{clauseTypeLabel[clause.type]}</Text>
       <Text className="text-sm text-foreground">{clause.description}</Text>

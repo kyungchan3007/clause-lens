@@ -30,8 +30,13 @@ module.exports = {
           tint: v("tint"),
         },
         background: v("bg"),
-        surface: { DEFAULT: v("surface"), alt: v("surfaceAlt") },
-        foreground: { DEFAULT: v("text"), muted: v("textMuted"), inverse: v("textInverse") },
+        surface: { DEFAULT: v("surface"), alt: v("surfaceAlt"), subtle: v("neutralBg") },
+        foreground: {
+          DEFAULT: v("text"),
+          muted: v("textMuted"),
+          inverse: v("textInverse"),
+          subtle: v("neutralText"),
+        },
         border: { DEFAULT: v("border"), strong: v("borderStrong") },
         // 배지: 텍스트(text, 700대 대비)와 점/강조(DEFAULT, 600)·배경(bg, 50) 분리.
         danger: { DEFAULT: v("danger"), foreground: neutral[0], bg: v("dangerBg"), text: v("dangerText") },
