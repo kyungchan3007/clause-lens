@@ -51,7 +51,7 @@
 | TASK-U1b | 홈 리디자인 보정 (Hero 아이콘·최근 진입 버튼·DocumentRow 상대일/플레이스홀더·중앙 Hero) | 14 순서 1 보정 | [0038](../intent/specs/0038-home-polish/) | Claude | **review** (#112/PR#113) | TASK-U2b |
 | TASK-U4a | 구독 예고 UI — 무료 소진(403) 화면 + 최근 목록 구독 카드 | 14 ⑥·⑨ (구독 선반영) | [0039](../intent/specs/0039-subscription-ui/) | Claude | **in-progress** (#114 — 시안 선반영, 실구독=TASK-006) | TASK-U1b |
 | TASK-U3 | 결과 화면 리디자인 (하이라이트·조항·0건) | 14 순서 3 | [0045](../intent/specs/0045-result-redesign/) | Claude | **review** (#167 — Codex 토론 반영·Pager 공용 승격·riskTone(low)→neutral·checks.sh PASS·시뮬 육안 남음) | TASK-U2b |
-| TASK-U3b | 결과 화면 "전체 보기" 드래그 바텀시트 (전체화면 조항 스크롤·접기) | 14 순서 3 후속 | [0063](../intent/specs/0063-result-sheet/) | Claude | **in-progress** (#169 — Codex 토론 반영·새 의존성 없이 직접 구현·2스냅·DragSheet 공용 승격) | TASK-U3 |
+| TASK-U3b | 결과 화면 "전체 보기" 드래그 바텀시트 (전체화면 조항 스크롤·접기) | 14 순서 3 후속 | [0063](../intent/specs/0063-result-sheet/) | Claude | **review** (#169/PR#170 — DragSheet 공용 승격·2스냅·reanimated+gesture 직접·checks.sh PASS·시뮬 실측 collapsed/full/드래그 OK) | TASK-U3 |
 | TASK-U4~5 | 화면 리디자인 (마이페이지·최근목록) | 14 순서 4~5 | – | – | todo | TASK-U2b |
 
 > BrandHeader·Notice·card shadow는 선제 공통화하지 않고 **순서1(홈 리디자인)**에서 실제 소비 확인 후 도입(Codex·0012 승격 스펙).
