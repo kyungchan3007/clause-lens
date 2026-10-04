@@ -75,3 +75,34 @@ describe("DragSheet (render a11y)", () => {
     expect(onIndexChange).toHaveBeenCalledWith(1); // 0 → 마지막(1)
   });
 });
+
+// reduce-motion 게이트 검증 — 목의 useReducedMotion 토글 + withSpring 호출 추적으로
+// "감소 요청 시 애니메이션 비사용(즉시 점프)" 분기를 재현. (시각적 모션 자체는 시뮬 실측.)
+describe("DragSheet reduce-motion 분기", () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const RA = require("react-native-reanimated");
+  afterEach(() => RA.__reset());
+
+  it("reduce-motion off → withSpring 사용(애니메이션 경로)", () => {
+    RA.__reset();
+    const tree = render(
+      <DragSheet index={0} onIndexChange={() => {}} snapPoints={SNAPS} handleLabel="h">
+        <></>
+      </DragSheet>,
+    );
+    fireLayout(tree.root);
+    expect(RA.__springCalls()).toBeGreaterThan(0);
+  });
+
+  it("reduce-motion on → withSpring 미사용(즉시 점프)", () => {
+    RA.__reset();
+    RA.__setReduceMotion(true);
+    const tree = render(
+      <DragSheet index={0} onIndexChange={() => {}} snapPoints={SNAPS} handleLabel="h">
+        <></>
+      </DragSheet>,
+    );
+    fireLayout(tree.root);
+    expect(RA.__springCalls()).toBe(0);
+  });
+});
