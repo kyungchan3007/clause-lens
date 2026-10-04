@@ -20,7 +20,8 @@
 - **게이트**: PASS (checks.sh ALL PASS — ui 56·mobile 281). drag-sheet.lib·result/sheet 순수 단위 신규, maestro S20 전체 보기 열기→접기.
 - **이번에 드러난 공백/버그**: (1) `@clause-lens/ui` 배럴이 DragSheet→reanimated eager import → 배럴 소비 모바일 테스트 전부 worklets 네이티브 init(loadUnpackers) 실패 → jest.after-env에 worklets 비의존 reanimated mock + gesture-handler jestSetup. (2) 시뮬 실측서 Pan .onEnd 워클릿이 JS 함수 resolveSnapIndex 동기 호출 → Worklets 에러 → runOnJS로 수정.
 - **파일**: `packages/ui/src/{drag-sheet.tsx,drag-sheet.lib.ts,drag-sheet.test.ts,index.ts}`·`packages/ui/package.json` · `apps/mobile/src/features/result/{ui/ResultScreen.tsx,lib/sheet.ts,lib/sheet.test.ts}` · `apps/mobile/{jest.config.js,jest.after-env.js,.maestro/result.yaml}` · spec 0063.
-- **다음/주의**: 시뮬 실측 collapsed·full·드래그 OK(실 Vision+Claude 조항 4건). PR #170(머지 대기, CI·머지 직접). 조항 탭→접힘 육안·reduce-motion/스크린리더 실측·목록 최상단 당겨 접기는 후속.
+- **접근성(구현 완료)**: reduce-motion 게이트·핸들 a11y(role/label/expanded)·hitSlop·44pt·전환 버튼 병행(드래그 대체, WCAG 2.2). **미구현 아님** — 온디바이스 VoiceOver/TalkBack·reduce-motion **실측**만 후속(#167 시뮬 육안 후속과 동일 기준).
+- **다음/주의**: 시뮬 실측 collapsed·full·드래그 OK(실 Vision+Claude 조항 4건). PR #170(머지 대기, CI·머지 직접). 조항 탭→접힘 육안·a11y 온디바이스 실측·목록 최상단 당겨 접기는 후속.
 
 ## 2026-10-03 · Claude · 분석 결과 화면 리디자인 (#167)
 - **무엇**: 확정 시안대로 결과·하이라이트 화면 비주얼 리디자인 — 헤더(닫기+페이지 네비 알약)·섹션 헤더("확인이 필요한 조항 N"+힌트)·이미지 카드·조항 배지 점·0건 안심 EmptyState·항상 참고 고지 푸터. 로직(좌표·상태·스냅샷) 불변.

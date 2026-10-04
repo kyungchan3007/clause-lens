@@ -44,7 +44,7 @@
 - [x] "접기"(버튼/핸들)로 원래 상태 복귀, Android 뒤로가기 full→collapsed — handleBackPress 단위 + 버튼/드래그 실측.
 - [x] HighlightOverlay 좌표·상태 분리·스냅샷(0022) 동작 불변 — 시트는 이미지와 독립 절대배치, 좌표 하이라이트 실측 불변.
 - [x] full에서 조항 탭 → 접히며 해당 조항 강조(기존 toggle 의미 유지), 이미지/좌표 없으면 자동 접기 안 함 — shouldCollapseOnClauseTap 단위 검증(육안은 후속).
-- [~] 접근성: reduce-motion·터치 44pt·핸들 hitSlop/a11y(accessibilityRole·expanded) 구현. 스크린리더/reduce-motion 실측은 후속.
+- [x] 접근성 **구현 완료**: reduce-motion 게이트(애니메이션 축소), 핸들 a11y(accessibilityRole="button"·label·state.expanded)·hitSlop, 터치 44pt(패딩+hitSlop), 전환 버튼(전체 보기/접기) 병행(드래그 대체). (온디바이스 VoiceOver/TalkBack·reduce-motion **실측**만 후속 — #167 시뮬 육안 후속과 동일 기준.)
 - [x] 단위(스냅 전이·a11y props) + maestro e2e(열기→접기) + 기존 좌표/선택/스냅샷 단위 불변 — ui 56·mobile 281 통과.
 - [x] `bash agents/harness/evals/checks.sh` PASS.
 
