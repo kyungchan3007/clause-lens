@@ -2,6 +2,7 @@
 module.exports = {
   preset: "jest-expo",
   setupFiles: ["<rootDir>/jest.setup.js"],
+  setupFilesAfterEnv: ["<rootDir>/jest.after-env.js"],
   testMatch: ["**/*.test.ts", "**/*.test.tsx"],
   // 각 테스트 전 mock 호출기록 + 구현까지 초기화(구현 누수 방지).
   resetMocks: true,

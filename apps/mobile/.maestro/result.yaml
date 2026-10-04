@@ -25,3 +25,10 @@ appId: com.chan.clauselens
 # 리디자인(0045): 섹션 헤더 + 항상 보이는 참고 고지 푸터. (위험도 배지 점·페이지 네비 알약·0건 안심 EmptyState는 육안)
 - assertVisible: "확인이 필요한 조항"
 - assertVisible: "분석 결과는 참고용이며 법률 자문을 대체하지 않아요."
+# 0063: "전체 보기" 드래그 바텀시트 — 버튼으로 열기(full) → 접기(collapsed) (드래그 탭 대체 경로)
+- tapOn: "전체 보기"
+- assertVisible: "접기"
+- tapOn: "접기"
+- assertVisible: "전체 보기"
+# 참고 고지 푸터는 시트와 무관하게 항상 보임(시트가 가리지 않음)
+- assertVisible: "분석 결과는 참고용이며 법률 자문을 대체하지 않아요."
