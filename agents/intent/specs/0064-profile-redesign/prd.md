@@ -41,7 +41,7 @@
 - [x] 공용 `ScreenHeader` packages/ui 신설 + 단위(4건), `ListRow tone` 단위(2건).
 - [x] 동작 불변: useProfile·auth signOut·entitlement(FreeQuotaRow 표현만)·FAQ·라우팅.
 - [x] 단위 + ProfileScreen render(로그아웃→confirmSignOut·1:1→openInquiry) + `bash agents/harness/evals/checks.sh` PASS(ui 68·mobile 284).
-- [ ] 시뮬레이터 육안(헤더·아바타 72px·이름 19px·로그아웃 빨강·스와이프백) — 다음 단계(백엔드+로그인 필요).
+- [x] 시뮬레이터 육안(헤더·아바타 72px·이름 19px·로그아웃 빨강·스와이프백) — 2026-10-07 확인: 커스텀 ScreenHeader(뒤로+"마이페이지"), 중앙 아바타 블록(IconBadge+"박경찬" extrabold+"카카오 계정으로 로그인"), "내 이용/남은 무료 분석 0회"(primary·tabular-nums), FAQ 아코디언, 1:1 문의, "계정/로그아웃"(red+LogOut 아이콘) 모두 시안 일치. 뒤로 버튼 홈 복귀 정상.
 
 ## 7. 미해결 질문 (Open Questions)
 - Q1. 1:1 문의 행을 로컬 MenuRow 유지 vs ListRow 직접 — SDD에서 확정(로컬 제거 최소화).
