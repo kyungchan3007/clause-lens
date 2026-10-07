@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-07 · Claude · 최근목록 리디자인 (#173)
+- **무엇**: 최근목록(RecentListScreen)을 시안에 맞춰 — 자체 상단바 → #171 공용 `ScreenHeader`(부제 헤더 고정), empty → 공용 `EmptyState`. TASK-U5(U4~5 분리 ②, 화면 리디자인 세트 완료).
+- **설계**: #171 착수 시 Claude 서브에이전트 토론에서 두 화면 함께 확정. 공용 신설 없음(ScreenHeader 소비). DocumentRow 썸네일 이미 48×60이라 미변경·구독 카드 유지(전제 교정).
+- **게이트**: PASS (checks.sh ALL PASS — mobile 287·ui 68). RecentListScreen render 3 신규.
+- **이번에 드러난 공백**: "7일 보관" 안내가 ListHeaderComponent라 스크롤 시 사라짐 → 헤더 subtitle로 고정. empty 인라인 → 공용 EmptyState(py-16 wrapper로 위치 보존).
+- **파일**: `apps/mobile/src/features/documents/ui/{RecentListScreen.tsx,RecentListScreen.test.tsx}` · spec 0065. (DocumentRow·구독 카드 불변)
+- **다음/주의**: PR #174(머지·CI 직접). 시뮬 육안은 마이페이지(#171)와 함께 백엔드+로그인 후. 화면 리디자인 세트(홈·분석진행·결과·전체보기·마이페이지·최근목록) 완료.
+
 ## 2026-10-07 · Claude · 마이페이지 리디자인 (#171)
 - **무엇**: 마이페이지를 확정 시안에 맞춰 — 네이티브 Stack 헤더 → 공용 커스텀 `ScreenHeader`, 로그아웃 raw Pressable → `ListRow tone="danger"`, 프로필 블록 폴리시, FreeQuotaRow 값 accent+tabular-nums. TASK-U4(U4~5 분리 ①).
 - **설계**: Codex 대신 **Claude 서브에이전트로 적대적 설계 토론**(사용자 지정 "다른 세션 불러 토론"). 결론: 공용 신설 ScreenHeader 1개로 제한, MenuRow 승격 폐기→ListRow tone 흡수. 전제 교정(썸네일 이미 48×60·DocumentRow 홈과 공용 아님·profile SafeAreaView 필수).
