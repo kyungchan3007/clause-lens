@@ -19,3 +19,8 @@
 - 테스트: `screen-header.test`(신규 4건)·`list-row.test` tone 2건·`ProfileScreen.test`(신규: displayName·로그아웃→confirmSignOut·1:1→openInquiry). maestro `profile-back.yaml`을 커스텀 "뒤로" 버튼으로 갱신(스와이프백은 gestureEnabled 보존·시뮬 육안).
 - 게이트: `bash agents/harness/evals/checks.sh` **ALL PASS**(ui 68·mobile 284). 부수: expo-doctor가 expo-constants 패치 기대 드리프트(57.0.20 vs 57.0.21)로 실패 → `expo.install.exclude`에 추가(기존 minimumReleaseAge 홀드 패턴, 버전 bump은 중복 유발이라 배제).
 - 남음: 시뮬레이터 육안(헤더·아바타 72px·이름 19px·로그아웃 빨강·스와이프백) — 백엔드+로그인 필요, 다음 단계.
+
+### 시뮬 육안 (2026-10-07)
+- 로컬 백엔드 기동 + 카카오 로그인(사용자 직접). 홈 우상단 프로필 → /profile 진입.
+- ScreenHeader(뒤로+"마이페이지"), 중앙 프로필 블록(IconBadge 아바타+"박경찬" extrabold+"카카오 계정으로 로그인"), "내 이용" 섹션 "남은 무료 분석 0회"(primary 색·tabular-nums 우측 정렬), "자주 묻는 질문" FAQ 아코디언 5건, "문의" 1:1 문의 row, "계정" 섹션 로그아웃(red 텍스트+LogOut 아이콘, flat). 뒤로 버튼 → 홈 복귀 정상.
+- 시안(Profile.dc.html)과 일치. 무료 분석 0회여도 화면 표현 정상(쿼터 소모 없음).

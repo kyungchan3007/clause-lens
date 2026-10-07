@@ -36,7 +36,7 @@
 - [x] DocumentRow·SubscriptionPromoCard 변경 없음(이미 시안 일치).
 - [x] 동작 불변: documentsStore(refresh/loadMore)·pull-to-refresh·무한스크롤·account sync·onOpen/onBack 라우팅 — 표현만 수정.
 - [x] 단위(RecentListScreen render 3: 헤더 부제·뒤로·empty EmptyState) + `bash agents/harness/evals/checks.sh` PASS(mobile 287·ui 68).
-- [ ] 시뮬 육안(헤더 부제·카드·위험도 점·구독 카드) — 다음 단계(백엔드+로그인).
+- [x] 시뮬 육안(헤더 부제·카드·위험도 점·구독 카드) — 2026-10-07 확인: ScreenHeader(뒤로+"최근 분석"+부제 고정), 카드 3건(썸네일·"계약서·1장"·"10/4 · ● 위험 N건"·"3일 후 삭제" pill), red 위험도 점, 하단 구독 예고 카드 모두 시안 일치.
 
 ## 7. 미해결 질문 (Open Questions)
 - 없음(설계 토론에서 확정).
