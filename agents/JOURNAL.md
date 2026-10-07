@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-07 · Claude · 마이페이지 리디자인 (#171)
+- **무엇**: 마이페이지를 확정 시안에 맞춰 — 네이티브 Stack 헤더 → 공용 커스텀 `ScreenHeader`, 로그아웃 raw Pressable → `ListRow tone="danger"`, 프로필 블록 폴리시, FreeQuotaRow 값 accent+tabular-nums. TASK-U4(U4~5 분리 ①).
+- **설계**: Codex 대신 **Claude 서브에이전트로 적대적 설계 토론**(사용자 지정 "다른 세션 불러 토론"). 결론: 공용 신설 ScreenHeader 1개로 제한, MenuRow 승격 폐기→ListRow tone 흡수. 전제 교정(썸네일 이미 48×60·DocumentRow 홈과 공용 아님·profile SafeAreaView 필수).
+- **게이트**: PASS (checks.sh ALL PASS — ui 68·mobile 284). screen-header 4·list-row tone 2·ProfileScreen render 3 신규.
+- **이번에 드러난 공백/부수**: profile만 네이티브 헤더라 앱 내 혼자 튐 → 커스텀 전환=일관 회복. 커스텀 전환 시 SafeAreaView 누락하면 노치 겹침(필수). expo-doctor가 expo-constants 패치 기대 드리프트(57.0.20 vs 57.0.21)로 실패 → `expo.install.exclude` 추가(기존 minimumReleaseAge 홀드 패턴, bump은 expo 번들과 중복).
+- **파일**: `packages/ui/src/{screen-header.tsx,screen-header.test.tsx,list-row.tsx,list-row.test.tsx,index.ts}` · `apps/mobile/{app/_layout.tsx,app/profile.tsx,package.json}` · `apps/mobile/src/features/{profile/ui/ProfileScreen.tsx,profile/ui/ProfileScreen.test.tsx,entitlement/ui/FreeQuotaRow.tsx}` · `.maestro/profile-back.yaml` · spec 0064.
+- **다음/주의**: PR #172(머지·CI 직접). 시뮬 육안(아바타 72px·이름 19px·스와이프백)은 백엔드+로그인 후. 이어서 최근목록 리디자인(TASK-U5, 새 이슈 — ScreenHeader 소비).
+
 ## 2026-10-04 · Claude · 분석 결과 "전체 보기" 드래그 바텀시트 (#169)
 - **무엇**: 결과 화면 조항 목록을 2단계(collapsed↔full) 드래그 바텀시트로 — 전체화면 스크롤 + 접기. 공용 `DragSheet`(packages/ui) 승격 + ResultScreen 통합.
 - **설계**: Codex 토론(spec 0063 §2 대안). 2스냅(3단계 과설계), 시트=이미지 독립 절대배치(좌표 0022 불변), full에서 이미지 불투명 가림(unmount 금지), 트리거=SectionHeader 버튼+핸들 탭·드래그(드래그 전용 금지 WCAG), full 조항 탭→접힘+강조, snapIndex=ResultScreen 로컬. 구현은 gorhom 대신 reanimated+gesture-handler 직접(Reanimated4/SDK57 호환 미확정 회피).

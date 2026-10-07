@@ -25,7 +25,10 @@ export function FreeQuotaRow() {
         <RetryInline onRetry={() => void refresh()} label="불러오지 못했어요 · 다시 시도" />
       ) : data ? (
         <View className="flex-row items-center gap-2">
-          <Text className="text-base font-bold text-foreground">
+          <Text
+            style={{ fontVariant: ["tabular-nums"] }}
+            className="text-base font-extrabold text-primary"
+          >
             {data.freeRemaining}회
           </Text>
           {staleError ? (

@@ -4,9 +4,12 @@ import { Pressable, Text, View } from "react-native";
 import { cardShadowStyle } from "./shadow";
 
 export type ListRowVariant = "card" | "flat";
+export type ListRowTone = "default" | "danger";
 
 export interface ListRowProps {
   title: string;
+  // 제목 색 톤. danger=위험/파괴적 액션(로그아웃 등) 제목을 danger 토큰으로. leading 아이콘 색은 호출측 소유.
+  tone?: ListRowTone;
   // 보조 영역: string이면 기본 muted Text, ReactNode이면 호출측이 타이포·줄바꿈 소유.
   supporting?: React.ReactNode;
   leading?: React.ReactNode;
@@ -31,6 +34,7 @@ const VARIANT: Record<ListRowVariant, { container: string; title: string }> = {
 
 export function ListRow({
   title,
+  tone = "default",
   supporting,
   leading,
   trailing,
@@ -42,11 +46,12 @@ export function ListRow({
   accessibilityHint,
 }: ListRowProps) {
   const shadowStyle = elevated && variant === "card" ? cardShadowStyle : undefined;
+  const titleColor = tone === "danger" ? "text-danger" : "text-foreground";
   const body = (
     <>
       {leading != null ? <View className="flex-shrink-0">{leading}</View> : null}
       <View className="min-w-0 flex-1">
-        <Text numberOfLines={1} className={`text-foreground ${VARIANT[variant].title}`}>
+        <Text numberOfLines={1} className={`${titleColor} ${VARIANT[variant].title}`}>
           {title}
         </Text>
         {typeof supporting === "string" ? (
