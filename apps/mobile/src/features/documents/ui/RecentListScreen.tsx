@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { FlatList, Text, View } from "react-native";
-import { Icon, IconButton, LoadingIndicator, RetryInline } from "@clause-lens/ui";
-import { color } from "@clause-lens/tokens";
+import { EmptyState, LoadingIndicator, RetryInline, ScreenHeader } from "@clause-lens/ui";
 
 import { useDocumentsStore } from "../model/documentsStore";
 import { DocumentRow } from "./DocumentRow";
@@ -30,10 +29,11 @@ export function RecentListScreen({
 
   return (
     <View className="flex-1 bg-background">
-      <View className="flex-row items-center gap-1 border-b border-border bg-surface px-2 py-1.5">
-        <IconButton icon="ChevronLeft" accessibilityLabel="뒤로" onPress={onBack} size={22} />
-        <Text className="text-lg font-bold text-foreground">최근 분석</Text>
-      </View>
+      <ScreenHeader
+        title="최근 분석"
+        subtitle="분석 결과는 7일 동안 보관돼요."
+        onBack={onBack}
+      />
 
       {status === "loading" ? (
         <View className="flex-1 items-center justify-center">
@@ -62,15 +62,14 @@ export function RecentListScreen({
           refreshing={refreshing}
           onEndReachedThreshold={0.4}
           onEndReached={() => void loadMore()}
-          ListHeaderComponent={
-            <Text className="pb-1 text-xs text-foreground-muted">
-              분석 결과는 7일 동안 보관돼요.
-            </Text>
-          }
           ListEmptyComponent={
-            <View className="items-center gap-1 py-16">
-              <Icon name="FileClock" size={26} color={color("textMuted")} />
-              <Text className="text-sm text-foreground-muted">아직 분석한 계약서가 없어요</Text>
+            // EmptyState는 중앙배치를 스스로 소유하지 않음 → wrapper로 위치 보존.
+            <View className="items-center py-16">
+              <EmptyState
+                icon="FileClock"
+                title="아직 분석한 계약서가 없어요"
+                subtitle="계약서를 촬영하면 분석 결과가 여기에 쌓여요."
+              />
             </View>
           }
           ListFooterComponent={
