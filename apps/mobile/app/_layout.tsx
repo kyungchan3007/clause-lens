@@ -59,10 +59,8 @@ function AuthGate() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={status === "authenticated"}>
         <Stack.Screen name="index" />
-        <Stack.Screen
-          name="profile"
-          options={{ headerShown: true, title: "마이페이지", headerBackTitle: "뒤로" }}
-        />
+        {/* profile은 자체 커스텀 ScreenHeader 사용(전역 headerShown:false 상속). 스와이프백은 gestureEnabled 기본값 유지. */}
+        <Stack.Screen name="profile" />
         <Stack.Screen name="result" />
         <Stack.Screen name="recent" />
       </Stack.Protected>

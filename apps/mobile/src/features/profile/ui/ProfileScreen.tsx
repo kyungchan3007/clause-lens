@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Icon, IconBadge, ListRow, SectionHeader } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
@@ -32,11 +32,11 @@ export function ProfileScreen() {
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="pb-10">
-      {/* 내 정보 */}
-      <View className="items-center gap-3 px-6 py-8">
-        <IconBadge name="User" size={40} />
+      {/* 내 정보 — 흰 블록 중앙 정렬(시안) */}
+      <View className="items-center gap-3 bg-surface px-6 pb-6 pt-8">
+        <IconBadge name="User" size={36} />
         <View className="items-center gap-1">
-          <Text className="text-xl font-bold text-foreground">
+          <Text className="text-xl font-extrabold tracking-tight text-foreground">
             {displayName ?? "사용자"}
           </Text>
           {providerLabel ? (
@@ -64,17 +64,16 @@ export function ProfileScreen() {
         />
       </View>
 
-      {/* 계정 */}
+      {/* 계정 — 로그아웃은 공용 ListRow(tone=danger). raw Pressable 제거(a11y·일관성). */}
       <SectionHeader label="계정" />
       <View className="border-t border-border">
-        <Pressable
-          accessibilityRole="button"
+        <ListRow
+          variant="flat"
+          tone="danger"
+          title="로그아웃"
+          leading={<Icon name="LogOut" size={20} color={color("danger")} />}
           onPress={confirmSignOut}
-          className="min-h-[56px] flex-row items-center gap-3 border-b border-border bg-surface px-4 active:bg-surface-alt"
-        >
-          <Icon name="LogOut" size={20} color={color("danger")} />
-          <Text className="flex-1 text-base text-danger">로그아웃</Text>
-        </Pressable>
+        />
       </View>
     </ScrollView>
   );

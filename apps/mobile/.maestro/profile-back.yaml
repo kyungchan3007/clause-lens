@@ -1,6 +1,7 @@
-# S12. 프로필 뒤로가기 → 홈 (best-effort)
+# S12. 프로필 뒤로가기 → 홈 (#171: 커스텀 ScreenHeader 뒤로 버튼)
 # 사전조건: 로그인된 상태(login.yaml 선행).
-# ⚠️ iOS 네이티브 back은 시뮬레이터에서 브리틀 → 좌측 엣지 스와이프로 시도(실패 시 수동 확인).
+# 네이티브 헤더 → 커스텀 ScreenHeader 전환(#171): 뒤로는 공용 IconButton(a11y "뒤로").
+# iOS 좌측 엣지 스와이프백(gestureEnabled 기본값 보존)은 시뮬레이터에서 브리틀 → 수동 육안.
 appId: com.chan.clauselens
 ---
 - launchApp:
@@ -10,8 +11,6 @@ appId: com.chan.clauselens
     timeout: 15000
 - tapOn: "마이페이지"
 - assertVisible: "자주 묻는 질문"
-# iOS 좌측 엣지 스와이프(뒤로 가기 제스처)
-- swipe:
-    start: "2%, 50%"
-    end: "90%, 50%"
+# 커스텀 헤더 뒤로 버튼(a11y "뒤로") → 홈
+- tapOn: "뒤로"
 - assertVisible: "계약서, 찍기만 하세요"

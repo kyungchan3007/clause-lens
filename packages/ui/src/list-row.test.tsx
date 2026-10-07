@@ -46,4 +46,19 @@ describe("ListRow", () => {
     const strRoot = render(<ListRow title="제목" supporting="보조문구" />);
     expect(strRoot.findAllByType(Text).some((t) => t.props.children === "보조문구")).toBe(true);
   });
+
+  // 제목 Text(numberOfLines=1)의 색 톤 — default=foreground, danger=danger 토큰.
+  const titleOf = (root: ReactTestInstance) =>
+    root.findAll((n) => n.type === Text && n.props.numberOfLines === 1)[0];
+
+  it("tone 기본은 text-foreground 제목", () => {
+    const root = render(<ListRow title="로그인" />);
+    expect(titleOf(root).props.className).toContain("text-foreground");
+    expect(titleOf(root).props.className).not.toContain("text-danger");
+  });
+
+  it('tone="danger"면 제목이 text-danger', () => {
+    const root = render(<ListRow title="로그아웃" tone="danger" onPress={() => {}} />);
+    expect(titleOf(root).props.className).toContain("text-danger");
+  });
 });

@@ -52,7 +52,8 @@
 | TASK-U4a | 구독 예고 UI — 무료 소진(403) 화면 + 최근 목록 구독 카드 | 14 ⑥·⑨ (구독 선반영) | [0039](../intent/specs/0039-subscription-ui/) | Claude | **done** (#114/PR#115 머지 — 시안 선반영, 실구독=TASK-006) | TASK-U1b |
 | TASK-U3 | 결과 화면 리디자인 (하이라이트·조항·0건) | 14 순서 3 | [0045](../intent/specs/0045-result-redesign/) | Claude | **done** (#167/PR#168 머지 — Pager 공용 승격·riskTone(low)→neutral·시뮬 육안) | TASK-U2b |
 | TASK-U3b | 결과 화면 "전체 보기" 드래그 바텀시트 (전체화면 조항 스크롤·접기) | 14 순서 3 후속 | [0063](../intent/specs/0063-result-sheet/) | Claude | **done** (#169/PR#170 머지 — DragSheet 공용 승격·2스냅·a11y 테스트·시뮬 실측 collapsed/full/드래그) | TASK-U3 |
-| TASK-U4~5 | 화면 리디자인 (마이페이지·최근목록) | 14 순서 4~5 | – | – | todo | TASK-U2b |
+| TASK-U4 | 마이페이지 리디자인 (시안 정렬 + 공용 ScreenHeader) | 14 순서 4 | [0064](../intent/specs/0064-profile-redesign/) | Claude | **in-progress** (#171 — Claude 설계 토론 반영·ScreenHeader 공용·ListRow tone·네이티브→커스텀 헤더) | TASK-U2b |
+| TASK-U5 | 최근목록 리디자인 (시안 정렬 + ScreenHeader 소비) | 14 순서 5 | – | – | todo | TASK-U4 |
 
 > BrandHeader·Notice·card shadow는 선제 공통화하지 않고 **순서1(홈 리디자인)**에서 실제 소비 확인 후 도입(Codex·0012 승격 스펙).
 
