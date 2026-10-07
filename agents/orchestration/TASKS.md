@@ -31,9 +31,9 @@
 | TASK-002 | S3 Presigned URL 연동·직접 업로드 | [capture-import](../intent/features/capture-import.md) | [0018](../intent/specs/0018-uploads-presign.md)·[0019](../intent/specs/0019-app-upload.md) | Claude | **done** (백엔드 #15/PR#59·MinIO 실측 + 앱 #61/PR#62·시뮬레이터 실측, 2026-09-23) | TASK-001 |
 | TASK-003 | 분석 요청·jobId 상태 폴링 | [analyze-document](../intent/features/analyze-document.md) | [0020](../intent/specs/0020-analysis-request-polling.md) | Claude | **done** (#63·PR#64 — 게이트 13검사·백엔드 실측 4/4·앱 시뮬 실측, 2026-09-28) | TASK-002 |
 | TASK-004 | OCR·위험 조항 결과 + 하이라이트 표시 | [view-highlights](../intent/features/view-highlights.md) | [0021](../intent/specs/0021-ocr-risk-analysis.md)·[0022](../intent/specs/0022-app-result-highlight.md) | Claude | **done** (4a 백엔드 #68/PR#69 — Vision OCR+Claude · 4b 결과·하이라이트 #73/PR#75 — react-native-svg 오버레이·좌표변환·조항목록·S20 시뮬 실측, 2026-09-30. EXIF fixture 실측·재진입 영속은 후속) | TASK-003 |
-| TASK-005 | 로그인·무료 분석 횟수 | [login-entitlement](../intent/features/login-entitlement.md) | [0009](../intent/specs/0009-app-kakao-login.md)(앱 로그인)·[0027](../intent/specs/0027-entitlement-enforcement/)(자격 집행)·[0029](../intent/specs/0029-app-entitlement-display/)(앱 표시) | Claude | **in-progress** (#36 앱 카카오 로그인 done · 정책 확정 #79 · **백엔드 집행 #90/PR#91 done** · **앱 잔량 표시·403 흐름 #94 in-progress** — Codex 설계 토론 반영) | #32 |
+| TASK-005 | 로그인·무료 분석 횟수 | [login-entitlement](../intent/features/login-entitlement.md) | [0009](../intent/specs/0009-app-kakao-login.md)(앱 로그인)·[0027](../intent/specs/0027-entitlement-enforcement/)(자격 집행)·[0029](../intent/specs/0029-app-entitlement-display/)(앱 표시) | Claude | **done** (#36 앱 카카오 로그인 · 정책 #79 · 백엔드 집행 #90/PR#91 · 앱 잔량 표시·403 흐름 #94/PR#95 — 전부 머지) | #32 |
 | TASK-008 | 분석 기록 재열람 — 문서목록 API + 7일 보관(접근 차단) | [save-retain](../intent/features/save-retain.md)(재열람 토대) | [0030](../intent/specs/0030-recall-documents-list/) | Claude | **done** (#96/PR#97 머지 — Codex 설계 토론 반영. **조항 재열람만**·접근 차단만. 이미지 하이라이트 재열람·실삭제(#74)는 바로 다음) | TASK-004·TASK-005 |
-| TASK-006 | 구독·문서 저장 | [save-retain](../intent/features/save-retain.md) | – | – | todo | TASK-008 |
+| TASK-006 | 구독·문서 저장 | [save-retain](../intent/features/save-retain.md) | – | Claude | **in-progress** (① 구독 상태·권한 모델 #162/PR#166 done · ②보관 전환·③실삭제·④결제 남음) | TASK-008 |
 | TASK-007 | 특정 페이지 이미지 교체·재분석 | [replace-page](../intent/features/replace-page.md) | – | – | todo | TASK-003 |
 
 ## UI/UX 태스크 (14 페이지 "구현 순서")
@@ -43,15 +43,15 @@
 | id | 제목 | 정의 | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
 | TASK-U0a | 디자인 토큰 정비 + 테마 경로(vars) + 위험도 tone 도메인 | 14 순서 0 | [0031](../intent/specs/0031-design-tokens-theme-path/) | Claude | **done** (#98/PR#99 머지 — vars() 테마 경로·대비 분리·riskTone 도메인) | TASK-F2·TASK-F3 |
-| TASK-U0b1 | ListRow·Badge(tone)·StatusDot 신설 + DocumentRow/MenuRow 승격 + UI 테스트 게이트 | 14 순서 0 | [0032](../intent/specs/0032-listrow-badge-tone/) | Claude | **in-progress** (#100 — Codex 토론 반영) | TASK-U0a |
-| TASK-U0b2 | Button·IconButton·SectionHeader·EmptyState + semantic.light 직접 참조 정리 | 14 순서 0 | [0034](../intent/specs/0034-button-iconbutton/) | Claude | **in-progress** (#101 — Codex 토론 반영) | TASK-U0b1 |
+| TASK-U0b1 | ListRow·Badge(tone)·StatusDot 신설 + DocumentRow/MenuRow 승격 + UI 테스트 게이트 | 14 순서 0 | [0032](../intent/specs/0032-listrow-badge-tone/) | Claude | **done** (#100/PR#102 머지 — Codex 토론 반영) | TASK-U0a |
+| TASK-U0b2 | Button·IconButton·SectionHeader·EmptyState + semantic.light 직접 참조 정리 | 14 순서 0 | [0034](../intent/specs/0034-button-iconbutton/) | Claude | **done** (#101/PR#105 머지 — Codex 토론 반영) | TASK-U0b1 |
 | TASK-U1 | 홈 화면 리디자인 (빈 상태·페이지 담음·최근) | 14 순서 1 | [0035](../intent/specs/0035-home-redesign/) | Claude | **done** (#106·#107 — 4상태·BrandHeader·Notice·card shadow·그리드 보류) | TASK-U0b2 |
 | TASK-U2 | 분석 진행 화면 리디자인 (전용 ProcessingScreen) | 14 순서 2 | [0036](../intent/specs/0036-processing-screen/) | Claude | **done** (#108·PR#109 — 서버 계약 반영: indeterminate 흐르는 바·정직 문구 3곳) | TASK-U1 |
 | TASK-U2b | 담은 페이지 2열 썸네일 그리드 (드래그 엔진 교체) | 14 순서 1 후속(②) | [0037](../intent/specs/0037-captured-pages-grid/) | Claude | **done** (#110·PR#111 — sortables Grid·fixed-order·ID-only 드롭·썸네일·미리보기 모달) | TASK-U2 |
-| TASK-U1b | 홈 리디자인 보정 (Hero 아이콘·최근 진입 버튼·DocumentRow 상대일/플레이스홀더·중앙 Hero) | 14 순서 1 보정 | [0038](../intent/specs/0038-home-polish/) | Claude | **review** (#112/PR#113) | TASK-U2b |
-| TASK-U4a | 구독 예고 UI — 무료 소진(403) 화면 + 최근 목록 구독 카드 | 14 ⑥·⑨ (구독 선반영) | [0039](../intent/specs/0039-subscription-ui/) | Claude | **in-progress** (#114 — 시안 선반영, 실구독=TASK-006) | TASK-U1b |
-| TASK-U3 | 결과 화면 리디자인 (하이라이트·조항·0건) | 14 순서 3 | [0045](../intent/specs/0045-result-redesign/) | Claude | **review** (#167 — Codex 토론 반영·Pager 공용 승격·riskTone(low)→neutral·checks.sh PASS·시뮬 육안 남음) | TASK-U2b |
-| TASK-U3b | 결과 화면 "전체 보기" 드래그 바텀시트 (전체화면 조항 스크롤·접기) | 14 순서 3 후속 | [0063](../intent/specs/0063-result-sheet/) | Claude | **review** (#169/PR#170 — DragSheet 공용 승격·2스냅·reanimated+gesture 직접·checks.sh PASS·시뮬 실측 collapsed/full/드래그 OK) | TASK-U3 |
+| TASK-U1b | 홈 리디자인 보정 (Hero 아이콘·최근 진입 버튼·DocumentRow 상대일/플레이스홀더·중앙 Hero) | 14 순서 1 보정 | [0038](../intent/specs/0038-home-polish/) | Claude | **done** (#112/PR#113 머지) | TASK-U2b |
+| TASK-U4a | 구독 예고 UI — 무료 소진(403) 화면 + 최근 목록 구독 카드 | 14 ⑥·⑨ (구독 선반영) | [0039](../intent/specs/0039-subscription-ui/) | Claude | **done** (#114/PR#115 머지 — 시안 선반영, 실구독=TASK-006) | TASK-U1b |
+| TASK-U3 | 결과 화면 리디자인 (하이라이트·조항·0건) | 14 순서 3 | [0045](../intent/specs/0045-result-redesign/) | Claude | **done** (#167/PR#168 머지 — Pager 공용 승격·riskTone(low)→neutral·시뮬 육안) | TASK-U2b |
+| TASK-U3b | 결과 화면 "전체 보기" 드래그 바텀시트 (전체화면 조항 스크롤·접기) | 14 순서 3 후속 | [0063](../intent/specs/0063-result-sheet/) | Claude | **done** (#169/PR#170 머지 — DragSheet 공용 승격·2스냅·a11y 테스트·시뮬 실측 collapsed/full/드래그) | TASK-U3 |
 | TASK-U4~5 | 화면 리디자인 (마이페이지·최근목록) | 14 순서 4~5 | – | – | todo | TASK-U2b |
 
 > BrandHeader·Notice·card shadow는 선제 공통화하지 않고 **순서1(홈 리디자인)**에서 실제 소비 확인 후 도입(Codex·0012 승격 스펙).
@@ -64,15 +64,15 @@
 
 | id | 제목 | 정의 | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-R1 | 홈 분석 세션 로직 커스텀 훅 분리 (app/index.tsx) | 라우트 얇게(frontend-architecture) | [0041](../intent/specs/0041-home-session-hook/) | Claude | **in-progress** (#118 — widgets/home-session · 단위·게이트 PASS · 로그인 후 e2e 확인 남음) | – |
-| TASK-R2 | 결과 route 판정 로직 커스텀 훅 분리 (app/result.tsx) | 〃 | [0042](../intent/specs/0042-result-source-hook/) | Claude | **in-progress** (#119 — widgets/result-source · 단위·게이트 PASS · review 경로 시뮬 실측) | TASK-R1 |
-| TASK-R3 | 프로필 화면 로직 커스텀 훅 분리 (ProfileScreen) | 〃 | [0043](../intent/specs/0043-profile-hook/) | Claude | **in-progress** (#120 — features/profile/model · 단위·타입·e2e·게이트 ALL PASS · PR #124) | – |
+| TASK-R1 | 홈 분석 세션 로직 커스텀 훅 분리 (app/index.tsx) | 라우트 얇게(frontend-architecture) | [0041](../intent/specs/0041-home-session-hook/) | Claude | **done** (#118/PR#121 머지 — widgets/home-session · 단위·게이트 PASS) | – |
+| TASK-R2 | 결과 route 판정 로직 커스텀 훅 분리 (app/result.tsx) | 〃 | [0042](../intent/specs/0042-result-source-hook/) | Claude | **done** (#119/PR#122 머지 — widgets/result-source · 단위·게이트 PASS) | TASK-R1 |
+| TASK-R3 | 프로필 화면 로직 커스텀 훅 분리 (ProfileScreen) | 〃 | [0043](../intent/specs/0043-profile-hook/) | Claude | **done** (#120/PR#124 머지 — features/profile/model · 단위·타입·e2e·게이트 ALL PASS) | – |
 
 ## 테스트 자산 태스크
 
 | id | 제목 | 정의 | spec | owner | status | depends |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-E1 | Maestro 시나리오 문구를 홈 리디자인 이후 UI로 동기화 | [SCENARIOS.md](../../apps/mobile/.maestro/SCENARIOS.md) | [0044](../intent/specs/0044-maestro-home-copy-sync/) | Claude | **in-progress** (#123 — 17 yaml + SCENARIOS 동기화 · 시뮬 11개 PASS · 게이트 PASS · PR 리뷰 대기) | TASK-U1b |
+| TASK-E1 | Maestro 시나리오 문구를 홈 리디자인 이후 UI로 동기화 | [SCENARIOS.md](../../apps/mobile/.maestro/SCENARIOS.md) | [0044](../intent/specs/0044-maestro-home-copy-sync/) | Claude | **done** (#123/PR#125 머지 — 17 yaml + SCENARIOS 동기화 · 시뮬 11개 PASS) | TASK-U1b |
 
 ## 하네스·거버넌스 태스크
 
@@ -81,8 +81,8 @@
 | TASK-H1 | 이슈·체크박스 강제 장치 (하네스 이식 1/4) | [loop.md](../harness/loop.md) §브랜치·이슈 | [0023](../intent/specs/0023-issue-checkbox-enforcement.md) | Claude | **done** (#82/PR#86 머지 — records·issue-link·issue-sync·done 미체크 차단) | #77 |
 | TASK-H2 | 커밋 기록 규칙 (하네스 이식 2/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0024](../intent/specs/0024-commit-record-rules.md) | Claude | **done** (#83/PR#87 머지 — 커밋 세 섹션 hook·토큰 자동 기입) | #82 |
 | TASK-H3 | 작업 과정 기록·강제 (하네스 이식 3/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0025](../intent/specs/0025-process-record-enforcement/) | Claude | **done** (#84/PR#88 머지 — 폴더 spec·자동기록·수정전 차단·종료 돌려보냄) | #82 |
-| TASK-H4 | 복기 자동 주입 + 효과 측정 (하네스 이식 4/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0026](../intent/specs/0026-recall-injection/) | Claude | **in-progress** (#85 — 복기 주입·pnpm metrics · 효과 측정은 후속) | #83·#84 |
-| TASK-H5 | Notion 기록 규칙 지침서화 (영향 섹션 전체 갱신·섹션 맵) | [notion-recording.md](../harness/notion-recording.md) | [0033](../intent/specs/0033-notion-recording-rule/) | Claude | **in-progress** (#103 — 사용자 지적: 01 편중 금지·03/15 누락) | – |
+| TASK-H4 | 복기 자동 주입 + 효과 측정 (하네스 이식 4/4) | [commit-and-issue.md](../harness/commit-and-issue.md) | [0026](../intent/specs/0026-recall-injection/) | Claude | **done** (#85/PR#89 머지 — 복기 주입·pnpm metrics · 효과 측정은 후속) | #83·#84 |
+| TASK-H5 | Notion 기록 규칙 지침서화 (영향 섹션 전체 갱신·섹션 맵) | [notion-recording.md](../harness/notion-recording.md) | [0033](../intent/specs/0033-notion-recording-rule/) | Claude | **done** (#103/PR#104 머지 — 01 편중 금지·03/15 누락 반영) | – |
 
 ## 백로그 (아직 태스크화 안 됨)
 - TanStack Query 도입 (서버 상태 캐시)
