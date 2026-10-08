@@ -127,6 +127,40 @@ describe("AnalysisService.analyze", () => {
     expect(r.pages[0].normalizedImage).toBeUndefined();
   });
 
+  it("documentId 비어있으면 presign 전면 생략 — 잘못된 키 방지", async () => {
+    documents.startAnalysis.mockResolvedValue(
+      makeJob({
+        documentId: "",
+        dispatchedAt: new Date(),
+        status: "processing",
+        pages: [
+          {
+            id: "pa1",
+            jobId: "job1",
+            pageId: "pg1",
+            revision: 2,
+            status: "done",
+            errorCode: null,
+            retryable: false,
+            attempts: 0,
+            confirmedAt: new Date(),
+            createdAt: new Date(),
+            page: {
+              order: 0,
+              revision: 2,
+              ocrResults: [{ revision: 2, imageWidth: 1000, imageHeight: 1400 }],
+              analysisResults: [],
+            },
+          },
+        ],
+      } as unknown as Partial<AnalysisJobWithPages>),
+    );
+
+    const r = await svc.analyze("u1", "doc1");
+    expect(storage.presignGet).not.toHaveBeenCalled();
+    expect(r.pages[0].normalizedImage).toBeUndefined();
+  });
+
   it("presign 실패(S3 장애)해도 결과는 유지 — 해당 페이지만 normalizedImage 미부착(500 방지)", async () => {
     storage.presignGet.mockRejectedValue(new Error("s3 down"));
     documents.startAnalysis.mockResolvedValue(

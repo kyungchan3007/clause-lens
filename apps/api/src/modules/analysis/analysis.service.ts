@@ -38,6 +38,9 @@ export class AnalysisService implements OnModuleInit, OnModuleDestroy {
   private async attachNormalizedImages(
     resp: AnalysisStatusResponse,
   ): Promise<AnalysisStatusResponse> {
+    // documentId는 모든 페이지 키의 공통 세그먼트 → 유효하지 않으면 presign 전면 생략(잘못된 키 방지).
+    const documentId = resp.documentId;
+    if (typeof documentId !== "string" || documentId.length === 0) return resp;
     const pages = await Promise.all(
       resp.pages.map(async (p) => {
         // 치수·revision은 계약상 양수(normalizedImage schema도 width/height/revision 양수), pageId는 비어있지 않아야 함.
@@ -53,7 +56,7 @@ export class AnalysisService implements OnModuleInit, OnModuleDestroy {
         }
         try {
           const url = await this.storage.presignGet(
-            normalizedImageKey(resp.documentId, pageId, revision),
+            normalizedImageKey(documentId, pageId, revision),
             NORMALIZED_IMAGE_TTL_S,
           );
           return {
@@ -63,7 +66,7 @@ export class AnalysisService implements OnModuleInit, OnModuleDestroy {
         } catch {
           // presign 실패(S3 일시 장애·구성 오류)는 해당 페이지만 이미지 미부착 — 결과 조회 자체는 유지(500 방지).
           this.logger.warn(
-            `normalized image presign failed (doc ${resp.documentId} page ${p.pageId})`,
+            `normalized image presign failed (doc ${documentId} page ${pageId})`,
           );
           return p;
         }
