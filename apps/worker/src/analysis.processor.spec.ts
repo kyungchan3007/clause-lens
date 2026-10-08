@@ -4,6 +4,8 @@ import {
   upsertPageOcr,
 } from "@clause-lens/db/analysis";
 
+import { normalizedImageKey } from "@clause-lens/contracts";
+
 import { AnalysisProcessor, type AnalysisJobRef } from "./analysis.processor";
 import { NORMALIZATION_VERSION } from "./config";
 import { AnalysisPermanentError, AnalysisTransientError, ValidationError } from "./lib/errors";
@@ -77,6 +79,7 @@ function makeProcessor(
   } as ClauseAnalyzerPort;
   const storage = {
     getObject: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+    putObject: jest.fn().mockResolvedValue(undefined),
   } as unknown as StoragePort;
   const publisher = { publish: jest.fn().mockResolvedValue(undefined) } as unknown as jest.Mocked<NotificationPublisher>;
   const processor = new AnalysisProcessor(prisma, ocr, analyzer, storage, publisher);
@@ -99,10 +102,16 @@ beforeEach(() => {
 
 describe("AnalysisProcessor.process (0021)", () => {
   it("성공: OCR 없음 → Vision → upsert → 분석 → 결과 원자 확정 + publish", async () => {
-    const { processor, ocr, publisher } = makeProcessor(makeJob([{ pageId: "pg1", status: "pending" }]));
+    const { processor, ocr, publisher, storage } = makeProcessor(makeJob([{ pageId: "pg1", status: "pending" }]));
     await processor.process(job());
     expect(ocr.recognize).toHaveBeenCalledTimes(1);
     expect(upsertOcrMock).toHaveBeenCalledTimes(1);
+    // 정규화 이미지를 결정적 키로 영속(#175).
+    expect(storage.putObject).toHaveBeenCalledWith(
+      normalizedImageKey("doc1", "pg1", 1),
+      expect.anything(),
+      "image/jpeg",
+    );
     expect(confirmResultMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ jobId: "job1", input: expect.objectContaining({ pageId: "pg1", model: "m" }) }));
     expect(publisher.publish).toHaveBeenCalledWith("doc1", 2);
   });

@@ -17,6 +17,8 @@ maestro test apps/mobile/.maestro/profile.yaml   # 개별
 ```
 
 > ⚠️ **카카오 로그인은 계정 자격증명 입력이 필요**해 완전 자동화 불가. 로그인 웹뷰까지 자동 진행 후 **자격증명은 수동**(테스트 계정). 로그인 이후(프로필·FAQ·로그아웃)는 자동.
+>
+> ⚠️ **iOS 함정(2026-10-08 실측)**: maestro `clearState: true`는 앱 데이터만 지우고 **Keychain(expo-secure-store 세션)은 안 지움** → 로그인 상태가 유지됨. 그래서 `capture-gate`·`login`·`login-failure`의 "clearState=로그아웃" 전제가 iOS에서 성립 안 함 → **진짜 로그아웃(`logout.yaml`) 선행** 후 돌려야 로그인 화면이 나온다. 또 **수동 카카오 로그인이 60초를 넘기면** `login` 대기가 타임아웃될 수 있음(기능은 정상).
 
 ---
 

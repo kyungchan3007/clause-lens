@@ -87,6 +87,24 @@ export const clauseSchema = z.object({
   boxes: z.array(boxSchema).min(1),
 });
 
+// 서버 정규화(upright) 이미지 — 앱이 이 이미지를 그려 좌표 정합(#175).
+// url=presigned GET(단기). width/height=좌표 기준(boxes와 동일 픽셀 공간). revision=이미지·결과 묶음 식별.
+export const normalizedImageSchema = z.object({
+  url: z.string().url(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  revision: z.number().int().positive(),
+});
+
+// 정규화 이미지 S3 키 — worker(쓰기)·api(presign GET)가 동일 규칙 공유(#175). Page.finalKey와 형제(결정적·revision별).
+export function normalizedImageKey(
+  documentId: string,
+  pageId: string,
+  revision: number,
+): string {
+  return `documents/${documentId}/pages/${pageId}/r${revision}/normalized.jpg`;
+}
+
 // ── 페이지별 결과 ──
 // done일 때만 imageWidth/height·clauses·analysisComplete가 채워짐(하위호환 optional).
 // analysisComplete=true = 분석 완료 마커 존재(정상 0건=true+[]; 미저장=false/undefined).
@@ -99,6 +117,7 @@ export const pageAnalysisResultSchema = z.object({
   retryable: z.boolean().optional(),
   imageWidth: z.number().int().positive().optional(), // 원본 upright 실측 치수
   imageHeight: z.number().int().positive().optional(),
+  normalizedImage: normalizedImageSchema.optional(), // 서버 정규화 이미지(#175·#176 앱이 그림)
   analysisComplete: z.boolean().optional(),
   clauses: z.array(clauseSchema).optional(),
 });
@@ -127,6 +146,7 @@ export type ClauseRiskLevel = z.infer<typeof clauseRiskLevelSchema>;
 export type ClauseType = z.infer<typeof clauseTypeSchema>;
 export type Box = z.infer<typeof boxSchema>;
 export type Clause = z.infer<typeof clauseSchema>;
+export type NormalizedImage = z.infer<typeof normalizedImageSchema>;
 export type PageAnalysisResult = z.infer<typeof pageAnalysisResultSchema>;
 export type AnalysisStatusResponse = z.infer<typeof analysisStatusResponseSchema>;
 export type AnalyzeResponse = z.infer<typeof analyzeResponseSchema>;
