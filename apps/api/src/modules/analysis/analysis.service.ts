@@ -40,21 +40,25 @@ export class AnalysisService implements OnModuleInit, OnModuleDestroy {
   ): Promise<AnalysisStatusResponse> {
     const pages = await Promise.all(
       resp.pages.map(async (p) => {
-        // 치수 + 식별자(pageId·revision)가 모두 유효할 때만 — 잘못된 키('undefined')로 presign 방지.
-        if (!p.imageWidth || !p.imageHeight || !p.pageId || !p.revision) return p;
+        // 치수·revision은 계약상 양수(normalizedImage schema도 width/height/revision 양수), pageId는 비어있지 않아야 함.
+        // falsy(!x) 대신 명시적 양수/존재 검사 — 0·누락은 유효 이미지가 아니므로 의도적 제외(잘못된 키·계약 위반 방지).
+        const { imageWidth: w, imageHeight: h, pageId, revision } = p;
+        if (
+          typeof w !== "number" || w <= 0 ||
+          typeof h !== "number" || h <= 0 ||
+          !pageId ||
+          typeof revision !== "number" || revision <= 0
+        ) {
+          return p;
+        }
         try {
           const url = await this.storage.presignGet(
-            normalizedImageKey(resp.documentId, p.pageId, p.revision),
+            normalizedImageKey(resp.documentId, pageId, revision),
             NORMALIZED_IMAGE_TTL_S,
           );
           return {
             ...p,
-            normalizedImage: {
-              url,
-              width: p.imageWidth,
-              height: p.imageHeight,
-              revision: p.revision,
-            },
+            normalizedImage: { url, width: w, height: h, revision },
           };
         } catch {
           // presign 실패(S3 일시 장애·구성 오류)는 해당 페이지만 이미지 미부착 — 결과 조회 자체는 유지(500 방지).
