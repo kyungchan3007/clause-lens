@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import {
   GetObjectCommand,
   HeadObjectCommand,
+  PutObjectCommand,
   type S3Client,
 } from "@aws-sdk/client-s3";
 import { createS3ClientFromEnv, processEnvReader } from "@clause-lens/infra";
@@ -40,6 +41,17 @@ export class S3StorageAdapter extends StoragePort {
       throw new ValidationError("invalid_image");
     }
     return bytes;
+  }
+
+  async putObject(key: string, bytes: Uint8Array, contentType: string): Promise<void> {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: bytes,
+        ContentType: contentType,
+      }),
+    );
   }
 }
 

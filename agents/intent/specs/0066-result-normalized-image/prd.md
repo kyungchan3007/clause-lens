@@ -36,11 +36,12 @@
 - 계약(08) 변경은 contracts 패키지·API·worker·앱이 함께 일치(타입 drift 금지).
 
 ## Acceptance
-- [ ] worker upright(정규화) 이미지 S3 영속(결과 asset), OCR 입력 바이트 재사용(중복 디코드 없음).
-- [ ] API 결과에 정규화 이미지 URL + revision/identity 반환, 계약 08 갱신(contracts·API·worker·앱 타입 일치).
-- [ ] 보관 만료(7일)·접근 차단 정책 반영(#164 정합, 재열람 410과 일관).
-- [ ] 좌표 기준 = 정규화 이미지 픽셀 명문화(0022·0066 trace 연결).
-- [ ] 단위/계약 테스트 + `bash agents/harness/evals/checks.sh` PASS.
+- [x] worker upright(정규화) 이미지 S3 영속(결정적 키 `documents/{doc}/pages/{page}/r{rev}/normalized.jpg`), OCR 입력 바이트 재사용(중복 디코드 없음) — best-effort put.
+- [x] API 결과에 정규화 이미지 URL + revision 반환(`normalizedImage{url,width,height,revision}`), 계약 08 갱신(contracts·API·worker 타입 일치, 앱은 optional이라 하위호환).
+- [x] 접근 차단 정합: 보관 만료 문서는 `getAnalysis` 410 선차단 → URL 미발급. (물리 삭제는 #164 실삭제 잡 — 결정적 키 규칙 참조.)
+- [x] 좌표 기준 = 정규화 이미지 픽셀 명문화(contract 주석 + trace, 0022 §④ 계승).
+- [x] 단위/계약 테스트(contracts·worker·api) + `bash agents/harness/evals/checks.sh` **ALL PASS**.
+- [ ] (후속) EXIF 1~8 실측 fixture — 현 단위는 목 기반, 실 방향 검증은 후속(0022 후속 기준).
 
 ## 7. 미해결 질문 (Open Questions)
 - Q1. 정규화 asset 키·수명을 기존 ResultImage/스냅샷과 통합할지 별도 둘지 — SDD에서 확정.

@@ -47,6 +47,11 @@ export class MinioStorageAdapter extends StoragePort {
     });
   }
 
+  async presignGet(key: string, expiresInSeconds: number): Promise<string> {
+    const cmd = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    return getSignedUrl(this.client, cmd, { expiresIn: expiresInSeconds });
+  }
+
   async head(key: string): Promise<HeadResult> {
     try {
       const out = await this.client.send(
