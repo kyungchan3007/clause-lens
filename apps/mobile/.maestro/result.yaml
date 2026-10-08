@@ -23,7 +23,11 @@ appId: com.chan.clauselens
     visible: "분석 결과"
     timeout: 15000
 # 리디자인(0045): 섹션 헤더 + 항상 보이는 참고 고지 푸터. (위험도 배지 점·페이지 네비 알약·0건 안심 EmptyState는 육안)
-- assertVisible: "확인이 필요한 조항"
+# 섹션 헤더는 "확인이 필요한 조항 N"(건수 포함, #167) — maestro는 전체 텍스트 매칭이라 정규식으로.
+# 시트 내용은 헤더보다 한 프레임 늦게 렌더 → 대기(브리틀 방지).
+- extendedWaitUntil:
+    visible: "확인이 필요한 조항.*"
+    timeout: 8000
 - assertVisible: "분석 결과는 참고용이며 법률 자문을 대체하지 않아요."
 # 0063: "전체 보기" 드래그 바텀시트 — 버튼으로 열기(full) → 접기(collapsed) (드래그 탭 대체 경로)
 - tapOn: "전체 보기"

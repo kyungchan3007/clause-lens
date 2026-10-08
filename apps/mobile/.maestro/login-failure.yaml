@@ -7,8 +7,9 @@ appId: com.chan.clauselens
 - assertVisible: "카카오로 시작하기"
 - tapOn: "카카오로 시작하기"
 # 카카오 웹뷰 → (수동) 계속하기. 백엔드가 없어 토큰 교환이 실패해야 함.
+# API-down(연결 거부)은 '일반 실패' 문구로 매핑됨(네트워크 분기와 구분) — 실측 2026-10-08.
 - extendedWaitUntil:
-    visible: "네트워크 연결을 확인해주세요"
+    visible: "(네트워크 연결을 확인해주세요|로그인에 실패했어요)"
     timeout: 60000
 # 실패해도 홈 미진입, 로그인 화면 유지(재시도 가능)
 - assertVisible: "카카오로 시작하기"

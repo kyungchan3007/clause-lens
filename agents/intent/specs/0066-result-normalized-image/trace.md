@@ -24,6 +24,12 @@
 - **api**: `StoragePort.presignGet(key,ttl)` 추가(`ports/storage.port.ts`·`MinioStorageAdapter` GetObjectCommand+getSignedUrl). `AnalysisService`에 StoragePort 주입(모듈 provide) + `attachNormalizedImages` — 완료(치수 존재) 페이지에 presigned GET URL 부착(TTL 3600s). 보관 만료(410)는 `getAnalysis`가 선차단 → 만료 문서엔 URL 미발급(접근 차단 정합).
 - **테스트**: contracts(normalizedImage 스키마·키 2건), worker(putObject 호출·키 검증), api(normalizedImage 부착·치수 없으면 미부착·presign 키 검증). 게이트 `checks.sh` **ALL PASS**(contracts 25·api 86·worker 43 포함).
 
+### 백엔드 스모크 + e2e 실측 (2026-10-08)
+- 로컬 백엔드(postgres·redis·네이티브 MinIO·API·worker 실제 Vision+Claude·Metro) 기동, 시뮬 로그인(사용자), 갤러리 계약서 분석 1회.
+- **#175 왕복 검증 성공**: worker가 `documents/{doc}/pages/{page}/r1/normalized.jpg`를 MinIO에 저장(99KiB) → API 결과 `normalizedImage{url, width:1200, height:1600, revision:1}`(치수·revision 정합) → 그 presigned GET **HTTP 200 · image/jpeg · 100,949 bytes**. (JWT는 JWT_ACCESS_SECRET로 발급해 실제 엔드포인트 호출.)
+- e2e(maestro): `result.yaml`(업로드→분석→결과→#169 드래그시트) 포함 14개 플로우 통과. 결과 화면은 현행 react-native-svg 하이라이트로 정상 — #175가 공급한 이미지의 **앱 소비(Skia 렌더)는 #176**.
+- 보관 만료 접근 차단은 getAnalysis 410 선차단으로 유지(코드·단위). 물리 삭제는 #164.
+
 ### 남음 / 다음
 - **물리 삭제는 #164**(실삭제 잡): 결정적 키 규칙을 #164가 참조해 정규화 asset도 함께 삭제(retention 대상 등록). 이 이슈는 "접근 차단(만료 시 URL 미발급)"까지.
 - **EXIF 1~8 실측 fixture**: image-validator의 `.rotate()`가 8종 방향을 세우는지 — 현 단위는 목 기반. 실 fixture 검증은 후속(0022 후속과 동일 기준).
