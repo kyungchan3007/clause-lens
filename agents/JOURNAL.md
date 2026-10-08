@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-10-08 · Claude · 결과 화면 Skia 하이라이트 전환 + 구역 탭 (#176)
+- **무엇**: 결과 이미지 블록을 RN `<Image>`+react-native-svg → **Skia `<Canvas>`**로 교체. #175가 내려준 서버 정규화 이미지를 그리고 위험 구역을 색칠(채움+테두리), **사진 구역 탭 → 조항 선택**. 설명 구간(DragSheet/ClauseList)은 불변.
+- **설계**: Codex 적대적 검토(2026-10-08) 결론 반영(0067). `current.normalizedImage` 이미 존재(threading 불필요), 좌표 기준=normalizedImage.{width,height}(boxes 동일 공간). 하위호환: 정규화 없는 구버전은 기존 Image+SVG.
+- **구현**: `lib/hitTest.ts`(순수: 역변환·겹침 작은박스 우선·44pt) + `ui/SkiaHighlightCanvas.tsx`(useImage+Canvas+RoundedRect+Gesture.Tap→runOnJS(hitTest)) + ResultScreen 3분기. skImage 로드 게이트로 stale 혼합 방지, revision identity는 current에서 구조적 보장.
+- **게이트**: `checks.sh` **ALL PASS**(mobile 292, +hitTest 5). 
+- **이번에 드러난 공백**: useImage가 세대 검증 없음 → skImage!=null 게이트로 이미지+박스 동시 렌더. 재열람 경로(imageByPageId 빈값)도 normalizedImage.url로 이제 이미지 복원.
+- **파일**: `apps/mobile/src/features/result/{lib/hitTest.ts,lib/hitTest.test.ts,ui/SkiaHighlightCanvas.tsx,ui/ResultScreen.tsx}` · spec 0067.
+- **다음/주의**: PR(머지·CI 직접). **구역 탭·색칠·메모리 시뮬 육안은 백엔드+로그인+분석 후**(maestro는 캔버스 제스처 자동화 어려움). web은 CanvasKit 프리로드 경로 확인 후속.
+
 ## 2026-10-08 · Claude · 결과 정규화(upright) 이미지 영속·제공 (#175)
 - **무엇**: worker가 OCR 입력으로만 쓰고 버리던 upright(EXIF 정규화) 이미지를 결과용 asset으로 S3에 영속하고, 분석 결과에 `normalizedImage{url,width,height,revision}`(presigned GET)로 제공. 결과 Skia 전환(#176)의 좌표 정합 기반.
 - **설계**: Codex 적대적 검토(2026-10-08) 반영. A안(서버 정규화본) 확정. **결정적 키**(`documents/{doc}/pages/{page}/r{rev}/normalized.jpg`)로 worker 쓰기·api presign이 동일 키 재구성 → **DB 마이그레이션 없음**(SDD §4 Q1 확정, 리스크↓).

@@ -26,6 +26,7 @@ import type { ResultScreenProps } from "../model/types";
 import { ClauseList } from "./ClauseList";
 import { HighlightOverlay } from "./HighlightOverlay";
 import { ResultHeader } from "./ResultHeader";
+import { SkiaHighlightCanvas } from "./SkiaHighlightCanvas";
 
 // 분석 결과 화면: 헤더 + 이미지 하이라이트 카드 + 조항 목록(전체 보기 드래그 바텀시트).
 // 좌표 변환·상태 분리·스냅샷 매칭은 불변(0022). 시트는 이미지와 독립된 오버레이 — 좌표 측정 불변(0063).
@@ -45,6 +46,8 @@ export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProp
       ? { width: current.imageWidth, height: current.imageHeight }
       : null;
   const clauses: Clause[] = current?.clauses ?? [];
+  // 서버 정규화 이미지(#175) — 있으면 Skia로 그리고 좌표 정합이 보장(이미지·박스 동일 revision). 재열람도 복원.
+  const normalized = current?.normalizedImage;
 
   const overlayEnabled =
     !!image &&
@@ -98,7 +101,31 @@ export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProp
   const goPrev = () => goToPage(Math.max(0, pageIndex - 1));
   const goNext = () => goToPage(Math.min(orderedPages.length - 1, pageIndex + 1));
 
-  const imageBlock = image ? (
+  const imageBlock = normalized ? (
+    // 서버 정규화 이미지 + 색칠을 한 Skia 캔버스에(#176). 구역 탭 → 조항 선택. 재열람 경로도 동작.
+    <View className="mx-4 mt-3 overflow-hidden rounded-2xl border border-border bg-surface-alt">
+      <View
+        className="w-full"
+        style={{ height: imageAreaHeight }}
+        accessibilityLabel={`${current.order + 1}페이지 분석 이미지`}
+        onLayout={(e: LayoutChangeEvent) =>
+          setViewSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })
+        }
+      >
+        {viewSize.width > 0 ? (
+          <SkiaHighlightCanvas
+            url={normalized.url}
+            clauses={clauses}
+            image={{ width: normalized.width, height: normalized.height }}
+            view={viewSize}
+            selectedClauseId={selectedClauseId}
+            onSelectClause={onClauseTap}
+          />
+        ) : null}
+      </View>
+    </View>
+  ) : image ? (
+    // 하위호환: 정규화 이미지 없는 결과(구버전)는 로컬 스냅샷 + react-native-svg 오버레이.
     // 바깥 카드(테두리·라운드)와 측정 대상(안쪽 뷰) 분리 — Image·SVG가 같은 내부 viewport 공유(좌표 정합).
     <View className="mx-4 mt-3 overflow-hidden rounded-2xl border border-border bg-surface-alt">
       <View
@@ -134,7 +161,7 @@ export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProp
   );
 
   const mismatchNotice =
-    image && !overlayEnabled && serverSize && !imageError ? (
+    !normalized && image && !overlayEnabled && serverSize && !imageError ? (
       <Text className="px-4 pt-2 text-center text-xs text-foreground-muted">
         이미지와 좌표가 맞지 않아 위치 표시는 건너뜁니다. 목록으로 확인하세요.
       </Text>
