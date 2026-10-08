@@ -3,7 +3,7 @@
 - **이슈:** #175 · **선행 for**: #176(앱 Skia) · **근거 번복**: 0022(§⑤ SVG 결정)
 - **작성**: Claude · **날짜**: 2026-10-08
 
-## 1. 설계 개요
+## 1. 접근 (Approach)
 - worker가 OCR 전에 만드는 **upright(EXIF 정규화) 바이트**를 버리지 않고 **결과용 asset으로 S3에 저장**한다.
 - 분석 결과 응답에 그 asset의 **접근 URL + revision/identity**를 실어, 앱이 "서버가 본 바로 그 이미지"를 그리고 같은 리비전의 박스만 올리게 한다.
 - 좌표계는 그대로 **정규화 이미지 픽셀**(`imageWidth/imageHeight`) — 변환 로직 변경 없음. 바뀌는 건 "앱이 그리는 이미지의 출처"뿐.
@@ -15,7 +15,7 @@
 - `packages/contracts` + `apps/api`(documents/analysis 모듈): 결과 응답 DTO에 `normalizedImage{ url, width, height, revision }` 추가 — **08 계약 갱신**(contracts·api·worker·앱 타입 동시 일치).
 - 보관/만료: 기존 7일 retention(`retainUntil`)·접근 차단(410) 경로에 정규화 asset 포함(#164 실삭제 잡이 같이 지우도록 키를 retention 대상에 등록).
 
-## 3. 대안 검토 (Codex 적대적 검토 2026-10-08 반영)
+## 3. 고려한 대안 (Alternatives · Codex 적대적 검토 2026-10-08)
 | 질문 | 대안 | 결정 |
 | --- | --- | --- |
 | 앱이 그릴 이미지 | A 서버 정규화본 제공 / B 원본 그대로 / C 현 스냅샷 유지 | **A** — 사용자 "정석대로·버그 없게". B는 EXIF·해상도 역변환 리스크, C는 EXIF/다른페이지 못 거름 |
