@@ -35,7 +35,7 @@
 - [x] 사진 구역 탭 → 조항 선택·강조(`Gesture.Tap`→hitTest→`onClauseTap`), 목록↔캔버스 선택 동기화(기존 selectedClauseId 재사용).
 - [x] stale 혼합 방지: skImage 로드 전 이미지·박스 미그림 + revision identity는 `current`에서 이미지·박스 동일 revision으로 구조적 보장.
 - [x] 좌표 역변환·겹침 우선순위(면적 작은 것)·44pt **순수함수 단위 5건** + `bash agents/harness/evals/checks.sh` **ALL PASS**(mobile 292).
-- [ ] 시뮬 육안(정합·구역 탭·메모리) — 백엔드+로그인+분석 후(다음 단계).
+- [x] 시뮬 육안(2026-10-08): Skia 캔버스가 서버 정규화 이미지 + 색칠 박스 렌더(제2·3조 중립·제4조 red), **red 제4조 구역 탭 → 해당 조항 강조(박스 굵게·채움 진하게) + 목록 카드 파란 선택 테두리(캔버스↔목록 동기화)**, 좌표 정합 정상. 실제 Vision+Claude 분석.
 
 ## 7. 미해결 질문 (Open Questions)
 - Q1. Skia 미지원/로드 실패·web fallback 시 SVG로 그레이스풀 폴백할지 — SDD 확정.
