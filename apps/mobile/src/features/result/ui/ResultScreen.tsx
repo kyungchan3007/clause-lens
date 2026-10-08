@@ -14,6 +14,7 @@ import { color } from "@clause-lens/tokens";
 import type { Clause } from "@clause-lens/contracts";
 
 import { isSizeConsistent, type Size } from "../lib/coordinateTransform";
+import { withinDecodeBudget } from "../lib/decodeBudget";
 import {
   computeCollapsedOccupy,
   handleBackPress,
@@ -48,6 +49,8 @@ export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProp
   const clauses: Clause[] = current?.clauses ?? [];
   // 서버 정규화 이미지(#175) — 있으면 Skia로 그리고 좌표 정합이 보장(이미지·박스 동일 revision). 재열람도 복원.
   const normalized = current?.normalizedImage;
+  // 디코드 메모리 예산 안일 때만 Skia(초과 대형 이미지는 OOM 방어 → 폴백). trace 0067.
+  const skiaOk = !!normalized && withinDecodeBudget(normalized.width, normalized.height);
 
   const overlayEnabled =
     !!image &&
@@ -101,7 +104,7 @@ export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProp
   const goPrev = () => goToPage(Math.max(0, pageIndex - 1));
   const goNext = () => goToPage(Math.min(orderedPages.length - 1, pageIndex + 1));
 
-  const imageBlock = normalized ? (
+  const imageBlock = skiaOk && normalized ? (
     // 서버 정규화 이미지 + 색칠을 한 Skia 캔버스에(#176). 구역 탭 → 조항 선택. 재열람 경로도 동작.
     <View className="mx-4 mt-3 overflow-hidden rounded-2xl border border-border bg-surface-alt">
       <View
@@ -113,7 +116,9 @@ export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProp
         }
       >
         {viewSize.width > 0 ? (
+          // key=url → 페이지 전환마다 리마운트: 이전 url의 비동기 로드가 현재 박스와 섞이지 않음(세대 격리).
           <SkiaHighlightCanvas
+            key={normalized.url}
             url={normalized.url}
             clauses={clauses}
             image={{ width: normalized.width, height: normalized.height }}
