@@ -8,8 +8,16 @@ appId: com.chan.clauselens
     visible: "계약서, 찍기만 하세요"
     timeout: 15000
 - tapOn: "마이페이지"
+# 로그아웃은 화면 맨 아래 → 가운데로 스크롤해 끝단 탭이 스크롤로 먹히는 것 방지.
+- scrollUntilVisible:
+    element: "로그아웃"
+    direction: DOWN
+    centerElement: true
 - tapOn: "로그아웃"
-- assertVisible: "로그아웃 하시겠어요?"
+# 네이티브 Alert 반영 지연 대비 대기(브리틀 방지).
+- extendedWaitUntil:
+    visible: "로그아웃 하시겠어요?"
+    timeout: 5000
 # 취소 → 로그아웃되지 않고 마이페이지 유지
 - tapOn: "취소"
 - assertVisible: "자주 묻는 질문"

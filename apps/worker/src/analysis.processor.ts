@@ -1,5 +1,9 @@
-import { Injectable } from "@nestjs/common";
-import { coerceAnalysisErrorCode, type AnalysisErrorCode } from "@clause-lens/contracts";
+import { Injectable, Logger } from "@nestjs/common";
+import {
+  coerceAnalysisErrorCode,
+  normalizedImageKey,
+  type AnalysisErrorCode,
+} from "@clause-lens/contracts";
 import {
   confirmAnalysisResultTx,
   confirmPageAnalysisTx,
@@ -47,6 +51,7 @@ interface FailDecision {
 @Injectable()
 export class AnalysisProcessor {
   private readonly cfg: WorkerConfig = loadConfig();
+  private readonly logger = new Logger(AnalysisProcessor.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -126,6 +131,17 @@ export class AnalysisProcessor {
         maxPixels: this.cfg.imageMaxPixels,
         minPixels: this.cfg.imageMinPixels,
       });
+      // 정규화(upright) 이미지를 결과용으로 S3에 영속(#175) — 앱이 재열람 시 이 이미지를 그림(좌표 정합).
+      // best-effort: 실패해도 OCR·분석은 진행(이미지는 부가). 결정적 키라 재시도 시 덮어써도 무해.
+      try {
+        await this.storage.putObject(
+          normalizedImageKey(documentId, pa.pageId, revision),
+          validated.uprightBytes,
+          "image/jpeg",
+        );
+      } catch {
+        this.logger.warn(`normalized image persist failed (page ${pa.pageId} r${revision})`);
+      }
       const { blocks } = await this.ocr.recognize({
         imageBytes: validated.uprightBytes,
         imageWidth: validated.width,

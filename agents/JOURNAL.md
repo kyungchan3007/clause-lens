@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-10-08 · Claude · 결과 정규화(upright) 이미지 영속·제공 (#175)
+- **무엇**: worker가 OCR 입력으로만 쓰고 버리던 upright(EXIF 정규화) 이미지를 결과용 asset으로 S3에 영속하고, 분석 결과에 `normalizedImage{url,width,height,revision}`(presigned GET)로 제공. 결과 Skia 전환(#176)의 좌표 정합 기반.
+- **설계**: Codex 적대적 검토(2026-10-08) 반영. A안(서버 정규화본) 확정. **결정적 키**(`documents/{doc}/pages/{page}/r{rev}/normalized.jpg`)로 worker 쓰기·api presign이 동일 키 재구성 → **DB 마이그레이션 없음**(SDD §4 Q1 확정, 리스크↓).
+- **구현**: contracts `normalizedImageSchema`+`normalizedImageKey`+필드(08 계약) · worker `StoragePort.putObject`+S3 PutObjectCommand, processor가 validateImage 직후 uprightBytes를 best-effort put(재디코드 없음) · api `StoragePort.presignGet`+MinioAdapter, AnalysisService `attachNormalizedImages`(완료 페이지에 TTL 3600s presigned GET). 보관 만료(410)는 getAnalysis 선차단 → 만료 문서 URL 미발급.
+- **게이트**: `checks.sh` **ALL PASS**. 신규 테스트 — contracts(스키마·키), worker(putObject 호출·키), api(부착/미부착·presign 키).
+- **이번에 드러난 공백**: worker uprightBytes가 OCR 뒤 버려짐(핵심 공백) · isSizeConsistent(크기)만으론 EXIF/다른페이지 못 거름 → revision으로 묶음 · S3 물리 cleanup 잡 부재(#164).
+- **파일**: `packages/contracts/src/{analysis.ts,analysis.spec.ts}` · `apps/worker/src/{ports/storage.port.ts,adapters/s3-storage.adapter.ts,analysis.processor.ts,analysis.processor.spec.ts}` · `apps/api/src/{ports/storage.port.ts,adapters/minio-storage.adapter.ts,modules/analysis/{analysis.service.ts,analysis.module.ts,analysis.service.spec.ts}}` · spec 0066.
+- **다음/주의**: PR(머지·CI 직접). 물리 삭제는 #164(결정적 키 참조). EXIF 1~8 실측 fixture 후속. 머지 후 #176(앱 Skia)이 `normalizedImage.url` 소비. 실 백엔드 스모크(put→presign→앱 로드)는 로컬 기동 후.
+
 ## 2026-10-07 · Claude · 마이페이지·최근목록 시뮬 육안 검증 (#171·#173)
 - **무엇**: 두 리디자인의 마지막 Acceptance(시뮬 육안)를 실제 시뮬레이터에서 검증·기록. 화면 리디자인 세트 전 화면 시안 일치 입증 완료.
 - **방법**: 로컬 백엔드(postgres 5433·redis 6380·네이티브 MinIO·API·worker·Metro) 기동 + 카카오 로그인(사용자 직접). 기존 분석 3건(10/4, 7일 보관 내) 조회.

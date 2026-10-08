@@ -9,11 +9,20 @@ appId: com.chan.clauselens
     visible: "계약서, 찍기만 하세요"
     timeout: 15000
 - tapOn: "마이페이지"
-# 계정 > 로그아웃(메뉴 행)
+# 계정 > 로그아웃(메뉴 행) — 맨 아래라 가운데로 스크롤 후 탭(끝단 탭 스크롤먹힘 방지).
+- scrollUntilVisible:
+    element: "로그아웃"
+    direction: DOWN
+    centerElement: true
 - tapOn: "로그아웃"
-- assertVisible: "로그아웃 하시겠어요?"
-# 확인 다이얼로그의 "로그아웃" 버튼(다이얼로그가 최상단)
-- tapOn: "로그아웃"
+# 네이티브 Alert 반영 지연 대비 대기(브리틀 방지).
+- extendedWaitUntil:
+    visible: "로그아웃 하시겠어요?"
+    timeout: 5000
+# 확인 다이얼로그의 "로그아웃" 버튼 — 제목·뒤 ListRow와 글자가 겹쳐(세 곳) 텍스트 탭이 모호.
+# 네이티브 2버튼 Alert 우측 버튼 위치로 탭(취소=좌/로그아웃=우).
+- tapOn:
+    point: "69%,56%"
 # 로그인 화면 복귀
 - extendedWaitUntil:
     visible: "카카오로 시작하기"

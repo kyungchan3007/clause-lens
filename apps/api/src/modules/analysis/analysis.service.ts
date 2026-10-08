@@ -1,28 +1,79 @@
 import {
   Injectable,
+  Logger,
   type OnModuleDestroy,
   type OnModuleInit,
 } from "@nestjs/common";
-import type { AnalysisStatusResponse } from "@clause-lens/contracts";
+import {
+  normalizedImageKey,
+  type AnalysisStatusResponse,
+} from "@clause-lens/contracts";
 
 import { QueuePort } from "../../ports/queue.port";
+import { StoragePort } from "../../ports/storage.port";
 import { DocumentsService } from "../documents/documents.service";
 import { toStatusResponse } from "./analysis.mapper";
 
 // 접수 후 이 시간이 지나도 미전달(dispatchedAt null)이면 reconciler가 재전달.
 const DISPATCH_GRACE_MS = 30_000;
 const RECONCILE_INTERVAL_MS = 30_000;
+// 정규화 이미지 presigned GET 유효기간(#175). 결과 조회 즉시 로드 → 짧게.
+const NORMALIZED_IMAGE_TTL_S = 3600;
 
 // 분석 접수 조율 + 상태 조회 + 미전달 복구(좁은 reconciler).
 // 상태 소유·전이는 DocumentsService/packages-db가 담당. 여기선 큐 등록·복구만.
 @Injectable()
 export class AnalysisService implements OnModuleInit, OnModuleDestroy {
   private timer: ReturnType<typeof setInterval> | undefined;
+  private readonly logger = new Logger(AnalysisService.name);
 
   constructor(
     private readonly documents: DocumentsService,
     private readonly queue: QueuePort,
+    private readonly storage: StoragePort,
   ) {}
+
+  // 완료 페이지(정규화 치수 존재)에 서버 정규화 이미지 presigned GET URL을 붙인다(#175).
+  // 보관 만료(410)는 getAnalysis가 선차단하므로 여기 도달 = 접근 허용 상태.
+  private async attachNormalizedImages(
+    resp: AnalysisStatusResponse,
+  ): Promise<AnalysisStatusResponse> {
+    // documentId는 모든 페이지 키의 공통 세그먼트 → 유효하지 않으면 presign 전면 생략(잘못된 키 방지).
+    const documentId = resp.documentId;
+    if (typeof documentId !== "string" || documentId.length === 0) return resp;
+    const pages = await Promise.all(
+      resp.pages.map(async (p) => {
+        // 치수·revision은 계약상 양수(normalizedImage schema도 width/height/revision 양수), pageId는 비어있지 않아야 함.
+        // falsy(!x) 대신 명시적 양수/존재 검사 — 0·누락은 유효 이미지가 아니므로 의도적 제외(잘못된 키·계약 위반 방지).
+        const { imageWidth: w, imageHeight: h, pageId, revision } = p;
+        if (
+          typeof w !== "number" || w <= 0 ||
+          typeof h !== "number" || h <= 0 ||
+          !pageId ||
+          typeof revision !== "number" || revision <= 0
+        ) {
+          return p;
+        }
+        try {
+          const url = await this.storage.presignGet(
+            normalizedImageKey(documentId, pageId, revision),
+            NORMALIZED_IMAGE_TTL_S,
+          );
+          return {
+            ...p,
+            normalizedImage: { url, width: w, height: h, revision },
+          };
+        } catch {
+          // presign 실패(S3 일시 장애·구성 오류)는 해당 페이지만 이미지 미부착 — 결과 조회 자체는 유지(500 방지).
+          this.logger.warn(
+            `normalized image presign failed (doc ${documentId} page ${pageId})`,
+          );
+          return p;
+        }
+      }),
+    );
+    return { ...resp, pages };
+  }
 
   // 분석 요청(멱등): 접수(같은 문서=같은 job) → 미전달이면 enqueue+전달기록.
   async analyze(
@@ -34,7 +85,7 @@ export class AnalysisService implements OnModuleInit, OnModuleDestroy {
       await this.queue.enqueueAnalysis(job.id); // 큐 job id=job.id → 중복 add 멱등
       await this.documents.markDispatched(job.id);
     }
-    return toStatusResponse(job);
+    return this.attachNormalizedImages(toStatusResponse(job));
   }
 
   // 진실의 기준(재진입·재연결 fallback).
@@ -43,7 +94,7 @@ export class AnalysisService implements OnModuleInit, OnModuleDestroy {
     documentId: string,
   ): Promise<AnalysisStatusResponse> {
     const job = await this.documents.getAnalysis(userId, documentId);
-    return toStatusResponse(job);
+    return this.attachNormalizedImages(toStatusResponse(job));
   }
 
   // enqueue 누락 복구: DB 커밋됐지만 큐에 못 올라간 활성 job을 재전달.

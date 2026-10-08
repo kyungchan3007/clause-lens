@@ -27,4 +27,6 @@ export abstract class StoragePort {
   abstract copy(params: CopyParams): Promise<void>;
   abstract getHeadBytes(key: string, length: number): Promise<Uint8Array>;
   abstract delete(key: string): Promise<void>;
+  // 정규화 결과 이미지 조회용 단기 presigned GET(#175).
+  abstract presignGet(key: string, expiresInSeconds: number): Promise<string>;
 }
