@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   type OnModuleDestroy,
   type OnModuleInit,
 } from "@nestjs/common";
@@ -24,6 +25,7 @@ const NORMALIZED_IMAGE_TTL_S = 3600;
 @Injectable()
 export class AnalysisService implements OnModuleInit, OnModuleDestroy {
   private timer: ReturnType<typeof setInterval> | undefined;
+  private readonly logger = new Logger(AnalysisService.name);
 
   constructor(
     private readonly documents: DocumentsService,
@@ -38,20 +40,29 @@ export class AnalysisService implements OnModuleInit, OnModuleDestroy {
   ): Promise<AnalysisStatusResponse> {
     const pages = await Promise.all(
       resp.pages.map(async (p) => {
-        if (!p.imageWidth || !p.imageHeight) return p;
-        const url = await this.storage.presignGet(
-          normalizedImageKey(resp.documentId, p.pageId, p.revision),
-          NORMALIZED_IMAGE_TTL_S,
-        );
-        return {
-          ...p,
-          normalizedImage: {
-            url,
-            width: p.imageWidth,
-            height: p.imageHeight,
-            revision: p.revision,
-          },
-        };
+        // 치수 + 식별자(pageId·revision)가 모두 유효할 때만 — 잘못된 키('undefined')로 presign 방지.
+        if (!p.imageWidth || !p.imageHeight || !p.pageId || !p.revision) return p;
+        try {
+          const url = await this.storage.presignGet(
+            normalizedImageKey(resp.documentId, p.pageId, p.revision),
+            NORMALIZED_IMAGE_TTL_S,
+          );
+          return {
+            ...p,
+            normalizedImage: {
+              url,
+              width: p.imageWidth,
+              height: p.imageHeight,
+              revision: p.revision,
+            },
+          };
+        } catch {
+          // presign 실패(S3 일시 장애·구성 오류)는 해당 페이지만 이미지 미부착 — 결과 조회 자체는 유지(500 방지).
+          this.logger.warn(
+            `normalized image presign failed (doc ${resp.documentId} page ${p.pageId})`,
+          );
+          return p;
+        }
       }),
     );
     return { ...resp, pages };
