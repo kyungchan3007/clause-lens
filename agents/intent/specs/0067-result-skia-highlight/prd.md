@@ -1,0 +1,42 @@
+# PRD — 결과 화면 Skia 하이라이트 전환 + 구역 탭
+
+- **이슈:** #176
+- **상태**: draft
+- **작성**: Claude · **날짜**: 2026-10-08
+- **의존**: #175(결과 정규화 이미지 공급) 선행 · **번복 근거**: 0022(§⑤ SVG 확정)
+
+## 1. 문제 (Problem)
+- 결과 하이라이트가 RN `<Image>` + react-native-svg 오버레이(0022). 사진 위 박스는 탭을 못 받고(목록 탭으로만 선택), 확대·고화질 여지가 없다.
+- 사용자가 **Skia 전환**을 원함(화질·향후 핀치줌) + **사진 구역을 직접 탭**해 조항 선택.
+
+## 2. 목표 (Goals)
+- G1. `<Image>`+SVG → **Skia Canvas**: #175가 준 정규화 이미지를 `useImage`로 그리고 위험 구역을 **색칠 Rect**(채움+테두리·선택 강조)로.
+- G2. 사진 **색칠 구역 탭 → 해당 조항 선택·강조**(제스처 히트테스트). **목록↔캔버스 선택 동기화**.
+- G3. **조항 설명 구간(DragSheet/ClauseList)·좌표 변환·상태 분리는 불변**(표현 레이어만 교체).
+
+## 3. 목표가 아닌 것 (Non-goals)
+- N1. 핀치줌(후속 별도) · N2. 원본 다운로드·역방향 재분석 · N3. 백엔드 이미지 공급(#175).
+
+## 4. 사용자 흐름 (User Flow)
+1. 결과 진입 → Skia 캔버스에 정규화 이미지 + 위험 구역 색칠.
+2. 사진 구역 탭 → 해당 조항 선택·강조(캔버스+목록 동시). 목록 탭 → 캔버스 강조 이동(기존 동기화).
+3. 페이지 전환 → 이전 이미지·박스가 **섞이지 않음**(세대 격리). 리비전 불일치 시 표시 중단·목록 유지.
+
+## 5. 성공 지표 (Success Metrics)
+- 시뮬 육안: 색칠이 정확히 조항 위, 구역 탭 동작, 페이지 전환 시 stale 혼합 0, 메모리 안정. checks.sh PASS.
+
+## 6. 제약 (Constraints)
+- Expo v57, Skia 2.6.2(이미 deps). 서버 진실·표현만. 색/간격 토큰. 터치 44pt·a11y.
+- 좌표 변환 1회(PixelRatio 추가 금지). web은 CanvasKit 선import 차단.
+- `gestureEnabled`·DragSheet 제스처와 충돌 금지.
+
+## Acceptance
+- [x] Skia Canvas로 정규화 이미지 + 색칠 Rect 렌더(`SkiaHighlightCanvas`, 기존 Image+SVG는 정규화 없는 구버전 하위호환으로 보존). 0067 trace에 SVG→Skia 근거.
+- [x] 사진 구역 탭 → 조항 선택·강조(`Gesture.Tap`→hitTest→`onClauseTap`), 목록↔캔버스 선택 동기화(기존 selectedClauseId 재사용).
+- [x] stale 혼합 방지: skImage 로드 전 이미지·박스 미그림 + revision identity는 `current`에서 이미지·박스 동일 revision으로 구조적 보장.
+- [x] 좌표 역변환·겹침 우선순위(면적 작은 것)·44pt **순수함수 단위 5건** + `bash agents/harness/evals/checks.sh` **ALL PASS**(mobile 292).
+- [x] 시뮬 육안(2026-10-08): Skia 캔버스가 서버 정규화 이미지 + 색칠 박스 렌더(제2·3조 중립·제4조 red), **red 제4조 구역 탭 → 해당 조항 강조(박스 굵게·채움 진하게) + 목록 카드 파란 선택 테두리(캔버스↔목록 동기화)**, 좌표 정합 정상. 실제 Vision+Claude 분석.
+
+## 7. 미해결 질문 (Open Questions)
+- Q1. Skia 미지원/로드 실패·web fallback 시 SVG로 그레이스풀 폴백할지 — SDD 확정.
+- Q2. 겹친 박스 탭 우선순위(최소 면적 우선 vs 최상단 z) — SDD 확정.
