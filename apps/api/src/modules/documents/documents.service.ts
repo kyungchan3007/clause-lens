@@ -6,11 +6,19 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import {
+  ANALYSIS_INCOMPLETE_CODE,
   MAX_PENDING_DOCUMENTS_PER_USER,
+  RETENTION_EXPIRED_CODE,
+  SUBSCRIPTION_REQUIRED_CODE,
   type DocumentListResponse,
   type PresignPageInput,
+  type SaveDocumentResponse,
 } from "@clause-lens/contracts";
-import { isRetentionActive, isUniqueViolation } from "@clause-lens/db/analysis";
+import {
+  documentVisible,
+  isRetentionActive,
+  isUniqueViolation,
+} from "@clause-lens/db/analysis";
 
 import {
   decodeCursor,
@@ -148,12 +156,56 @@ export class DocumentsService {
   ): Promise<AnalysisJobWithPages> {
     const doc = await this.repo.findOwnedSession(userId, documentId);
     if (!doc) throw new NotFoundException("문서를 찾을 수 없습니다.");
-    if (!isRetentionActive(doc.retainUntil)) {
+    // 보관 가시성 공유 판정(#163): SAVED는 retainUntil 경과해도 통과, TEMPORARY 만료는 410.
+    // (소유자 확인을 가시성보다 먼저 — 비소유자가 상태를 구분하지 못하게.)
+    if (!documentVisible(doc)) {
       throw new GoneException("보관 기간이 지나 다시 볼 수 없습니다.");
     }
     const job = await this.repo.findLatestAnalysis(documentId);
     if (!job) throw new NotFoundException("분석 요청이 없습니다.");
     return job;
+  }
+
+  // 분석 결과 장기 보관 전환(저장하기, #163 / TASK-006 ②). 멱등.
+  // 결정표(bare rowcount로 분기 금지 — 존재 누출 방지):
+  //   미소유 404 → 이미 SAVED 200(멱등) → 미구독 403 → CAS 1행 200 → 0행이면 재조회로 분기.
+  // CAS(saveDocumentCas)가 전환의 단일 권위. pre-load/재조회는 에러코드 산출용.
+  async saveDocument(
+    userId: string,
+    documentId: string,
+  ): Promise<SaveDocumentResponse> {
+    const now = new Date();
+    const doc = await this.repo.findOwnedSession(userId, documentId);
+    if (!doc) throw new NotFoundException("문서를 찾을 수 없습니다.");
+    // 이미 저장됨 → 멱등 성공(SAVED는 영속 권리 — 구독 재확인 없이).
+    if (doc.retentionState === "SAVED") {
+      return { documentId: doc.id, retentionState: "SAVED", savedAt: (doc.savedAt ?? now).toISOString() };
+    }
+    // 보관 권한(미구독 403). 만료/미완료보다 먼저 — 권한이 1차 게이트.
+    const canSave = await this.repo.userCanSave(userId, now);
+    if (!canSave) {
+      throw new ForbiddenException({ code: SUBSCRIPTION_REQUIRED_CODE, message: "저장은 구독이 필요한 기능입니다." });
+    }
+    // 원자적 전환(단일 권위). pre-load 이후 만료/경쟁은 0행으로 포착.
+    const updated = await this.repo.saveDocumentCas(userId, documentId);
+    if (updated === 1) {
+      return { documentId, retentionState: "SAVED", savedAt: new Date().toISOString() };
+    }
+    // 0행 → 재조회로 사유 분기.
+    const after = await this.repo.findOwnedSession(userId, documentId);
+    if (!after) throw new NotFoundException("문서를 찾을 수 없습니다.");
+    if (after.retentionState === "SAVED") {
+      // 동시 더블탭 경쟁의 패자 → 멱등 성공.
+      return { documentId: after.id, retentionState: "SAVED", savedAt: (after.savedAt ?? now).toISOString() };
+    }
+    if (after.status !== "done" && after.status !== "partial") {
+      throw new ConflictException({ code: ANALYSIS_INCOMPLETE_CODE, message: "완료된 분석만 저장할 수 있습니다." });
+    }
+    if (!isRetentionActive(after.retainUntil, now)) {
+      throw new GoneException({ code: RETENTION_EXPIRED_CODE, message: "보관 기간이 지나 저장할 수 없습니다." });
+    }
+    // 전이 가능해 보이는데 CAS 0행(시계 skew 경쟁) → 재시도 유도.
+    throw new ConflictException("저장을 완료하지 못했습니다. 다시 시도해 주세요.");
   }
 
   // 재열람 가능한 최근 분석 문서 목록(#96 / 0030). 소유자·done|partial·retainUntil>now.

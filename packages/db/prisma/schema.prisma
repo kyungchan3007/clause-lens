@@ -69,6 +69,12 @@ enum PageStatus {
   // 실패는 영속 상태가 아니라 complete 응답의 error/retryable로 표현
 }
 
+// 보관 수명(analysis status와 직교한 축, #163). DELETING·취소는 #164가 추가.
+enum RetentionState {
+  TEMPORARY // 무료 — retainUntil(완료+7일)로 접근 판정
+  SAVED // 구독 저장 — 장기 보관(retainUntil 경과해도 유지)
+}
+
 // 계약 세션 — 사용자가 분석하려는 페이지 묶음.
 model Document {
   id              String         @id @default(cuid())
@@ -78,6 +84,8 @@ model Document {
   expiresAt       DateTime       @db.Timestamptz(3) // 세션 만료(정리 기준). URL TTL과 분리
   completedAt     DateTime?      @db.Timestamptz(3) // terminal(done|partial) 최초 확정 시각. 1회 설정(연장 없음)
   retainUntil     DateTime?      @db.Timestamptz(3) // 재열람 보관 기한(completedAt+7일). 세션 TTL(expiresAt)과 분리 — 재열람 접근은 이 값으로 판정
+  retentionState  RetentionState @default(TEMPORARY) // 보관 수명(#163). SAVED는 retainUntil 경과해도 노출
+  savedAt         DateTime?      @db.Timestamptz(3) // SAVED 전환 시각(감사용 — 가시성은 여기서 파생하지 않음)
   createdAt       DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime       @updatedAt @db.Timestamptz(3)
 

@@ -177,6 +177,13 @@ maestro test apps/mobile/.maestro/profile.yaml   # 개별
 - **Edge(계정 전환)** 로그아웃/다른 계정 로그인 시 이전 사용자 목록이 노출되지 않는다
 - **Note** 진입 버튼→목록(기록 있음)·온보딩(0건)은 recent.yaml이 조건 분기로 자동. **문서 행 탭 재열람·410·계정 전환은 백엔드 seeding 필요 → 반자동/실측(별도)**. 보관 설정·목록 집계·커서·접근 차단은 db 통합(`packages/db/test/recall.integration.mjs`)·api 단위(`documents*.spec.ts`), 앱 store 격리·배지·410 제거는 단위(`documents/*.test.ts`)로 커버
 
+## S23. 분석 결과 장기 보관 전환 — 저장하기 (documents) — 단위 커버(#163, TASK-006 ②)
+- **Given** 구독 사용자 · 완료(done|partial)·미만료 결과 화면
+- **When** "저장하기" 탭
+- **Then** 서버가 TEMPORARY→SAVED 전환(멱등) → 목록 재조회로 반영 · 보관 기간(7일)이 지나도 재열람 유지
+- **Edge** 미구독 403("구독이 필요해요") · 만료 410("보관 기간이 지났어요") · 미완료 409 · 미로그인 로그인 안내
+- **Note** 저장 버튼은 **기능 플래그 `SAVE_DOCUMENT_ENABLED` OFF**(실삭제 #164·결제 #165 랜딩 전까지 비노출) → **maestro 자동화 미대상**. 보관 판정·저장 결정표는 api 단위(`retention-visibility.spec.ts`·`documents.service.save.spec.ts`), 앱 저장 경로는 단위(`useSaveDocument.test.ts`·`documentsApi.test.ts`), SAVED 가시성 parity는 db 통합(`recall.integration.mjs`)으로 커버. 플래그 ON 시(= #164/#165) 이 시나리오를 반자동/실측으로 승격.
+
 ---
 
 ## 백엔드 계약 검증(단위/통합에서 커버)

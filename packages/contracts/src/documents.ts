@@ -12,11 +12,17 @@ export const riskCountsSchema = z.object({
 });
 export type RiskCounts = z.infer<typeof riskCountsSchema>;
 
+// 보관 수명(#163) — TEMPORARY(무료 7일)·SAVED(구독 장기 보관). DELETING·취소는 #164.
+export const retentionStateSchema = z.enum(["TEMPORARY", "SAVED"]);
+export type RetentionStateDto = z.infer<typeof retentionStateSchema>;
+
 export const documentListItemSchema = z.object({
   documentId: z.string(),
   completedAt: z.string().datetime(), // 분석 완료(재열람 가능) 시각 ISO
   retainUntil: z.string().datetime(), // 재열람 보관 기한 ISO(이후 접근 차단). 앱은 "N일 후 삭제" 표시에 사용
   status: z.enum(["done", "partial"]), // partial = 일부 페이지만 분석 완료
+  retentionState: retentionStateSchema, // SAVED면 "저장됨"(보관 기한 무관 유지), TEMPORARY만 "N일 후 삭제"
+  savedAt: z.string().datetime().nullable(), // SAVED 전환 시각(감사용), TEMPORARY면 null
   totalPageCount: z.number().int().nonnegative(),
   analyzedPageCount: z.number().int().nonnegative(), // partial 구분(일부 분석 완료)
   risk: riskCountsSchema,
@@ -36,3 +42,17 @@ export const DOCUMENTS_PAGE_SIZE_MAX = 50;
 
 // 보관 기간이 지나 재열람이 차단될 때의 상태 코드(앱이 "보관 기간이 지났어요"로 분기).
 export const RETENTION_EXPIRED_CODE = "retention_expired" as const;
+
+// ── 저장하기(장기 보관 전환, #163) ──
+
+// POST /me/documents/:id/save 성공 응답(멱등). 앱은 이후 목록을 재조회한다.
+export const saveDocumentResponseSchema = z.object({
+  documentId: z.string(),
+  retentionState: z.literal("SAVED"),
+  savedAt: z.string().datetime(),
+});
+export type SaveDocumentResponse = z.infer<typeof saveDocumentResponseSchema>;
+
+// 저장 거부 바디 코드(앱 분기). 403=구독 필요, 410=만료, 409=미완료.
+export const SUBSCRIPTION_REQUIRED_CODE = "subscription_required" as const;
+export const ANALYSIS_INCOMPLETE_CODE = "analysis_incomplete" as const;

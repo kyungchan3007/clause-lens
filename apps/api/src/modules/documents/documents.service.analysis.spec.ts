@@ -19,6 +19,8 @@ function makeDoc(over: Partial<DocumentWithPages> = {}): DocumentWithPages {
     clientRequestId: "req1",
     status: "uploaded",
     expiresAt: new Date(Date.now() + 3600_000),
+    retentionState: "TEMPORARY",
+    savedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     pages: [
