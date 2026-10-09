@@ -14,6 +14,18 @@
 
 ---
 
+## 2026-10-09 · Claude · PR 머지 시 이슈 체크박스 자동 동기화 (#183, 0072)
+- **무엇**: 머지 후 사람 개입 0으로 이슈 완료 조건을 spec Acceptance 상태로 미러(A) + PR 시점 spec 준비성 검사(B'). #153 2단계.
+- **설계**: 적대적 토론 → A+B' 확정(사용자). Action은 거울(상태만)·머지 후 검증 항목은 REASON_MARK 사유 있는 미체크로 역설 해소·이슈는 head 브랜치+closingIssuesReferences로·B'는 사유 없는 미체크만 실패·#116은 TASKS 비의존.
+- **구현**: issue-sync 순수 코어 `syncIssueFromSpec`(--issue N) 분리 · records `inspectSpecReadiness` · `.github/scripts/{lib/github.mjs,issue-sync-merged.mjs,pr-check-spec.mjs}` · `pr-issue-sync.yml`(pull_request_target·merge_commit_sha만 체크아웃) · pr-ai-review.yml B' 스텝. 테스트 30건.
+- **게이트**: `checks.sh` ALL PASS.
+- **#169 정정**(사용자 확인): `--issue 169`로 0063 기준 8/8 미러(이슈 0/8이었음) — 새 경로 첫 동작 확인.
+- **이번에 드러난 공백**: 기존 done 게이트는 doneSpecIds(TASKS 행) 기반이라 0040류 미방문 → PR별 inspectSpecReadiness로 닫음. Action live는 로컬 미검증(실제 머지 시 확인).
+- **파일**: `.github/{scripts/*,workflows/*}`·`agents/harness/{evals/issue-sync.mjs,lib/records.mjs,loop.md,branch-and-issue.md}` · spec 0072.
+- **다음/주의**: PR(머지 직접). 보안: pull_request_target는 base/merge-sha만 체크아웃·fork 코드 실행 금지. 재측정은 별도.
+
+---
+
 ## 2026-10-09 · Claude · 애매한 요청 대책: 질문 먼저 + "애매한 곳·가정" 칸 (#182, 0071)
 - **무엇**: 요청 애매하면 구현 전 질문 규칙(loop.md·AGENTS.md) + prd 7번 칸 "애매한 곳·가정" 필수화 + `checkFolderPrd` 검사(도입 0071 이후).
 - **구현**: 템플릿 7번 칸 이름·안내 줄(`(`로 시작→빈 칸 취급). records.mjs `ASSUMPTION_REQUIRED_FROM`·`assumptionSection`·`checkAssumptions`(안내 줄 무시·줄 끝 괄호 표시 요구·"없음" 단독). 테스트 11케이스.

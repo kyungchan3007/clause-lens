@@ -46,3 +46,11 @@ jobs:
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5-mini' }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: node .github/scripts/pr-ai-review.mjs
+
+      # B'(#183): spec 준비성 — 사유 없는 미체크(#116/#169 신호)면 실패. 사유 있는 미체크는 통과.
+      - name: Check spec readiness (issue checkboxes)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: node .github/scripts/pr-check-spec.mjs
