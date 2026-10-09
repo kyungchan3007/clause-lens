@@ -22,6 +22,7 @@
 - **이번에 드러난 공백**: DELETING은 #163 documentVisible default-deny로 상세/저장 자동 안전하나 **목록 쿼리는 미경유** → 명시 제외 추가(리뷰 C4). S3 end-to-end는 실 Postgres+MinIO 필요(Docker off) → 백엔드 기동 시 migrate deploy + 통합/ dry-run.
 - **파일**: `packages/db/{prisma/schema.prisma,prisma/migrations/20261009010000_add_retention_delete,src/retention-ops.ts,src/documents-ops.ts,test/recall.integration.mjs}` · `apps/api/src/{modules/retention/*,scripts/retention-sweep.ts,app.module.ts}` · spec 0069.
 - **다음/주의**: PR(머지·CI 직접, feat/163 위 스택 — #163 먼저 머지). 운영은 **dry-run 먼저** 확인 후 --execute. 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165)·크론 등록.
+- **e2e(2026-10-09, 실 Postgres+MinIO)**: #163 저장 엔드포인트(403→200→멱등→목록 SAVED→만료 게이트 통과) + #164 스윕(dry-run→execute, 후보 행·S3 3키 삭제·대조군 유지·DeletionAudit). **실버그 포착·수정**: Prisma가 number를 bigint 바인딩 → `make_interval(days => bigint)` 42883 에러 → `::int` 캐스트(3곳). 단위는 모킹이라 미포착 → e2e 가치 입증. 수정 후 checks.sh ALL PASS.
 
 ---
 

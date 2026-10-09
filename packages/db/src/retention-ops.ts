@@ -47,7 +47,7 @@ export async function countHardDeleteCandidates(
     FROM "Document"
     WHERE "retentionState" = 'TEMPORARY'
       AND "retainUntil" IS NOT NULL
-      AND "retainUntil" + make_interval(days => ${lagDays}) <= now()
+      AND "retainUntil" + make_interval(days => ${lagDays}::int) <= now()
   `;
   return Number(rows[0]?.cnt ?? 0n);
 }
@@ -63,7 +63,7 @@ export async function findHardDeleteCandidates(
     FROM "Document"
     WHERE "retentionState" = 'TEMPORARY'
       AND "retainUntil" IS NOT NULL
-      AND "retainUntil" + make_interval(days => ${lagDays}) <= now()
+      AND "retainUntil" + make_interval(days => ${lagDays}::int) <= now()
     ORDER BY "retainUntil" ASC
     LIMIT ${limit}
   `;
@@ -82,7 +82,7 @@ export async function transitionToDeleting(
     WHERE "id" = ${documentId}
       AND "retentionState" = 'TEMPORARY'
       AND "retainUntil" IS NOT NULL
-      AND "retainUntil" + make_interval(days => ${lagDays}) <= now()
+      AND "retainUntil" + make_interval(days => ${lagDays}::int) <= now()
   `;
   return updated === 1;
 }

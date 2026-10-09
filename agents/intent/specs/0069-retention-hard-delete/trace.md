@@ -32,5 +32,12 @@
 - **통합(gate 밖)**: recall.integration.mjs에 후보/안전지연/DELETING CAS 멱등/목록제외/감사/행삭제 섹션. Docker off로 live 미실행 → 백엔드 기동 시 migrate deploy와 함께.
 - **게이트**: `bash agents/harness/evals/checks.sh` **✅ ALL PASS**.
 
+### e2e (2026-10-09, 실 Postgres + MinIO)
+- 마이그레이션 `20261009010000`(ALTER TYPE ADD VALUE 'DELETING' + DeletionAudit) 실 DB 적용 성공.
+- 시드: 만료 TEMPORARY 후보 1(S3 객체 3: finalKey·normalized·tmp) + 대조군 2(LAG 유예 중 TEMPORARY·SAVED 만료).
+- dry-run: 후보 1건·keys=3·쓰기 없음(대조군 제외 확인). execute: 삭제 1·실패 0·skip 0.
+- 검증: 후보 Document 행+페이지 cascade 삭제·대조군 유지·S3 3개 삭제·DeletionAudit 1건(free_expired, keys=3).
+- **e2e가 실버그 포착**: Prisma가 JS number를 bigint로 바인딩 → `make_interval(days => bigint)` 함수 없음(42883). `make_interval(days => ${lag}::int)` 캐스트로 수정(count·find·transition 3곳). 단위는 db 함수 모킹이라 미포착 → e2e 필수성 입증. 수정 후 checks.sh ALL PASS.
+
 ### 남음
-- 커밋(3섹션)·푸시·PR(#164, feat/163 위 스택). 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165 lapsedAt)·크론 등록(운영).
+- 커밋(SQL 캐스트 수정)·푸시(PR #180 갱신). 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165 lapsedAt)·크론 등록(운영).
