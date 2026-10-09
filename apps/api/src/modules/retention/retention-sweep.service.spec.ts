@@ -110,4 +110,46 @@ describe("RetentionSweepService.execute (#164)", () => {
     expect(mAudit).toHaveBeenCalledTimes(1); // 삭제 전 기록은 남음
     expect(mDelRow).not.toHaveBeenCalled(); // 행 삭제 안 함
   });
+
+  it("S3 삭제가 NotFound를 throw해도 멱등 성공 → 행 삭제됨(설계 계약)", async () => {
+    mCount.mockResolvedValue(1);
+    mFind.mockResolvedValue([{ documentId: "d1", userId: "u1" }]);
+    mFlip.mockResolvedValue(true);
+    mKeys.mockResolvedValue(keysData());
+    const del = jest.fn().mockRejectedValue(Object.assign(new Error("not found"), { name: "NotFound" }));
+    const svc = makeSvc({ delete: del });
+
+    const r = await svc.execute(10, 500);
+    expect(r.deleted).toBe(1); // NotFound는 성공 취급
+    expect(r.failed).toBe(0);
+    expect(mDelRow).toHaveBeenCalledWith(expect.anything(), "d1");
+  });
+
+  it("kill-switch(RETENTION_SWEEP_DISABLED) → execute 즉시 거부(후보 미조회·삭제 0)", async () => {
+    const prev = process.env.RETENTION_SWEEP_DISABLED;
+    process.env.RETENTION_SWEEP_DISABLED = "1";
+    try {
+      const svc = makeSvc({ delete: jest.fn() });
+      const r = await svc.execute(10, 500);
+      expect(r.aborted?.reason).toBe("kill_switch_disabled");
+      expect(r.deleted).toBe(0);
+      expect(mCount).not.toHaveBeenCalled();
+      expect(mFind).not.toHaveBeenCalled();
+    } finally {
+      if (prev === undefined) delete process.env.RETENTION_SWEEP_DISABLED;
+      else process.env.RETENTION_SWEEP_DISABLED = prev;
+    }
+  });
+});
+
+describe("isNotFoundError (#164)", () => {
+  it("name/Code/HTTP 404 계열은 true, 그 외는 false", () => {
+    const { isNotFoundError } = require("./retention-sweep.service");
+    expect(isNotFoundError({ name: "NotFound" })).toBe(true);
+    expect(isNotFoundError({ name: "NoSuchKey" })).toBe(true);
+    expect(isNotFoundError({ Code: "NoSuchKey" })).toBe(true);
+    expect(isNotFoundError({ $metadata: { httpStatusCode: 404 } })).toBe(true);
+    expect(isNotFoundError(new Error("timeout"))).toBe(false);
+    expect(isNotFoundError({ $metadata: { httpStatusCode: 500 } })).toBe(false);
+  });
 });

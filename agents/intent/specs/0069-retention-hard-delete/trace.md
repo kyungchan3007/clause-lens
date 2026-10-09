@@ -39,5 +39,10 @@
 - 검증: 후보 Document 행+페이지 cascade 삭제·대조군 유지·S3 3개 삭제·DeletionAudit 1건(free_expired, keys=3).
 - **e2e가 실버그 포착**: Prisma가 JS number를 bigint로 바인딩 → `make_interval(days => bigint)` 함수 없음(42883). `make_interval(days => ${lag}::int)` 캐스트로 수정(count·find·transition 3곳). 단위는 db 함수 모킹이라 미포착 → e2e 필수성 입증. 수정 후 checks.sh ALL PASS.
 
+### PR #180 리뷰 P1 반영 (2026-10-09)
+- **P1-1 NotFound 성공 처리**: `deleteKeys`가 어댑터의 NotFound throw도 멱등 성공으로 취급(`isNotFoundError` — name/Code/HTTP 404). transient만 행 삭제 보류. 단위 2건 추가.
+- **P1-2 standalone-only 강제**: AppModule에서 RetentionModule 제거 → 앱 런타임/엔드포인트/스케줄러에서 스윕 서비스 주입·호출 불가. 스크립트는 신규 `RetentionCliModule`(ConfigModule+DbModule+RetentionModule) 부트스트랩. 추가 방어선으로 `execute()` 시작에 kill-switch(`RETENTION_SWEEP_DISABLED`) 가드. 단위 2건 추가.
+- checks.sh ALL PASS(api retention 35건).
+
 ### 남음
-- 커밋(SQL 캐스트 수정)·푸시(PR #180 갱신). 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165 lapsedAt)·크론 등록(운영).
+- 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165 lapsedAt)·크론 등록(운영).

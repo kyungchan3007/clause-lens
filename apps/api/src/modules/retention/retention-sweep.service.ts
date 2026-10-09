@@ -73,6 +73,20 @@ export class RetentionSweepService {
     limit = RETENTION_SWEEP_DEFAULT_LIMIT,
     maxCandidates = RETENTION_SWEEP_DEFAULT_MAX_CANDIDATES,
   ): Promise<ExecuteReport> {
+    // kill-switch(방어선): 환경변수로 하드 비활성화. 어떤 경로로 execute가 불려도 즉시 거부.
+    const disabled = process.env.RETENTION_SWEEP_DISABLED;
+    if (disabled === "1" || disabled === "true") {
+      this.logger.warn("[execute] RETENTION_SWEEP_DISABLED 설정됨 — 실행 거부(kill-switch).");
+      return {
+        mode: "execute",
+        totalCandidates: 0,
+        deleted: 0,
+        failed: 0,
+        skipped: 0,
+        aborted: { reason: "kill_switch_disabled", totalCandidates: 0, cap: maxCandidates },
+      };
+    }
+
     const totalCandidates = await countHardDeleteCandidates(this.prisma);
     if (totalCandidates > maxCandidates) {
       this.logger.error(
@@ -132,13 +146,15 @@ export class RetentionSweepService {
     return { mode: "execute", totalCandidates, deleted, failed, skipped };
   }
 
-  // 키 전부 삭제 시도. DeleteObject는 없는 객체도 성공(throw X). throw는 transient → false(행 삭제 중단).
+  // 키 전부 삭제 시도. 멱등 계약: 없는 객체(NotFound)는 성공 처리, 그 외(transient 5xx/timeout)만 false(행 삭제 중단).
+  // DeleteObject는 보통 없는 객체에도 throw하지 않지만, 어댑터가 NotFound를 던져도 설계대로 성공 취급.
   private async deleteKeys(keys: string[], documentId: string): Promise<boolean> {
     let ok = true;
     for (const key of keys) {
       try {
         await this.storage.delete(key);
       } catch (e) {
+        if (isNotFoundError(e)) continue; // 없는 객체 = 성공(멱등)
         ok = false;
         this.logger.warn(
           `[execute] S3 삭제 실패(doc ${documentId}) — 행 삭제 보류: ${(e as Error).message}`,
@@ -147,4 +163,16 @@ export class RetentionSweepService {
     }
     return ok;
   }
+}
+
+// S3/스토리지 NotFound 계열 판별(SDK v3 name/Code/HTTP 404). NotFound만 멱등 성공으로 취급.
+export function isNotFoundError(e: unknown): boolean {
+  const err = e as { name?: string; Code?: string; code?: string; $metadata?: { httpStatusCode?: number } };
+  return (
+    err?.name === "NotFound" ||
+    err?.name === "NoSuchKey" ||
+    err?.Code === "NoSuchKey" ||
+    err?.code === "NoSuchKey" ||
+    err?.$metadata?.httpStatusCode === 404
+  );
 }

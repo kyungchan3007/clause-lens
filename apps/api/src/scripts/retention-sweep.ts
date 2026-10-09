@@ -1,7 +1,7 @@
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 
-import { AppModule } from "../app.module";
+import { RetentionCliModule } from "../modules/retention/retention-cli.module";
 import {
   RETENTION_SWEEP_DEFAULT_LIMIT,
   RETENTION_SWEEP_DEFAULT_MAX_CANDIDATES,
@@ -36,7 +36,7 @@ async function main(): Promise<void> {
   const limit = intArg(args, "--limit", RETENTION_SWEEP_DEFAULT_LIMIT);
   const cap = intArg(args, "--max", RETENTION_SWEEP_DEFAULT_MAX_CANDIDATES);
 
-  const app = await NestFactory.createApplicationContext(AppModule, {
+  const app = await NestFactory.createApplicationContext(RetentionCliModule, {
     logger: ["error", "warn", "log"],
   });
   try {
