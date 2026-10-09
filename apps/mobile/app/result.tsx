@@ -1,11 +1,36 @@
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "@clause-lens/ui";
 
-import { useDocumentReview } from "../src/features/documents";
-import { ResultScreen } from "../src/features/result";
+import { useDocumentReview, useSaveDocument, type SaveOutcome } from "../src/features/documents";
+import { ResultScreen, type ResultScreenProps } from "../src/features/result";
+import { SAVE_DOCUMENT_ENABLED } from "../src/shared/config/featureFlags";
 import { useResultSource } from "../src/widgets/result-source";
+
+// 저장하기(#163) 배선 — 결과 feature는 표현만, 저장 호출·목록 반영·피드백은 app 레이어.
+// 기능 플래그 OFF면 onSave 미주입 → 버튼 미노출(운영 노출 제한). 서버 권한이 실제 경계.
+const SAVE_FEEDBACK: Record<SaveOutcome, { title: string; message: string }> = {
+  saved: { title: "저장했어요", message: "이제 보관 기간이 지나도 다시 볼 수 있어요." },
+  subscription: { title: "구독이 필요해요", message: "장기 보관은 구독 후 이용할 수 있어요." },
+  expired: { title: "보관 기간이 지났어요", message: "만료된 결과는 저장할 수 없어요." },
+  conflict: { title: "저장할 수 없어요", message: "완료된 분석만 저장할 수 있어요." },
+  error: { title: "저장에 실패했어요", message: "잠시 후 다시 시도해 주세요." },
+};
+
+function SaveableResult(props: Omit<ResultScreenProps, "onSave" | "saving">) {
+  const { save, saving } = useSaveDocument(props.documentId);
+  const onSave = SAVE_DOCUMENT_ENABLED
+    ? () => {
+        void (async () => {
+          const outcome = await save();
+          const f = SAVE_FEEDBACK[outcome];
+          Alert.alert(f.title, f.message);
+        })();
+      }
+    : undefined;
+  return <ResultScreen {...props} onSave={onSave} saving={saving} />;
+}
 
 // 라우트는 얇게 — 경로 판정은 widgets/result-source 훅, 여기선 렌더·네비게이션만.
 //  (a) live = 방금 분석한 문서(메모리 스냅샷·이미지 포함, 격리 경로)
@@ -20,7 +45,7 @@ export default function ResultRoute() {
   if (source.kind === "live") {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-        <ResultScreen
+        <SaveableResult
           documentId={source.documentId}
           pages={source.pages}
           imageByPageId={source.imageByPageId}
@@ -104,7 +129,7 @@ function ReviewResult({
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <ResultScreen
+      <SaveableResult
         documentId={documentId}
         pages={pages}
         imageByPageId={{}}

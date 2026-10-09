@@ -31,7 +31,7 @@ import { SkiaHighlightCanvas } from "./SkiaHighlightCanvas";
 
 // 분석 결과 화면: 헤더 + 이미지 하이라이트 카드 + 조항 목록(전체 보기 드래그 바텀시트).
 // 좌표 변환·상태 분리·스냅샷 매칭은 불변(0022). 시트는 이미지와 독립된 오버레이 — 좌표 측정 불변(0063).
-export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProps) {
+export function ResultScreen({ pages, imageByPageId, onClose, onSave, saving }: ResultScreenProps) {
   const { orderedPages, pageIndex, current, selectedClauseId, goToPage, toggleClause } =
     useResultData(pages);
   const { height } = useWindowDimensions();
@@ -250,6 +250,17 @@ export function ResultScreen({ pages, imageByPageId, onClose }: ResultScreenProp
           </ScrollView>
         )}
       </View>
+
+      {onSave ? (
+        <View className="px-5 pb-1 pt-2">
+          <Button
+            label={saving ? "저장 중…" : "저장하기"}
+            variant="primary"
+            onPress={onSave}
+            disabled={saving}
+          />
+        </View>
+      ) : null}
 
       {footer}
     </View>

@@ -56,3 +56,6 @@ agents/harness/hooks/.unassigned.jsonl
 # 과거 잔재(spec 폴더 안 자동 기록) — 남아 있어도 커밋되지 않게 유지
 agents/intent/specs/**/trace.auto.jsonl
 agents/harness/hooks/.recall-state.json*
+
+# Turborepo local cache (regenerable)
+.turbo/

@@ -14,6 +14,17 @@
 
 ---
 
+## 2026-10-09 · Claude · 분석 결과 장기 보관 전환(저장하기) (#163 · TASK-006 ②)
+- **무엇**: 결과를 계정에 장기 보관하는 **저장하기**. `Document.retentionState`(TEMPORARY|SAVED)+`savedAt` 추가, 상세(410)·목록·저장이 공유하는 보관 판정 순수 함수, 멱등 저장 API, 앱 저장 버튼(기능 플래그 OFF).
+- **설계**: 적대적 리뷰(2026-10-09, 코드 대조) 반영(0068). **DELETING은 #163에서 제외**(순수함수 default-deny, #164가 추가)·**0행 응답 결정표**(owner 404 먼저·bare rowcount 금지)·**write-time capture·durable grant**(게이트 구독 재확인 안 함)·**#163은 #164+#165 전까지 비활성**(플래그 OFF).
+- **구현**: `packages/db` enum·2필드·마이그레이션 + `documentVisible`/`canTransitionToSaved`(documents-ops) + 목록 쿼리 SAVED 포함. `apps/api` `POST /me/documents/:id/save`(레포 `saveDocumentCas` $executeRaw CAS·`userCanSave`, 서비스 결정표) + 상세 게이트 `isRetentionActive`→`documentVisible`. `apps/mobile` `saveDocument` API·`useSaveDocument` 훅·ResultScreen `onSave` 버튼·`SAVE_DOCUMENT_ENABLED=false`.
+- **게이트**: `checks.sh` **ALL PASS**(api 15스위트/+retention-visibility 15·save 8, mobile +useSaveDocument 7·documentsApi save 3).
+- **이번에 드러난 공백**: terminal 불변식(done|partial⟺completedAt·retainUntil 원자 세팅)은 기존 reaggregateAndBump로 충족 — parity 테스트로 교차 확인. DB 통합(recall.integration SAVED parity)은 Docker 데몬 off로 미실행 → 백엔드 기동 시 migrate deploy와 함께.
+- **파일**: `packages/db/{prisma/schema.prisma,prisma/migrations/20261009000000_add_document_retention_state,src/documents-ops.ts,test/recall.integration.mjs}` · `packages/contracts/src/documents.ts` · `apps/api/src/modules/documents/*` · `apps/mobile/src/features/documents/*`·`features/result/*`·`shared/config/featureFlags.ts`·`app/result.tsx` · spec 0068.
+- **다음/주의**: PR(머지·CI 직접). 저장 버튼은 플래그 OFF→비노출·maestro 미대상(#164/#165 랜딩 시 승격). **#164(실삭제)는 이 브랜치 위 스택**(retentionState 의존·DELETING enum은 #164). #164에 넘길 제약: DELETING 비가역·유예 완전경과 후 진입·Page.finalKey 열거 후 행 삭제.
+
+---
+
 ## 2026-10-08 · Claude · 결과 화면 Skia 하이라이트 전환 + 구역 탭 (#176)
 - **무엇**: 결과 이미지 블록을 RN `<Image>`+react-native-svg → **Skia `<Canvas>`**로 교체. #175가 내려준 서버 정규화 이미지를 그리고 위험 구역을 색칠(채움+테두리), **사진 구역 탭 → 조항 선택**. 설명 구간(DragSheet/ClauseList)은 불변.
 - **설계**: Codex 적대적 검토(2026-10-08) 결론 반영(0067). `current.normalizedImage` 이미 존재(threading 불필요), 좌표 기준=normalizedImage.{width,height}(boxes 동일 공간). 하위호환: 정규화 없는 구버전은 기존 Image+SVG.

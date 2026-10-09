@@ -12,6 +12,8 @@ import {
   confirmAnalysisResultTx,
   confirmPageAnalysisTx,
   listRecentDocuments,
+  documentVisible,
+  canTransitionToSaved,
   RETENTION_DAYS,
 } from "../analysis/index.js";
 
@@ -177,6 +179,29 @@ async function run() {
   });
   const expiredList = await listRecentDocuments(prisma, u4, {});
   assert.equal(expiredList.items.length, 0, "retainUntil 지난 문서 제외");
+
+  // ── 6) 저장(SAVED, #163): 만료돼도 목록·상세 가시성 유지 + documentVisible↔목록SQL parity ──
+  const u5 = await seedUser();
+  const s = await seedAnalyzable(u5, 1);
+  await confirmPageDone(s.jobId, s.pages[0].id, [clause(0, "high")]);
+  // SAVED 전환 + retainUntil 과거(만료 상태에서도 노출돼야 함).
+  await prisma.document.update({
+    where: { id: s.documentId },
+    data: { retentionState: "SAVED", savedAt: new Date(), retainUntil: new Date(Date.now() - 1000) },
+  });
+  const savedList = await listRecentDocuments(prisma, u5, {});
+  assert.equal(savedList.items.length, 1, "SAVED 문서는 retainUntil 지나도 목록 노출");
+  assert.equal(savedList.items[0].retentionState, "SAVED", "목록 DTO retentionState=SAVED");
+  assert.ok(savedList.items[0].savedAt, "목록 DTO savedAt 존재");
+
+  // parity: documentVisible(TS) ↔ 목록 SQL 노출이 (retentionState × retainUntil)에서 일치.
+  const now = new Date();
+  const savedDoc = await prisma.document.findUnique({ where: { id: s.documentId } });
+  assert.equal(documentVisible(savedDoc, now), true, "SAVED 만료 → 가시(상세 게이트)");
+  assert.equal(canTransitionToSaved(savedDoc, now), false, "이미 SAVED는 재전환 불가");
+  const expiredDoc = await prisma.document.findUnique({ where: { id: e.documentId } });
+  assert.equal(documentVisible(expiredDoc, now), false, "TEMPORARY 만료 → 비가시(목록 제외와 일치)");
+  assert.equal(canTransitionToSaved(expiredDoc, now), false, "만료 TEMPORARY 저장 불가");
 
   console.log("✅ recall.integration: 모든 단언 통과");
 }

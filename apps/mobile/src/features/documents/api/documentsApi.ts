@@ -1,11 +1,13 @@
 import {
   analysisStatusResponseSchema,
   documentListResponseSchema,
+  saveDocumentResponseSchema,
   type AnalysisStatusResponse,
   type DocumentListResponse,
+  type SaveDocumentResponse,
 } from "@clause-lens/contracts";
 
-import { authedGet } from "../../../shared/api/client";
+import { authedGet, authedPost } from "../../../shared/api/client";
 
 // 분석 기록 재열람 API(0030). 응답은 계약(@clause-lens/contracts)으로 런타임 검증.
 // "서버가 진실의 기준" — 앱은 보관 기한·집계를 표시만 한다. 토큰·URL 로그 금지.
@@ -32,5 +34,19 @@ export async function fetchDocumentReview(
     `/documents/${documentId}/analysis`,
     accessToken,
     analysisStatusResponseSchema,
+  );
+}
+
+// 분석 결과 장기 보관 전환(저장하기, #163). 멱등(바디 없음).
+// 거부: 403(구독 필요)·410(만료)·409(미완료) — 호출측이 HttpError.status로 분기.
+export async function saveDocument(
+  accessToken: string,
+  documentId: string,
+): Promise<SaveDocumentResponse> {
+  return authedPost(
+    `/me/documents/${encodeURIComponent(documentId)}/save`,
+    accessToken,
+    undefined,
+    saveDocumentResponseSchema,
   );
 }

@@ -2,5 +2,6 @@
 export { useDocumentsStore } from "./model/documentsStore";
 export { useDocumentsSync } from "./model/useDocumentsSync";
 export { useDocumentReview } from "./model/useDocumentReview";
+export { useSaveDocument, type SaveOutcome } from "./model/useSaveDocument";
 export { RecentEntryButton } from "./ui/RecentEntryButton";
 export { RecentListScreen } from "./ui/RecentListScreen";

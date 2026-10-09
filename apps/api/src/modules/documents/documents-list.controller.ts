@@ -1,5 +1,13 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
-import type { DocumentListResponse } from "@clause-lens/contracts";
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
+import type { DocumentListResponse, SaveDocumentResponse } from "@clause-lens/contracts";
 
 import { CurrentUser, type AuthUser } from "../auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -23,5 +31,16 @@ export class DocumentsListController {
       cursor,
       limit: Number.isFinite(parsed) ? parsed : undefined,
     });
+  }
+
+  // POST /me/documents/:id/save — 분석 결과 장기 보관 전환(#163, 멱등).
+  // 거부: 404(미소유)·403(미구독)·410(만료)·409(미완료). 서버 canSaveDocuments가 보안 경계(앱 플래그는 UI 전용).
+  @Post("documents/:id/save")
+  @HttpCode(200)
+  save(
+    @CurrentUser() user: AuthUser,
+    @Param("id") documentId: string,
+  ): Promise<SaveDocumentResponse> {
+    return this.documents.saveDocument(user.userId, documentId);
   }
 }

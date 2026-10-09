@@ -33,6 +33,8 @@ export function toListItem(row: RecentDocumentRow): DocumentListItem {
     completedAt: row.completedAt.toISOString(),
     retainUntil: row.retainUntil.toISOString(),
     status: row.status,
+    retentionState: row.retentionState,
+    savedAt: row.savedAt ? row.savedAt.toISOString() : null,
     totalPageCount: row.totalPageCount,
     analyzedPageCount: row.analyzedPageCount,
     risk: row.risk,

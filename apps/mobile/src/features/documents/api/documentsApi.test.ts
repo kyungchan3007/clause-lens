@@ -1,4 +1,4 @@
-import { fetchDocumentReview, fetchRecentDocuments } from "./documentsApi";
+import { fetchDocumentReview, fetchRecentDocuments, saveDocument } from "./documentsApi";
 import { HttpError } from "../../../shared/http";
 
 const okJson = (body: unknown) => ({ ok: true, json: async () => body }) as Response;
@@ -12,6 +12,8 @@ const listBody = {
       completedAt: "2026-10-01T05:00:00.000Z",
       retainUntil: "2026-10-08T05:00:00.000Z",
       status: "done",
+      retentionState: "TEMPORARY",
+      savedAt: null,
       totalPageCount: 3,
       analyzedPageCount: 3,
       risk: { high: 1, medium: 0, low: 0 },
@@ -60,5 +62,33 @@ describe("documentsApi.fetchDocumentReview", () => {
     await fetchDocumentReview("t", "doc1").catch((e) =>
       expect((e as HttpError).status).toBe(410),
     );
+  });
+});
+
+describe("documentsApi.saveDocument (#163)", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("정상: POST /me/documents/:id/save + Authorization, SAVED 파싱", async () => {
+    const body = { documentId: "doc1", retentionState: "SAVED", savedAt: "2026-10-09T01:00:00.000Z" };
+    const spy = jest.spyOn(global, "fetch").mockResolvedValue(okJson(body));
+    const r = await saveDocument("tkn", "doc1");
+    expect(r.retentionState).toBe("SAVED");
+    const url = spy.mock.calls[0][0] as string;
+    expect(url).toContain("/me/documents/doc1/save");
+    const init = spy.mock.calls[0][1] as RequestInit;
+    expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer tkn");
+  });
+
+  it("documentId를 URL 인코딩", async () => {
+    const body = { documentId: "a/b", retentionState: "SAVED", savedAt: "2026-10-09T01:00:00.000Z" };
+    const spy = jest.spyOn(global, "fetch").mockResolvedValue(okJson(body));
+    await saveDocument("tkn", "a/b");
+    expect(spy.mock.calls[0][0]).toContain("/me/documents/a%2Fb/save");
+  });
+
+  it("403(구독 필요) → HttpError(403)", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue(errStatus(403));
+    await expect(saveDocument("t", "doc1")).rejects.toBeInstanceOf(HttpError);
   });
 });

@@ -13,6 +13,8 @@ function makeRow(over: Partial<RecentDocumentRow> = {}): RecentDocumentRow {
     completedAt: new Date("2026-10-01T05:00:00.000Z"),
     retainUntil: new Date("2026-10-08T05:00:00.000Z"),
     status: "done",
+    retentionState: "TEMPORARY",
+    savedAt: null,
     totalPageCount: 3,
     analyzedPageCount: 3,
     risk: { high: 2, medium: 1, low: 0 },
@@ -43,6 +45,15 @@ describe("documents-list.mapper DTO", () => {
     expect(item.completedAt).toBe("2026-10-01T05:00:00.000Z");
     expect(item.retainUntil).toBe("2026-10-08T05:00:00.000Z");
     expect(item.risk).toEqual({ high: 2, medium: 1, low: 0 });
+    expect(item.retentionState).toBe("TEMPORARY");
+    expect(item.savedAt).toBeNull();
+  });
+
+  it("SAVED 행은 retentionState·savedAt ISO 전달(#163)", () => {
+    const savedAt = new Date("2026-10-09T01:00:00.000Z");
+    const item = toListItem(makeRow({ retentionState: "SAVED", savedAt }));
+    expect(item.retentionState).toBe("SAVED");
+    expect(item.savedAt).toBe("2026-10-09T01:00:00.000Z");
   });
 
   it("hasMore=true면 마지막 행으로 nextCursor 발급, 아니면 null", () => {

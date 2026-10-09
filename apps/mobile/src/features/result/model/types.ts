@@ -14,4 +14,8 @@ export interface ResultScreenProps {
   // pageId → 업로드 스냅샷 이미지. 없으면(재진입·세션 만료) 이미지 없이 목록만 표시.
   imageByPageId: Record<string, ResultImage | undefined>;
   onClose?: () => void;
+  // 장기 보관 전환(저장하기, #163). app 레이어가 주입할 때만 저장 버튼 노출(기능 플래그로 제어).
+  // 저장 호출·목록 반영·피드백은 app 레이어가 담당(결과 feature는 표현만).
+  onSave?: () => void;
+  saving?: boolean; // 저장 진행 중(버튼 비활성·라벨 전환)
 }

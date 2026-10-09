@@ -8,12 +8,15 @@ import { PrismaClient, Prisma } from "../generated/client";
 //  - 집계는 **공개 결과(문서당 최신 job)의 done 페이지 조항**만 대상(N+1 없이 일괄).
 
 export type RecentDocumentStatus = "done" | "partial";
+export type RetentionStateValue = "TEMPORARY" | "SAVED";
 
 export interface RecentDocumentRow {
   documentId: string;
   completedAt: Date;
   retainUntil: Date;
   status: RecentDocumentStatus;
+  retentionState: RetentionStateValue; // 보관 수명(#163) — SAVED는 retainUntil 경과해도 노출
+  savedAt: Date | null; // SAVED 전환 시각(감사용)
   totalPageCount: number; // 문서 전체 페이지 수
   analyzedPageCount: number; // 공개 결과에서 분석 완료(done)된 페이지 수(partial 구분용)
   risk: { high: number; medium: number; low: number }; // 공개 결과 조항의 riskLevel별 개수
@@ -44,22 +47,32 @@ export async function listRecentDocuments(
   opts: { limit?: number; before?: RecentDocumentsCursor } = {},
 ): Promise<RecentDocumentsPage> {
   const limit = clampLimit(opts.limit);
-  const now = new Date();
 
   // ① 문서 페이지 선정(완료순, 커서 이후). limit+1로 다음 페이지 유무 판정.
   // (completedAt, id) 튜플 비교로 동률에서도 안정적인 커서.
+  // 보관 가시성(#163): SAVED는 retainUntil 경과해도 노출, TEMPORARY는 retainUntil>now(DB 시계).
+  // documentVisible()와 동치(여기에 목록 전용 status·retainUntil NOT NULL 제약 추가) — parity 테스트로 고정.
   const cursorCond = opts.before
     ? Prisma.sql`AND ("completedAt", "id") < (${opts.before.completedAt}, ${opts.before.id})`
     : Prisma.empty;
   const docs = await prisma.$queryRaw<
-    { id: string; completedAt: Date; retainUntil: Date; status: RecentDocumentStatus }[]
+    {
+      id: string;
+      completedAt: Date;
+      retainUntil: Date;
+      status: RecentDocumentStatus;
+      retentionState: RetentionStateValue;
+      savedAt: Date | null;
+    }[]
   >`
-    SELECT "id", "completedAt", "retainUntil", "status"
+    SELECT "id", "completedAt", "retainUntil", "status", "retentionState", "savedAt"
     FROM "Document"
     WHERE "userId" = ${userId}
       AND "status" IN ('done', 'partial')
-      AND "retainUntil" IS NOT NULL
-      AND "retainUntil" > ${now}
+      AND (
+        "retentionState" = 'SAVED'
+        OR ("retainUntil" IS NOT NULL AND "retainUntil" > now())
+      )
       ${cursorCond}
     ORDER BY "completedAt" DESC, "id" DESC
     LIMIT ${limit + 1}
@@ -124,6 +137,8 @@ export async function listRecentDocuments(
       completedAt: d.completedAt,
       retainUntil: d.retainUntil,
       status: d.status,
+      retentionState: d.retentionState,
+      savedAt: d.savedAt,
       totalPageCount: totalByDoc.get(d.id) ?? 0,
       analyzedPageCount: (jobId && analyzedByJob.get(jobId)) || 0,
       risk,
@@ -138,4 +153,34 @@ export async function listRecentDocuments(
 export function isRetentionActive(retainUntil: Date | null | undefined, now = new Date()): boolean {
   if (retainUntil == null) return true; // 아직 terminal 아님(진행중) → 세션 접근으로 통과
   return retainUntil.getTime() > now.getTime();
+}
+
+// 공유 보관 가시성 판정(#163) — 상세(410)·목록·저장이 모두 이 함수를 공유한다.
+// SAVED는 retainUntil 경과해도 노출(구독 유예·취소는 #164 권한, 게이트는 구독 재확인 안 함).
+// 알 수 없는 상태(미래 DELETING 등)는 default-deny → #164가 DELETING 추가해도 전방 안전.
+// 소유권은 호출측(findOwnedSession)에서 별도 확인.
+export function documentVisible(
+  doc: { retentionState: string; retainUntil: Date | null | undefined },
+  now = new Date(),
+): boolean {
+  switch (doc.retentionState) {
+    case "SAVED":
+      return true;
+    case "TEMPORARY":
+      return isRetentionActive(doc.retainUntil, now);
+    default:
+      return false;
+  }
+}
+
+// 저장(TEMPORARY→SAVED) 선검증(순수, 에러코드 산출용). 실제 전환은 조건부 UPDATE(CAS)가 단일 권위.
+// 소유권·구독 보관 권한(canSaveDocuments)은 호출측에서 별도 확인.
+export function canTransitionToSaved(
+  doc: { status: string; retentionState: string; retainUntil: Date | null | undefined },
+  now = new Date(),
+): boolean {
+  if (doc.status !== "done" && doc.status !== "partial") return false; // 미완료
+  if (doc.retentionState !== "TEMPORARY") return false; // 이미 SAVED 등
+  if (doc.retainUntil == null) return false; // terminal이면 항상 세팅(불변식) — 방어적 거부
+  return isRetentionActive(doc.retainUntil, now); // 만료 후 신규 저장 불가
 }

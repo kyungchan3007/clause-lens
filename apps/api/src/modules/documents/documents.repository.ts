@@ -4,6 +4,7 @@ import { Prisma } from "@clause-lens/db";
 import {
   reserveAnalysis,
   listRecentDocuments,
+  getAnalysisAccess,
   type RecentDocumentsCursor,
   type RecentDocumentsPage,
 } from "@clause-lens/db/analysis";
@@ -165,6 +166,27 @@ export class DocumentsRepository {
     opts: { limit?: number; before?: RecentDocumentsCursor },
   ): Promise<RecentDocumentsPage> {
     return listRecentDocuments(this.prisma, userId, opts);
+  }
+
+  // ── 저장하기(장기 보관 전환, #163) ──
+
+  // 구독 보관 권한(active|grace 구독 존재). getAnalysisAccess가 유일한 권한 판정 지점(#162).
+  async userCanSave(userId: string, now: Date): Promise<boolean> {
+    const access = await getAnalysisAccess(this.prisma, userId, now);
+    return access.storage.canSave;
+  }
+
+  // 저장 CAS — TEMPORARY·미만료일 때만 SAVED 전환(DB now() 기준, 단일 권위). 영향 행 수 반환.
+  // 가드가 retentionState='TEMPORARY'라 이미 SAVED면 0행 → savedAt 덮어쓰기 없음(멱등). READ COMMITTED로 충분.
+  saveDocumentCas(userId: string, documentId: string): Promise<number> {
+    return this.prisma.$executeRaw`
+      UPDATE "Document"
+      SET "retentionState" = 'SAVED', "savedAt" = now()
+      WHERE "id" = ${documentId}
+        AND "userId" = ${userId}
+        AND "retentionState" = 'TEMPORARY'
+        AND "retainUntil" IS NOT NULL
+        AND "retainUntil" > now()`;
   }
 
   // ── 분석 (#16) ──

@@ -15,6 +15,8 @@ function makeDoc(over: Partial<DocumentWithPages> = {}): DocumentWithPages {
     expiresAt: new Date(Date.now() - 3600_000), // 세션은 만료됐어도 재열람은 보관 기한으로 판정
     completedAt: new Date(Date.now() - 24 * 3600_000),
     retainUntil: new Date(Date.now() + 6 * 24 * 3600_000),
+    retentionState: "TEMPORARY",
+    savedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     pages: [],
@@ -48,6 +50,15 @@ describe("DocumentsService.getAnalysis 재열람 보관 게이트(0030)", () => 
     );
     await expect(svc.getAnalysis("u1", "doc1")).rejects.toBeInstanceOf(GoneException);
     expect(repo.findLatestAnalysis).not.toHaveBeenCalled();
+  });
+
+  it("SAVED 문서는 retainUntil이 지났어도 통과(#163)", async () => {
+    repo.findOwnedSession.mockResolvedValue(
+      makeDoc({ retentionState: "SAVED", savedAt: new Date(), retainUntil: new Date(Date.now() - 1000) }),
+    );
+    const job = { id: "jobSaved" } as never;
+    repo.findLatestAnalysis.mockResolvedValue(job);
+    await expect(svc.getAnalysis("u1", "doc1")).resolves.toBe(job);
   });
 
   it("retainUntil이 null(진행중)이면 통과 — 폴링을 막지 않는다", async () => {
@@ -86,6 +97,8 @@ describe("DocumentsService.listRecentDocuments(0030)", () => {
           completedAt: new Date("2026-10-01T05:00:00.000Z"),
           retainUntil: new Date("2026-10-08T05:00:00.000Z"),
           status: "partial",
+          retentionState: "TEMPORARY",
+          savedAt: null,
           totalPageCount: 3,
           analyzedPageCount: 2,
           risk: { high: 1, medium: 0, low: 1 },
@@ -110,6 +123,8 @@ describe("DocumentsService.listRecentDocuments(0030)", () => {
       completedAt: new Date("2026-09-30T00:00:00.000Z"),
       retainUntil: new Date("2026-10-07T00:00:00.000Z"),
       status: "done" as const,
+      retentionState: "TEMPORARY" as const,
+      savedAt: null,
       totalPageCount: 1,
       analyzedPageCount: 1,
       risk: { high: 0, medium: 0, low: 0 },
