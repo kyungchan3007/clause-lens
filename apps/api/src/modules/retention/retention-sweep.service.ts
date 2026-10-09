@@ -165,14 +165,26 @@ export class RetentionSweepService {
   }
 }
 
-// S3/스토리지 NotFound 계열 판별(SDK v3 name/Code/HTTP 404). NotFound만 멱등 성공으로 취급.
+// S3/스토리지 NotFound 계열 판별. NotFound만 멱등 성공으로 취급.
+// SDK v3($metadata.httpStatusCode)·name/Code뿐 아니라 래퍼/라이브러리가 최상위로 노출하는
+// statusCode/status(숫자 또는 문자열 404)까지 커버 — 하나라도 놓치면 DELETING 영구 잔류 위험.
 export function isNotFoundError(e: unknown): boolean {
-  const err = e as { name?: string; Code?: string; code?: string; $metadata?: { httpStatusCode?: number } };
+  const err = e as {
+    name?: string;
+    Code?: string;
+    code?: string;
+    statusCode?: number | string;
+    status?: number | string;
+    $metadata?: { httpStatusCode?: number };
+  };
+  const is404 = (v: unknown): boolean => v === 404 || v === "404";
   return (
     err?.name === "NotFound" ||
     err?.name === "NoSuchKey" ||
     err?.Code === "NoSuchKey" ||
     err?.code === "NoSuchKey" ||
-    err?.$metadata?.httpStatusCode === 404
+    is404(err?.$metadata?.httpStatusCode) ||
+    is404(err?.statusCode) ||
+    is404(err?.status)
   );
 }

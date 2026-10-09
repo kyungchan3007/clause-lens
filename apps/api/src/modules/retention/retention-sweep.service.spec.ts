@@ -149,7 +149,13 @@ describe("isNotFoundError (#164)", () => {
     expect(isNotFoundError({ name: "NoSuchKey" })).toBe(true);
     expect(isNotFoundError({ Code: "NoSuchKey" })).toBe(true);
     expect(isNotFoundError({ $metadata: { httpStatusCode: 404 } })).toBe(true);
+    // 래퍼/라이브러리 최상위 statusCode/status(숫자·문자열 404)
+    expect(isNotFoundError({ statusCode: 404 })).toBe(true);
+    expect(isNotFoundError({ status: 404 })).toBe(true);
+    expect(isNotFoundError({ statusCode: "404" })).toBe(true);
+    expect(isNotFoundError({ status: "404" })).toBe(true);
     expect(isNotFoundError(new Error("timeout"))).toBe(false);
     expect(isNotFoundError({ $metadata: { httpStatusCode: 500 } })).toBe(false);
+    expect(isNotFoundError({ statusCode: 500 })).toBe(false);
   });
 });
