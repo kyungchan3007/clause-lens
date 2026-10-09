@@ -26,6 +26,27 @@
 
 ---
 
+## 2026-10-09 · Claude · 애매한 요청 대책: 질문 먼저 + "애매한 곳·가정" 칸 (#182, 0071)
+- **무엇**: 요청 애매하면 구현 전 질문 규칙(loop.md·AGENTS.md) + prd 7번 칸 "애매한 곳·가정" 필수화 + `checkFolderPrd` 검사(도입 0071 이후).
+- **구현**: 템플릿 7번 칸 이름·안내 줄(`(`로 시작→빈 칸 취급). records.mjs `ASSUMPTION_REQUIRED_FROM`·`assumptionSection`·`checkAssumptions`(안내 줄 무시·줄 끝 괄호 표시 요구·"없음" 단독). 테스트 11케이스.
+- **게이트**: `checks.sh` ALL PASS(folder 19건, 자기 0071 prd 통과·기존 면제).
+- **이번에 드러난 공백(막힘)**: 정규식 `\b`가 JS에서 ASCII 기준 → **한국어 뒤 경계 매칭 실패**(`애매한 곳·가정\b`·`^없음\b`). 자기 적용이라 가드가 버그 검사를 즉시 적용→records.mjs 수정 교착. 탈출: prd 제목 일시 변경으로 가드 통과→정규식 `(?![가-힣])` 교정→복원. → **한국어 경계는 `\b` 금지, `(?![가-힣])`**.
+- **파일**: `agents/harness/{loop.md,lib/records.mjs,lib/records.folder.test.mjs}`·`AGENTS.md`·`agents/intent/templates/prd.md` · spec 0071.
+- **다음/주의**: PR(머지 직접). #183은 0072. 질문 먼저 규칙 상시 적용.
+
+---
+
+## 2026-10-09 · Claude · 측정 도구 "체크 수동 지시" 교정 (#184, 0070)
+- **무엇**: `pnpm metrics`의 "체크 수동 지시" 과대계상 교정 + `[보완]` 반영률 기간 적용. harness-lab 0031(PR #44·#45) 로직 이식.
+- **구현**: lib.mjs `CHECK_REQUEST` 요청형 좁힘·`typedText`(태그/붙여넣기 제거)·`inPeriod`·`toEvents`(대화요약 제외·uuid 중복제거). metrics.mjs `followupSection` 기간 적용·`recallSection` 파일 합쳐 toEvents 1회(#45). 고유부(REASON_MARK 경로·도구키 `id ?? name+input`·BASELINE·TASK-) 유지.
+- **게이트**: `checks.sh` ALL PASS(metrics lib 11건).
+- **이번에 드러난 공백**: 넓은 regex가 "체크박스" 언급·셸 출력·붙여넣기·uuid 중복까지 세서 2026-10-02 "2일 5회" 오판. → 직접 친 요청만.
+- **검증**: 연구 세션(af7a29b6) 제외 재측정 체크 수동 지시 **3·0·1회**(이슈 손 확인 값 일치).
+- **파일**: `agents/harness/metrics/{lib.mjs,metrics.mjs,lib.test.mjs}` · spec 0070.
+- **다음/주의**: PR(머지 직접). 재측정은 추후 별도. #182·#183도 0070 다음 번호를 노렸으니 착수 시 번호 재확인.
+
+---
+
 ## 2026-10-09 · Claude · 보관 만료 실삭제 잡 (#164 · TASK-006 ③)
 - **무엇**: 보관 만료 **무료(TEMPORARY)** 문서 물리 삭제(DB+S3). DELETING 상태·DeletionAudit·후보 판정 순수함수·dry-run 기본 standalone 스크립트.
 - **설계**: 적대적 리뷰(2026-10-09, 코드 대조) 반영(0069). **범위 축소(사용자 확정): SAVED 삭제는 #165로** — SAVED 문서 부재(미검증)·lapsedAt 없음·구독 스냅샷→CAS 재구독 TOCTOU 데이터손실. 안전지연 LAG 3일·S3 전키 성공 후에만 행삭제(NotFound만 성공)·목록 `retentionState<>'DELETING'`·중단상한·DeletionAudit(삭제 전)·kill-switch·setInterval 금지.

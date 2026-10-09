@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import {
   acceptanceSourceForIssue,
+  checkAssumptions,
   checkFolderPrd,
   checkFolderSdd,
   checkFolderTrace,
@@ -135,6 +136,38 @@ test("inspectSpecReadiness — PR 시점 spec 준비성(#183 B'/#116, TASKS 비�
   // 체크박스 0개
   writeFolder(root, "0102-c", { "prd.md": "# 0102 — c\n- **이슈:** #902\n## Acceptance\n내용 없음\n" });
   assert.equal(inspectSpecReadiness(root, "902").code, "no_checkbox");
+});
+
+test("checkAssumptions — 애매한 곳·가정 칸 표시 검사 (#182)", () => {
+  const sec = (body) => `# t\n## 7. 애매한 곳·가정 (Open Questions)\n${body}\n`;
+  // 칸 없음
+  assert.ok(checkAssumptions("# t\n## 1. 문제\n- x\n").length >= 1);
+  // 안내 줄만(( 로 시작) → 빈 칸
+  assert.ok(checkAssumptions(sec("- (요청에 없는 값을 적는다)")).length >= 1);
+  // 표시 없는 줄
+  assert.ok(checkAssumptions(sec("- 금액 기준을 할인 후로 정함")).length >= 1);
+  // 괄호 없는 "가정" 부분 문자열은 거부(괄호 표시 요구)
+  assert.ok(checkAssumptions(sec("- 금액 기준 가정")).length >= 1);
+  // (가정)/(확인 필요)/(확인됨: …) 허용
+  assert.deepEqual(checkAssumptions(sec("- 금액 기준 할인 후 (가정)")), []);
+  assert.deepEqual(checkAssumptions(sec("- 끝수 처리 (확인 필요)")), []);
+  assert.deepEqual(checkAssumptions(sec("- 등급 판별 (확인됨: 금액 기준)")), []);
+  // "없음 — 이유" 단독 허용
+  assert.deepEqual(checkAssumptions(sec("- 없음 — 요청이 완전함")), []);
+  // "없음"이 다른 항목과 섞이면 거부
+  assert.ok(checkAssumptions(sec("- 없음 — 이유\n- 끝수 (가정)")).length >= 1);
+  // 안내 줄 + 실제 항목 혼재 → 안내 줄 무시, 실제 항목만 검사
+  assert.deepEqual(checkAssumptions(sec("- (안내)\n- 끝수 (가정)")), []);
+  // 제목 번호·꼬리 달라도 인정(한국어 뒤 경계 버그 회귀)
+  assert.deepEqual(checkAssumptions("# t\n## 애매한 곳·가정\n- 끝수 (가정)\n"), []);
+  assert.deepEqual(checkAssumptions("# t\n## 8. 애매한 곳·가정 — 꼬리\n- 끝수 (가정)\n"), []);
+});
+
+test("checkFolderPrd — 도입 번호(0071) 이후만 애매한 곳·가정 검사", () => {
+  // 0070 이하: 칸 없어도 통과(기존 spec 면제)
+  assert.deepEqual(checkFolderPrd("# 0070 — t\n> **이슈:** #1\n## Acceptance\n- [ ] x\n", "0070"), []);
+  // 0071 이상: 칸 없으면 문제
+  assert.ok(checkFolderPrd("# 0071 — t\n> **이슈:** #1\n## Acceptance\n- [ ] x\n", "0071").some((p) => p.includes("애매한 곳·가정")));
 });
 
 test("checkFolderSdd·checkFolderTrace", () => {
