@@ -52,5 +52,10 @@
   - execute: ⓪ 재개 → ① 신규 후보 순. 신규 후보 블록도 try/catch로 감싸 한 건 실패가 run 전체를 중단하지 않음.
 - 단위 3건 추가(행삭제 실패 failed·재개 삭제·재개 중 S3 실패). checks.sh ALL PASS(retention-sweep 11건).
 
+### PR #181 리뷰 P1 2건 — 멱등 행삭제 + 재개 경합 가드 (2026-10-09)
+- **행 이미 삭제 멱등**: `deleteDocumentRow`를 `deleteMany`(없는 행도 0행·예외 없음)로 + `finishDeletion` catch에서 `isNotFoundError`(Prisma P2025 포함)면 `deleted`. 다른 인스턴스가 먼저 지운 경우 거짓 failed·DELETING 잔류 방지.
+- **재개 동시성 가드**: `findStuckDeletingDocuments`에 최소 경과시간(`RETENTION_RESUME_MIN_AGE_MINUTES=15`) `updatedAt < now()-15m` 추가 → 방금 전환돼 다른 실행이 처리 중인 문서 즉시 수거 차단. `transitionToDeleting`가 `updatedAt=now()` 갱신(raw UPDATE는 @updatedAt 미적용이라 명시).
+- 단위 2건 추가(행 이미삭제→deleted·P2025 분류). checks.sh ALL PASS(retention-sweep 12건).
+
 ### 남음
 - 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165 lapsedAt)·크론 등록(운영).

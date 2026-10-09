@@ -165,9 +165,11 @@ export class RetentionSweepService {
       const keys = documentDeletionKeys(documentId, data);
       const allDeleted = await this.deleteKeys(keys, documentId);
       if (!allDeleted) return "failed"; // S3 transient → 행 삭제 보류
-      await deleteDocumentRow(this.prisma, documentId); // 행 삭제 실패(일시 DB 오류)해도 아래 catch → failed
+      await deleteDocumentRow(this.prisma, documentId); // deleteMany라 없는 행도 예외 없음(멱등)
       return "deleted";
     } catch (e) {
+      // 다른 인스턴스가 이미 지웠거나(NotFound/행 없음) → 멱등 성공. 그 외(일시 DB 오류)만 failed(DELETING 잔류).
+      if (isNotFoundError(e)) return "deleted";
       this.logger.warn(`[execute] 삭제 완료 실패(doc ${documentId}) — DELETING 잔류: ${(e as Error).message}`);
       return "failed";
     }
@@ -210,6 +212,7 @@ export function isNotFoundError(e: unknown): boolean {
     err?.name === "NoSuchKey" ||
     err?.Code === "NoSuchKey" ||
     err?.code === "NoSuchKey" ||
+    err?.code === "P2025" || // Prisma: 삭제 대상 행 없음
     is404(err?.$metadata?.httpStatusCode) ||
     is404(err?.statusCode) ||
     is404(err?.status)

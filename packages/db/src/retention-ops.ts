@@ -4,6 +4,9 @@ import { PrismaClient } from "../generated/client";
 // 안전 지연: 410 차단 시점(retainUntil)과 분리해 LAG일 뒤에만 실삭제 대상(skew·오확정·지원 복구 여유).
 
 export const RETENTION_DELETE_LAG_DAYS = 3;
+// 재개(resume) 최소 경과시간 — 방금 DELETING으로 전환돼 다른 실행이 처리 중일 수 있는 문서를
+// 즉시 수거하지 않도록 이 시간이 지난(= 중단으로 간주) 것만 재개한다(동시성 경합 방어).
+export const RETENTION_RESUME_MIN_AGE_MINUTES = 15;
 
 export type HardDeleteReason = "free_expired";
 
@@ -71,14 +74,18 @@ export async function findHardDeleteCandidates(
 
 // 이전 실행에서 DELETING으로 전환됐으나 완료(행 삭제)되지 못한 문서 — 재개(resume) 대상.
 // (S3 삭제·행 삭제 중 크래시/일시 오류로 잔류. 후보 쿼리는 TEMPORARY만 보므로 여기서 별도 수거해 재시도.)
+// **최소 경과시간 가드**: transitionToDeleting가 updatedAt를 now()로 갱신하므로, updatedAt이
+// minAge분 이전인 것만 수거 → 방금 전환돼 다른 실행이 처리 중인 문서와의 동시 경합을 피한다.
 export async function findStuckDeletingDocuments(
   prisma: PrismaClient,
   limit: number,
+  minAgeMinutes = RETENTION_RESUME_MIN_AGE_MINUTES,
 ): Promise<HardDeleteCandidate[]> {
   return prisma.$queryRaw<HardDeleteCandidate[]>`
     SELECT "id" AS "documentId", "userId"
     FROM "Document"
     WHERE "retentionState" = 'DELETING'
+      AND "updatedAt" < now() - make_interval(mins => ${minAgeMinutes}::int)
     ORDER BY "updatedAt" ASC
     LIMIT ${limit}
   `;
@@ -91,9 +98,10 @@ export async function transitionToDeleting(
   documentId: string,
   lagDays = RETENTION_DELETE_LAG_DAYS,
 ): Promise<boolean> {
+  // updatedAt도 now()로 갱신 — 재개(resume) 최소 경과시간 가드의 기준점(raw UPDATE는 @updatedAt 미적용).
   const updated = await prisma.$executeRaw`
     UPDATE "Document"
-    SET "retentionState" = 'DELETING'
+    SET "retentionState" = 'DELETING', "updatedAt" = now()
     WHERE "id" = ${documentId}
       AND "retentionState" = 'TEMPORARY'
       AND "retainUntil" IS NOT NULL
@@ -138,6 +146,7 @@ export async function recordDeletionAudit(
 }
 
 // Document 행 삭제(자식 cascade). S3 전 키 삭제 확인 후에만 호출.
+// 멱등: 이미 없는 행(다른 인스턴스가 삭제)도 예외 없이 0행 → 성공 취급(deleteMany).
 export async function deleteDocumentRow(prisma: PrismaClient, documentId: string): Promise<void> {
-  await prisma.document.delete({ where: { id: documentId } });
+  await prisma.document.deleteMany({ where: { id: documentId } });
 }

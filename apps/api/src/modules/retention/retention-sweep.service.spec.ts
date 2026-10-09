@@ -147,18 +147,31 @@ describe("RetentionSweepService.execute (#164)", () => {
     }
   });
 
-  it("행 삭제(deleteDocumentRow) 실패해도 sweep 중단 없이 failed 집계(DELETING 잔류)", async () => {
+  it("행 삭제(deleteDocumentRow) 일시 실패 → sweep 중단 없이 failed 집계(DELETING 잔류)", async () => {
     mCount.mockResolvedValue(1);
     mFind.mockResolvedValue([{ documentId: "d1", userId: "u1" }]);
     mFlip.mockResolvedValue(true);
     mKeys.mockResolvedValue(keysData());
-    mDelRow.mockRejectedValue(new Error("db down")); // S3는 성공, 행 삭제만 실패
+    mDelRow.mockRejectedValue(new Error("db down")); // 일시 DB 오류
     const svc = makeSvc({ delete: jest.fn().mockResolvedValue(undefined) });
 
     const r = await svc.execute(10, 500); // 예외 전파 없이 완료
     expect(r.failed).toBe(1);
     expect(r.deleted).toBe(0);
     expect(mAudit).toHaveBeenCalledTimes(1); // 감사는 삭제 전 남음
+  });
+
+  it("행이 이미 삭제됨(NotFound/P2025) → 멱등 성공으로 deleted 처리", async () => {
+    mCount.mockResolvedValue(1);
+    mFind.mockResolvedValue([{ documentId: "d1", userId: "u1" }]);
+    mFlip.mockResolvedValue(true);
+    mKeys.mockResolvedValue(keysData());
+    mDelRow.mockRejectedValue(Object.assign(new Error("record not found"), { code: "P2025" }));
+    const svc = makeSvc({ delete: jest.fn().mockResolvedValue(undefined) });
+
+    const r = await svc.execute(10, 500);
+    expect(r.deleted).toBe(1); // 이미 없는 행 = 성공
+    expect(r.failed).toBe(0);
   });
 
   it("이전 실행에서 갇힌 DELETING 문서를 재개(resume)해 삭제 — 전환·감사 없이", async () => {
@@ -195,6 +208,7 @@ describe("isNotFoundError (#164)", () => {
     expect(isNotFoundError({ name: "NotFound" })).toBe(true);
     expect(isNotFoundError({ name: "NoSuchKey" })).toBe(true);
     expect(isNotFoundError({ Code: "NoSuchKey" })).toBe(true);
+    expect(isNotFoundError({ code: "P2025" })).toBe(true); // Prisma 행 없음
     expect(isNotFoundError({ $metadata: { httpStatusCode: 404 } })).toBe(true);
     // 래퍼/라이브러리 최상위 statusCode/status(숫자·문자열 404)
     expect(isNotFoundError({ statusCode: 404 })).toBe(true);
