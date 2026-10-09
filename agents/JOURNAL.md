@@ -14,6 +14,16 @@
 
 ---
 
+## 2026-10-09 · Claude · 애매한 요청 대책: 질문 먼저 + "애매한 곳·가정" 칸 (#182, 0071)
+- **무엇**: 요청 애매하면 구현 전 질문 규칙(loop.md·AGENTS.md) + prd 7번 칸 "애매한 곳·가정" 필수화 + `checkFolderPrd` 검사(도입 0071 이후).
+- **구현**: 템플릿 7번 칸 이름·안내 줄(`(`로 시작→빈 칸 취급). records.mjs `ASSUMPTION_REQUIRED_FROM`·`assumptionSection`·`checkAssumptions`(안내 줄 무시·줄 끝 괄호 표시 요구·"없음" 단독). 테스트 11케이스.
+- **게이트**: `checks.sh` ALL PASS(folder 19건, 자기 0071 prd 통과·기존 면제).
+- **이번에 드러난 공백(막힘)**: 정규식 `\b`가 JS에서 ASCII 기준 → **한국어 뒤 경계 매칭 실패**(`애매한 곳·가정\b`·`^없음\b`). 자기 적용이라 가드가 버그 검사를 즉시 적용→records.mjs 수정 교착. 탈출: prd 제목 일시 변경으로 가드 통과→정규식 `(?![가-힣])` 교정→복원. → **한국어 경계는 `\b` 금지, `(?![가-힣])`**.
+- **파일**: `agents/harness/{loop.md,lib/records.mjs,lib/records.folder.test.mjs}`·`AGENTS.md`·`agents/intent/templates/prd.md` · spec 0071.
+- **다음/주의**: PR(머지 직접). #183은 0072. 질문 먼저 규칙 상시 적용.
+
+---
+
 ## 2026-10-09 · Claude · 측정 도구 "체크 수동 지시" 교정 (#184, 0070)
 - **무엇**: `pnpm metrics`의 "체크 수동 지시" 과대계상 교정 + `[보완]` 반영률 기간 적용. harness-lab 0031(PR #44·#45) 로직 이식.
 - **구현**: lib.mjs `CHECK_REQUEST` 요청형 좁힘·`typedText`(태그/붙여넣기 제거)·`inPeriod`·`toEvents`(대화요약 제외·uuid 중복제거). metrics.mjs `followupSection` 기간 적용·`recallSection` 파일 합쳐 toEvents 1회(#45). 고유부(REASON_MARK 경로·도구키 `id ?? name+input`·BASELINE·TASK-) 유지.

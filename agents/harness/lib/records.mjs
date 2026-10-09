@@ -189,6 +189,8 @@ export const FOLDER_REQUIRED_FROM = "0025";
 export const REQUEST_FILE = "request.md";
 // 도입 이후 신규 spec부터 request.md 존재 필수(기존 0025~0058은 면제).
 export const REQUEST_REQUIRED_FROM = "0059";
+// 애매한 요청 대책(#182): 도입 이후 prd는 "애매한 곳·가정" 칸을 표시(괄호)와 함께 채워야 함(기존 면제).
+export const ASSUMPTION_REQUIRED_FROM = "0071";
 const REQUEST_PATH_RE = /^agents\/intent\/specs\/[^/]+\/request\.md$/;
 
 /** agents/intent/specs/<폴더>/request.md 경로인가(#155). */
@@ -263,11 +265,54 @@ export function acceptanceSourceForIssue(projectDir, issue) {
 
 const SDD_KEYWORDS = ["접근", "대안", "검증"];
 
+// "애매한 곳·가정" 칸 본문 줄들(없으면 null). 제목: "## " + (선택)"숫자. " + "애매한 곳·가정" + (선택)꼬리.
+export function assumptionSection(text) {
+  const lines = (text ?? "").split("\n");
+  const start = lines.findIndex((l) => /^##\s+(?:\d+\.\s*)?애매한 곳·가정(?![가-힣])/.test(l));
+  if (start === -1) return null;
+  const body = [];
+  for (const l of lines.slice(start + 1)) {
+    if (/^##\s/.test(l)) break;
+    body.push(l);
+  }
+  return body;
+}
+
+// 줄 끝 표시: (가정) · (확인 필요) · (확인됨: …)  — 부분 문자열 "가정"만으론 안 됨(괄호 요구).
+const ASSUMPTION_MARK = /\((?:가정|확인\s*필요|확인됨[:：][\s\S]*?)\)\s*$/;
+
+/** "애매한 곳·가정" 칸이 표시와 함께 채워졌는지(#182). 문제 목록(빈 배열=통과). */
+export function checkAssumptions(text) {
+  const body = assumptionSection(text);
+  if (body === null) return ['"## 7. 애매한 곳·가정" 칸이 없습니다'];
+  // 최상위 항목만(- 또는 * 로 시작, 들여쓰기 없음). 본문이 "("로 시작하면 안내 줄 → 빈 칸 취급.
+  const items = [];
+  for (const l of body) {
+    const m = /^[-*]\s+(.+?)\s*$/.exec(l);
+    if (!m) continue;
+    const content = m[1];
+    if (content.startsWith("(")) continue;
+    items.push(content);
+  }
+  if (items.length === 0) {
+    return ['"애매한 곳·가정" 칸을 채우세요 (각 줄 끝에 (가정)/(확인 필요)/(확인됨: …), 정말 없으면 "- 없음 — 이유")'];
+  }
+  const nones = items.filter((c) => /^없음(?![가-힣])/.test(c));
+  if (nones.length === items.length && items.length === 1) return [];
+  if (nones.length > 0) return ['"없음"은 다른 항목과 섞지 말고 단독 한 줄(- 없음 — 이유)로'];
+  const bad = items.find((c) => !ASSUMPTION_MARK.test(c));
+  if (bad) {
+    return [`애매한 곳·가정 항목은 줄 끝에 (가정)/(확인 필요)/(확인됨: …) 표시가 필요합니다: "${bad.slice(0, 30)}…"`];
+  }
+  return [];
+}
+
 export function checkFolderPrd(text, id) {
   const problems = [];
   if (/NNNN|<태스크 제목>|— 제목 —|<기능 이름>/.test(text.split("\n")[0] ?? "")) problems.push("제목을 실제 태스크명으로 채우세요");
   if (!/^\s*[-*] \[[ xX]\] \S/m.test(acceptanceSection(text))) problems.push("Acceptance에 내용 있는 체크박스를 1개 이상 쓰세요");
   if (id >= FOLDER_REQUIRED_FROM && !issueNumberOf(text)) problems.push('"- **이슈:** #번호"(또는 "관련 태스크: #번호")가 없습니다');
+  if (id >= ASSUMPTION_REQUIRED_FROM) problems.push(...checkAssumptions(text));
   return problems;
 }
 

@@ -46,6 +46,8 @@ bash agents/harness/evals/checks.sh   # 완료 전 게이트 (typecheck + expo-d
 `태스크 클레임 → 스펙 확인 → 계획 → 구현 → 게이트(checks.sh) → 저널 기록 → 태스크 완료`
 상세: [agents/harness/loop.md](agents/harness/loop.md)
 
+**요청이 애매하면 묻는다(구현 전):** 요청에 정해지지 않은 값·용어가 있으면 추측하지 말고 질문 목록으로 정리해 사용자 답을 받는다. "커밋할까요?"류 진행 확인은 아님 — 요구의 빈칸만. prd 7번 "애매한 곳·가정" 칸에 `(가정)`/`(확인 필요)`/`(확인됨: 답)`로 남긴다.
+
 이슈 초안 자동 정리 규칙: [agents/harness/github-issue-templates.md](agents/harness/github-issue-templates.md)
 
 **Notion 기록**(완료·변경 시 **01에만 말고 영향 섹션 전체** 갱신 — 섹션 맵): [agents/harness/notion-recording.md](agents/harness/notion-recording.md)
