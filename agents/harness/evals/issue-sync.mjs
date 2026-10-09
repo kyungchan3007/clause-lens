@@ -51,33 +51,52 @@ export function compareChecklists(specItems, issueItems) {
   return diffs;
 }
 
+/**
+ * 순수 코어(#183): 이슈 번호 + 이슈 본문을 받아 spec과 동기화 결과를 계산한다(IO 없음).
+ * 호출측이 getBody/putBody/comment를 담당 → CLI(gh)·Action(fetch) 모두 재사용.
+ *  - mode "sync"(기본): spec 체크 상태를 이슈로 미러(없는 체크 안 만듦) → nextBody.
+ *  - mode "check": spec↔이슈 어긋남(diffs).
+ */
+export function syncIssueFromSpec({ projectDir, issueNumber, issueBody, mode = "sync" }) {
+  const src = acceptanceSourceForIssue(projectDir, issueNumber);
+  if (!src) return { ok: false, code: "no_spec", message: `이슈 #${issueNumber}를 가리키는 spec이 없습니다` };
+  const specItems = parseChecklist(acceptanceSection(src.text));
+  if (specItems.length === 0) return { ok: false, code: "no_checkbox", specName: src.name, message: `${src.name}의 Acceptance에 체크박스가 없습니다` };
+  const checked = specItems.filter((i) => i.checked).length;
+  const base = { specName: src.name, checked, total: specItems.length };
+  if (mode === "check") {
+    const diffs = compareChecklists(specItems, parseChecklist(acceptanceSection(issueBody ?? "")));
+    return { ok: diffs.length === 0, code: diffs.length ? "drift" : "ok", diffs, ...base };
+  }
+  const nextBody = replaceIssueAcceptance(issueBody ?? "", specItems);
+  return { ok: true, code: nextBody === (issueBody ?? "") ? "unchanged" : "updated", nextBody, ...base };
+}
+
 function gh(args) {
   return execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
-  const mode = process.argv[2];
+  const argv = process.argv.slice(2);
+  const mode = argv.includes("--check") ? "--check" : argv.includes("--close") ? "--close" : "--sync";
+  const issueArg = argv.indexOf("--issue");
+  const issueOverride = issueArg >= 0 ? argv[issueArg + 1] : undefined; // 임의 이슈 지정(머지 후 정정·CI)
   const fail = (msg) => {
     console.log(`  ❌ ${msg}`);
     process.exit(1);
   };
   const branch = currentBranch(root);
-  const issue = branchIssueNumber(branch);
-  if (!issue) fail(`브랜치명에 이슈 번호가 없습니다: ${branch}`);
-  const src = acceptanceSourceForIssue(root, issue);
-  if (!src) fail(`이슈 #${issue}를 가리키는 spec이 없습니다 (단일 파일 "> **관련 태스크**: #${issue}" 또는 폴더 prd.md "- **이슈:** #${issue}")`);
-  const specName = src.name;
-  const specItems = parseChecklist(acceptanceSection(src.text));
-  if (specItems.length === 0) fail(`${specName}의 Acceptance에 체크박스가 없습니다`);
+  const issue = issueOverride ?? branchIssueNumber(branch);
+  if (!issue) fail(`이슈 번호가 없습니다 (브랜치 ${branch} 또는 --issue N)`);
   const { body, state } = JSON.parse(gh(["issue", "view", issue, "--json", "body,state"]));
-  const issueItems = parseChecklist(acceptanceSection(body));
 
-  if (mode === "--check") {
-    const diffs = compareChecklists(specItems, issueItems);
-    if (diffs.length) fail(`이슈 #${issue}와 spec이 어긋남:\n${diffs.map((d) => `     - ${d}`).join("\n")}\n     → pnpm issue-sync 로 맞추세요`);
-    console.log(`  ✅ 이슈 #${issue} ↔ ${specName} 체크박스 일치 (${specItems.filter((i) => i.checked).length}/${specItems.length} 체크)`);
-  } else if (mode === "--close") {
+  if (mode === "--close") {
+    // 닫기는 브랜치 기준(PR 머지 확인) — 순수 코어는 상태 미러만 담당.
+    const src = acceptanceSourceForIssue(root, issue);
+    if (!src) fail(`이슈 #${issue}를 가리키는 spec이 없습니다`);
+    const specItems = parseChecklist(acceptanceSection(src.text));
+    if (specItems.length === 0) fail(`${src.name}의 Acceptance에 체크박스가 없습니다`);
     const abandoned = specItems.filter((i) => !i.checked && !i.reasoned);
     if (abandoned.length) fail(`사유 없는 미체크가 ${abandoned.length}개 있어 닫지 않습니다: ${abandoned.map((i) => i.text).join(" / ")}`);
     const prs = JSON.parse(gh(["pr", "list", "--head", branch, "--state", "merged", "--json", "number"]));
@@ -87,14 +106,20 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
       gh(["issue", "close", issue, "--comment", `PR #${prs[0].number} 합쳐짐 — 완료 조건 ${specItems.filter((i) => i.checked).length}/${specItems.length} (pnpm issue-sync --close)`]);
       console.log(`  ✅ 이슈 #${issue} 닫음 (PR #${prs[0].number} 합쳐짐, 자동으로 닫히지 않았던 경우)`);
     }
+    process.exit(0);
+  }
+
+  const r = syncIssueFromSpec({ projectDir: root, issueNumber: issue, issueBody: body, mode: mode === "--check" ? "check" : "sync" });
+  if (r.code === "no_spec" || r.code === "no_checkbox") fail(r.message);
+  if (mode === "--check") {
+    if (!r.ok) fail(`이슈 #${issue}와 spec이 어긋남:\n${r.diffs.map((d) => `     - ${d}`).join("\n")}\n     → pnpm issue-sync 로 맞추세요`);
+    console.log(`  ✅ 이슈 #${issue} ↔ ${r.specName} 체크박스 일치 (${r.checked}/${r.total} 체크)`);
+  } else if (r.code === "unchanged") {
+    console.log(`  ✅ 이슈 #${issue} 이미 spec과 같음`);
   } else {
-    const next = replaceIssueAcceptance(body, specItems);
-    if (next === body) console.log(`  ✅ 이슈 #${issue} 이미 spec과 같음`);
-    else {
-      const file = join(mkdtempSync(join(tmpdir(), "issue-sync-")), "body.md");
-      writeFileSync(file, next);
-      gh(["issue", "edit", issue, "--body-file", file]);
-      console.log(`  ✅ 이슈 #${issue} 체크리스트를 ${specName}에 맞춤 (${specItems.filter((i) => i.checked).length}/${specItems.length} 체크)`);
-    }
+    const file = join(mkdtempSync(join(tmpdir(), "issue-sync-")), "body.md");
+    writeFileSync(file, r.nextBody);
+    gh(["issue", "edit", issue, "--body-file", file]);
+    console.log(`  ✅ 이슈 #${issue} 체크리스트를 ${r.specName}에 맞춤 (${r.checked}/${r.total} 체크)`);
   }
 }

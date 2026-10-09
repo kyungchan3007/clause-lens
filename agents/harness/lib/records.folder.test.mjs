@@ -12,6 +12,7 @@ import {
   decideEdit,
   folderForIssue,
   inspectIssueRecords,
+  inspectSpecReadiness,
   inspectTaskFolder,
   isRecordPath,
   isResidualAutoTraceFolder,
@@ -117,6 +118,23 @@ test("checkFolderPrd — 제목 잔재·체크박스·이슈번호", () => {
   assert.ok(p.some((x) => x.includes("제목")));
   assert.ok(p.some((x) => x.includes("체크박스")));
   assert.ok(p.some((x) => x.includes("이슈")));
+});
+
+test("inspectSpecReadiness — PR 시점 spec 준비성(#183 B'/#116, TASKS 비의존)", () => {
+  const root = tmpProject();
+  // 사유 없는 미체크 → 실패(TASKS 행이 전혀 없어도 잡힘 = #116 갭)
+  writeFolder(root, "0100-a", { "prd.md": "# 0100 — a\n- **이슈:** #900\n## Acceptance\n- [x] 한 것\n- [ ] 방치\n" });
+  const bad = inspectSpecReadiness(root, "900");
+  assert.equal(bad.ok, false);
+  assert.equal(bad.code, "abandoned");
+  // 전부 체크 또는 사유 있는 미체크 → 통과
+  writeFolder(root, "0101-b", { "prd.md": "# 0101 — b\n- **이슈:** #901\n## Acceptance\n- [x] 한 것\n- [ ] 머지 후 검증 — #901\n" });
+  assert.equal(inspectSpecReadiness(root, "901").ok, true);
+  // spec 없음
+  assert.equal(inspectSpecReadiness(root, "999").code, "no_spec");
+  // 체크박스 0개
+  writeFolder(root, "0102-c", { "prd.md": "# 0102 — c\n- **이슈:** #902\n## Acceptance\n내용 없음\n" });
+  assert.equal(inspectSpecReadiness(root, "902").code, "no_checkbox");
 });
 
 test("checkFolderSdd·checkFolderTrace", () => {

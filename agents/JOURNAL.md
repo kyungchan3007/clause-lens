@@ -14,6 +14,18 @@
 
 ---
 
+## 2026-10-09 · Claude · PR 머지 시 이슈 체크박스 자동 동기화 (#183, 0072)
+- **무엇**: 머지 후 사람 개입 0으로 이슈 완료 조건을 spec Acceptance 상태로 미러(A) + PR 시점 spec 준비성 검사(B'). #153 2단계.
+- **설계**: 적대적 토론 → A+B' 확정(사용자). Action은 거울(상태만)·머지 후 검증 항목은 REASON_MARK 사유 있는 미체크로 역설 해소·이슈는 head 브랜치+closingIssuesReferences로·B'는 사유 없는 미체크만 실패·#116은 TASKS 비의존.
+- **구현**: issue-sync 순수 코어 `syncIssueFromSpec`(--issue N) 분리 · records `inspectSpecReadiness` · `.github/scripts/{lib/github.mjs,issue-sync-merged.mjs,pr-check-spec.mjs}` · `pr-issue-sync.yml`(pull_request_target·merge_commit_sha만 체크아웃) · pr-ai-review.yml B' 스텝. 테스트 30건.
+- **게이트**: `checks.sh` ALL PASS.
+- **#169 정정**(사용자 확인): `--issue 169`로 0063 기준 8/8 미러(이슈 0/8이었음) — 새 경로 첫 동작 확인.
+- **이번에 드러난 공백**: 기존 done 게이트는 doneSpecIds(TASKS 행) 기반이라 0040류 미방문 → PR별 inspectSpecReadiness로 닫음. Action live는 로컬 미검증(실제 머지 시 확인).
+- **파일**: `.github/{scripts/*,workflows/*}`·`agents/harness/{evals/issue-sync.mjs,lib/records.mjs,loop.md,branch-and-issue.md}` · spec 0072.
+- **다음/주의**: PR(머지 직접). 보안: pull_request_target는 base/merge-sha만 체크아웃·fork 코드 실행 금지. 재측정은 별도.
+
+---
+
 ## 2026-10-09 · Claude · 보관 만료 실삭제 잡 (#164 · TASK-006 ③)
 - **무엇**: 보관 만료 **무료(TEMPORARY)** 문서 물리 삭제(DB+S3). DELETING 상태·DeletionAudit·후보 판정 순수함수·dry-run 기본 standalone 스크립트.
 - **설계**: 적대적 리뷰(2026-10-09, 코드 대조) 반영(0069). **범위 축소(사용자 확정): SAVED 삭제는 #165로** — SAVED 문서 부재(미검증)·lapsedAt 없음·구독 스냅샷→CAS 재구독 TOCTOU 데이터손실. 안전지연 LAG 3일·S3 전키 성공 후에만 행삭제(NotFound만 성공)·목록 `retentionState<>'DELETING'`·중단상한·DeletionAudit(삭제 전)·kill-switch·setInterval 금지.

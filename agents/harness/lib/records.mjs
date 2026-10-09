@@ -261,6 +261,24 @@ export function acceptanceSourceForIssue(projectDir, issue) {
   return undefined;
 }
 
+/**
+ * 이슈 하나의 spec 준비성(#183 B'/#116) — TASKS·doneSpecIds 비의존.
+ * PR 시점에 그 PR의 이슈→spec을 집어, 합치기 전에 드러나야 할 신호를 본다:
+ *  - spec/Acceptance 없음, 체크박스 0개, **사유 없는 미체크 존재**(= #116/#169 패턴).
+ * 반환 { ok, code, specName?, problems[] }. (사유 있는 미체크는 통과 — REASON_MARK 탈출구.)
+ */
+export function inspectSpecReadiness(projectDir, issue) {
+  const src = acceptanceSourceForIssue(projectDir, issue);
+  if (!src || !src.text) return { ok: false, code: "no_spec", problems: [`이슈 #${issue}를 가리키는 spec이 없습니다`] };
+  const items = parseChecklist(acceptanceSection(src.text));
+  if (items.length === 0) return { ok: false, code: "no_checkbox", specName: src.name, problems: [`${src.name}의 Acceptance에 체크박스가 없습니다`] };
+  const abandoned = items.filter((i) => !i.checked && !i.reasoned);
+  if (abandoned.length) {
+    return { ok: false, code: "abandoned", specName: src.name, problems: abandoned.map((i) => `사유 없는 미체크(완료 전이면 사유를 달거나 체크): ${i.text}`) };
+  }
+  return { ok: true, code: "ok", specName: src.name, problems: [] };
+}
+
 const SDD_KEYWORDS = ["접근", "대안", "검증"];
 
 export function checkFolderPrd(text, id) {

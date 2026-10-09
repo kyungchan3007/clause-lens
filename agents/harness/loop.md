@@ -26,8 +26,9 @@
 
 **장치로 강제(#82):** 판단 흐름·명령·강제 장치 상세는 [branch-and-issue.md](branch-and-issue.md).
 - 완료 게이트: **0023부터** spec에 이슈 번호(`> **관련 태스크**: #번호`)가 없으면 FAIL · **done** 태스크의 연결 spec에 **사유 없는 미체크**가 있으면 FAIL (0001~0022 면제).
-- PR 전: `pnpm issue-link`(브랜치↔이슈 연결) · `pnpm issue-sync`(이슈 체크박스를 spec `### Acceptance`에 맞춤) · `--check`(어긋남 검사).
-- 머지 후: `pnpm issue-sync --close`(`Closes #N`이 못 닫은 이슈 닫기). 완료 조건의 **단일 원본 = spec의 ### Acceptance**, 이슈는 복사본.
+- PR 전: `pnpm issue-link`(브랜치↔이슈 연결) · `pnpm issue-sync`(이슈 체크박스를 spec `### Acceptance`에 맞춤) · `--check`(어긋남 검사). 로컬은 이제 **편의**이고, 머지 시점 동기화는 아래 Action이 자동으로 한다.
+- **머지 시 자동(#183):** PR 머지 → GitHub Action(`pr-issue-sync.yml`)이 head 브랜치 이슈를 찾아 합쳐진 spec의 Acceptance **상태를 이슈로 미러**(사람 개입 0). **PR 시점**엔 `pr-check-spec.mjs`(B')가 그 PR의 spec에 **사유 없는 미체크**가 있으면 실패시킨다(#116 조기 차단). 머지 후에만 검증되는 항목은 `- [ ] … — #이슈`처럼 **사유 있는 미체크**로 둔다(Action이 그대로 미러해도 방치 아님).
+- 머지 후: `pnpm issue-sync --close`(`Closes #N`이 못 닫은 이슈 닫기). 완료 조건의 **단일 원본 = spec의 ### Acceptance**, 이슈는 복사본. 임의 이슈 정정은 `--issue N`.
 
 **과정 기록·강제(#84):** 규칙 상세는 [commit-and-issue.md](commit-and-issue.md).
 - **spec 형식: 0025부터 폴더** `agents/intent/specs/NNNN-슬러그/{prd,sdd,trace}.md`. 자동 기록은 spec 폴더 밖 `.harness/trace/<폴더>.jsonl`(git 미추적, #154 — 브랜치 전환 잔재 방지). 0001~0024 단일 파일은 면제.

@@ -43,6 +43,10 @@ pnpm issue-sync --check  # 어긋나면 실패
 
 # 머지 후 — "Closes #N"이 이슈를 못 닫는 경우가 있다
 pnpm issue-sync --close  # PR이 합쳐졌는데 이슈가 열려 있으면 닫음 (사유 없는 미체크가 있으면 거부)
+pnpm issue-sync --issue N  # 임의 이슈를 그 spec으로 정정(머지 후·닫힌 이슈 포함)
+
+# 머지 시 자동(#183): Action(pr-issue-sync.yml)이 spec Acceptance 상태를 이슈로 미러(사람 개입 0).
+# PR 시점: pr-check-spec.mjs(B')가 사유 없는 미체크(#116 신호)면 실패. 머지 후 검증 항목은 "- [ ] … — #이슈"로 사유 표기.
 ```
 
 ## 원문 고정 (request.md, #155)

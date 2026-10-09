@@ -1,7 +1,18 @@
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { parseChecklist } from "../lib/records.mjs";
-import { compareChecklists, renderChecklist, replaceIssueAcceptance } from "./issue-sync.mjs";
+import { compareChecklists, renderChecklist, replaceIssueAcceptance, syncIssueFromSpec } from "./issue-sync.mjs";
+
+function tmpSpec(issue, prd) {
+  const root = mkdtempSync(join(tmpdir(), "cl-sync-"));
+  const dir = join(root, "agents/intent/specs", `0200-x`);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "prd.md"), prd);
+  return root;
+}
 
 test("renderChecklist — 체크 상태 반영", () => {
   const out = renderChecklist([
@@ -68,4 +79,32 @@ test("compareChecklists — 상태·누락 차이 감지", () => {
 test("compareChecklists — 일치하면 빈 배열", () => {
   const a = parseChecklist("- [x] 하나\n- [ ] 둘");
   assert.deepEqual(compareChecklists(a, parseChecklist("- [x] 하나\n- [ ] 둘")), []);
+});
+
+test("syncIssueFromSpec — sync: spec 상태를 이슈로 미러(nextBody)", () => {
+  const root = tmpSpec("500", "# 0200 — x\n- **이슈:** #500\n## Acceptance\n- [x] A\n- [ ] B — #500\n");
+  const r = syncIssueFromSpec({ projectDir: root, issueNumber: "500", issueBody: "## 완료 조건\n- [ ] A\n- [ ] B\n", mode: "sync" });
+  assert.equal(r.ok, true);
+  assert.equal(r.code, "updated");
+  assert.match(r.nextBody, /- \[x\] A/);
+  assert.match(r.nextBody, /- \[ \] B — #500/);
+  assert.equal(r.checked, 1);
+  assert.equal(r.total, 2);
+});
+
+test("syncIssueFromSpec — 이미 같으면 unchanged", () => {
+  const root = tmpSpec("501", "# 0200 — x\n- **이슈:** #501\n## Acceptance\n- [x] A\n");
+  const r = syncIssueFromSpec({ projectDir: root, issueNumber: "501", issueBody: "## 완료 조건\n- [x] A\n", mode: "sync" });
+  assert.equal(r.code, "unchanged");
+});
+
+test("syncIssueFromSpec — check: 어긋나면 ok=false", () => {
+  const root = tmpSpec("502", "# 0200 — x\n- **이슈:** #502\n## Acceptance\n- [x] A\n");
+  assert.equal(syncIssueFromSpec({ projectDir: root, issueNumber: "502", issueBody: "## 완료 조건\n- [ ] A\n", mode: "check" }).ok, false);
+  assert.equal(syncIssueFromSpec({ projectDir: root, issueNumber: "502", issueBody: "## 완료 조건\n- [x] A\n", mode: "check" }).ok, true);
+});
+
+test("syncIssueFromSpec — spec 없으면 no_spec", () => {
+  const root = tmpSpec("503", "# 0200 — x\n- **이슈:** #503\n## Acceptance\n- [x] A\n");
+  assert.equal(syncIssueFromSpec({ projectDir: root, issueNumber: "999", issueBody: "", mode: "sync" }).code, "no_spec");
 });
