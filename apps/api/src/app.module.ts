@@ -7,6 +7,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { DocumentsModule } from "./modules/documents/documents.module";
 import { EntitlementModule } from "./modules/entitlement/entitlement.module";
 import { HealthModule } from "./modules/health/health.module";
+import { RetentionModule } from "./modules/retention/retention.module";
 import { UploadsModule } from "./modules/uploads/uploads.module";
 
 @Module({
@@ -20,6 +21,7 @@ import { UploadsModule } from "./modules/uploads/uploads.module";
     UploadsModule,
     AnalysisModule,
     EntitlementModule,
+    RetentionModule,
   ],
 })
 export class AppModule {}

@@ -69,6 +69,7 @@ export async function listRecentDocuments(
     FROM "Document"
     WHERE "userId" = ${userId}
       AND "status" IN ('done', 'partial')
+      AND "retentionState" <> 'DELETING'
       AND (
         "retentionState" = 'SAVED'
         OR ("retainUntil" IS NOT NULL AND "retainUntil" > now())
