@@ -12,8 +12,28 @@ export const PAST_RECORD_RULES = [
 ];
 const NOTION = /notion-(fetch|search)/;
 
-export const CHECK_REQUEST = /체크\s*(해|박스|표시)|check ?box/i;
+/**
+ * 사용자의 체크 수동 지시 — "체크박스"를 언급만 한 문장이 아니라 체크를 하라는/왜 안 했냐는 요청형만 (0031)
+ * 넓은 규칙(/체크\s*(해|박스|표시)|check ?box/i)은 붙여 넣은 이슈 제목("체크박스 동기화…")·도구 출력까지 셌다
+ */
+export const CHECK_REQUEST = /체크.{0,40}(해\s*줘|해\s*주|해\s*야|채워|체워|안\s*해|안\s*했|확인\s*안|확인\s*해\s*줘)|(왜|안)\s*.{0,10}확인\s*안\s*해.{0,30}체크|check ?(the )?box(es)?.{0,20}(please|why)/i;
+
+/** 사람이 직접 친 부분만 — 셸 명령·출력, 시스템 안내, 붙여 넣은 글, 명령 태그를 걷어 낸다 (0031) */
+const NOT_TYPED = /<(bash-input|bash-stdout|bash-stderr|system-reminder|pasted_content|local-command-[a-z]+|command-[a-z]+|task-notification)\b[^>]*>[\s\S]*?<\/\1>|<[a-z-]+\/>/g;
+export function typedText(content) {
+  return String(content ?? "").replace(NOT_TYPED, " ").trim();
+}
+// 사유 표지는 hooks·완료 검사와 같은 기준을 쓴다
 export { REASON_MARK };
+
+/** 시간대 표시가 없는 시각은 UTC로 본다 — recall 쪽 문자열 비교(transcript timestamp는 UTC)와 같게 */
+const asUtc = (v) => new Date(/T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(v) ? `${v}Z` : v).toISOString();
+
+/** 시각이 [since, until) 안인가 */
+export function inPeriod(ts, since, until) {
+  const t = asUtc(ts);
+  return (!since || t >= asUtc(since)) && (!until || t < asUtc(until));
+}
 
 export function localDate(ts, offsetHours = 9) {
   return new Date(new Date(ts).getTime() + offsetHours * 3600_000).toISOString().slice(0, 10);
@@ -48,6 +68,7 @@ export function classifyPastRead(name, input) {
 export function toEvents(lines) {
   const events = [];
   const seenTools = new Set();
+  const seenPrompts = new Set(); // 이어 하기로 같은 메시지가 여러 파일에 기록됨(같은 uuid) — 0031
   for (const line of lines) {
     let d;
     try {
@@ -57,8 +78,10 @@ export function toEvents(lines) {
     }
     if (!d || d.isSidechain) continue;
     const m = d.message;
-    if (d.type === "user" && typeof m?.content === "string" && !d.isMeta) {
-      events.push({ kind: "prompt", ts: d.timestamp, branch: d.gitBranch ?? "", text: m.content });
+    if (d.type === "user" && typeof m?.content === "string" && !d.isMeta && !d.isCompactSummary) {
+      if (d.uuid && seenPrompts.has(d.uuid)) continue;
+      if (d.uuid) seenPrompts.add(d.uuid);
+      events.push({ kind: "prompt", ts: d.timestamp, branch: d.gitBranch ?? "", text: typedText(m.content) });
     } else if (d.type === "assistant" && Array.isArray(m?.content)) {
       for (const c of m.content) {
         if (c?.type !== "tool_use") continue;
