@@ -4,3 +4,4 @@ export * from "./analysis-ops";
 export * from "./entitlement-ops";
 export * from "./subscription-ops";
 export * from "./documents-ops";
+export * from "./retention-ops";

@@ -69,10 +69,11 @@ enum PageStatus {
   // 실패는 영속 상태가 아니라 complete 응답의 error/retryable로 표현
 }
 
-// 보관 수명(analysis status와 직교한 축, #163). DELETING·취소는 #164가 추가.
+// 보관 수명(analysis status와 직교한 축, #163). DELETING은 실삭제 잡(#164).
 enum RetentionState {
   TEMPORARY // 무료 — retainUntil(완료+7일)로 접근 판정
   SAVED // 구독 저장 — 장기 보관(retainUntil 경과해도 유지)
+  DELETING // 실삭제 진행 중(#164) — 비가역. documentVisible default-deny로 숨김
 }
 
 // 계약 세션 — 사용자가 분석하려는 페이지 묶음.
@@ -96,6 +97,20 @@ model Document {
   @@unique([userId, clientRequestId]) // 멱등: 같은 사용자+요청키=같은 세션
   @@index([userId, status])
   @@index([userId, retainUntil, completedAt]) // 재열람 목록(소유자+보관 유효+완료순)
+}
+
+// 보관 만료 실삭제 감사 로그(#164). append-only — 행·랜덤 finalKey가 사라진 뒤 유일한 포렌식 흔적.
+// 삭제 실행 전에 기록한다. FK 없음(대상 Document는 곧 삭제됨).
+model DeletionAudit {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  reason     String // "free_expired" 등
+  keys       String[] // 삭제 대상 S3 키 목록(finalKey·normalized·tmp)
+  pageCount  Int
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
 }
 
 // 문서의 개별 페이지. imageKey 대신 확정 후보키(finalKey)를 서버가 소유.
