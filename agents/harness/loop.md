@@ -5,7 +5,7 @@
 
 ```
 1. CLAIM      TASKS.md에서 owner=나, status=in-progress · **이슈에서 브랜치 생성·연결**(§브랜치·이슈)
-2. DEFINE ★   spec 파일 `intent/specs/NNNN-슬러그.md` 생성 → PRD 섹션(왜/무엇 + Acceptance) 작성. 연결된 intent/features·기존 specs 확인.
+2. DEFINE ★   spec 파일 `intent/specs/NNNN-슬러그.md` 생성 → PRD 섹션(왜/무엇 + Acceptance) 작성. 연결된 intent/features·기존 specs 확인. **요청에 정해지지 않은 값·용어가 있으면 구현 전에 질문 목록으로 정리해 사용자 답을 받는다**(예: 금액 기준(할인 전/후·배송비)·끝수 처리·등급·상태 판별·입력 모양). "커밋할까요?"류 진행 확인은 질문 목록이 아니다 — 요구의 빈칸만. 받은 답은 prd 7번 "애매한 곳·가정" 칸 줄 끝을 `(확인됨: 답)`으로.
 3. CONTEXT    architecture → domain-map → 관련 도메인 문서 + frontend-architecture. (UI면 **shared/domain 위치 먼저 판단**[§공유 UI 승격, shared-first] + ui-ux-pro-max 스킬 조회) 관련 코드만.
 4. PLAN ★     같은 spec 파일에 SDD 섹션 작성(**무조건**): 접근·**대안·트레이드오프**·파일계획·검증계획. → 구현 전 게이트(아래 §4). 위험한 작업이면 사용자 승인.
 5. BUILD      Guardrails 지키며 작게 구현. Expo 코드면 v57 문서 먼저.
