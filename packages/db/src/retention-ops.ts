@@ -69,6 +69,21 @@ export async function findHardDeleteCandidates(
   `;
 }
 
+// 이전 실행에서 DELETING으로 전환됐으나 완료(행 삭제)되지 못한 문서 — 재개(resume) 대상.
+// (S3 삭제·행 삭제 중 크래시/일시 오류로 잔류. 후보 쿼리는 TEMPORARY만 보므로 여기서 별도 수거해 재시도.)
+export async function findStuckDeletingDocuments(
+  prisma: PrismaClient,
+  limit: number,
+): Promise<HardDeleteCandidate[]> {
+  return prisma.$queryRaw<HardDeleteCandidate[]>`
+    SELECT "id" AS "documentId", "userId"
+    FROM "Document"
+    WHERE "retentionState" = 'DELETING'
+    ORDER BY "updatedAt" ASC
+    LIMIT ${limit}
+  `;
+}
+
 // TEMPORARY → DELETING 조건부 전환(CAS, 후보 술어 재검증). 1행이면 전환 성공, 0행이면 skip(변경됨).
 // 비가역: DELETING에서 되돌리는 경로 없음. 저장 CAS는 retentionState='TEMPORARY' 가드라 부활 불가.
 export async function transitionToDeleting(

@@ -2,6 +2,7 @@
 jest.mock("@clause-lens/db/analysis", () => ({
   countHardDeleteCandidates: jest.fn(),
   findHardDeleteCandidates: jest.fn(),
+  findStuckDeletingDocuments: jest.fn(),
   transitionToDeleting: jest.fn(),
   loadDocumentKeysData: jest.fn(),
   recordDeletionAudit: jest.fn(),
@@ -12,6 +13,7 @@ import {
   countHardDeleteCandidates,
   deleteDocumentRow,
   findHardDeleteCandidates,
+  findStuckDeletingDocuments,
   loadDocumentKeysData,
   recordDeletionAudit,
   transitionToDeleting,
@@ -23,6 +25,7 @@ import type { StoragePort } from "../../ports/storage.port";
 
 const mCount = countHardDeleteCandidates as jest.Mock;
 const mFind = findHardDeleteCandidates as jest.Mock;
+const mStuck = findStuckDeletingDocuments as jest.Mock;
 const mFlip = transitionToDeleting as jest.Mock;
 const mKeys = loadDocumentKeysData as jest.Mock;
 const mAudit = recordDeletionAudit as jest.Mock;
@@ -37,7 +40,10 @@ const keysData = (over = {}) => ({
   ...over,
 });
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mStuck.mockResolvedValue([]); // 기본: 갇힌 DELETING 없음
+});
 
 describe("RetentionSweepService.dryRun (#164)", () => {
   it("쓰기 없이 후보·키 계획만 반환", async () => {
@@ -139,6 +145,47 @@ describe("RetentionSweepService.execute (#164)", () => {
       if (prev === undefined) delete process.env.RETENTION_SWEEP_DISABLED;
       else process.env.RETENTION_SWEEP_DISABLED = prev;
     }
+  });
+
+  it("행 삭제(deleteDocumentRow) 실패해도 sweep 중단 없이 failed 집계(DELETING 잔류)", async () => {
+    mCount.mockResolvedValue(1);
+    mFind.mockResolvedValue([{ documentId: "d1", userId: "u1" }]);
+    mFlip.mockResolvedValue(true);
+    mKeys.mockResolvedValue(keysData());
+    mDelRow.mockRejectedValue(new Error("db down")); // S3는 성공, 행 삭제만 실패
+    const svc = makeSvc({ delete: jest.fn().mockResolvedValue(undefined) });
+
+    const r = await svc.execute(10, 500); // 예외 전파 없이 완료
+    expect(r.failed).toBe(1);
+    expect(r.deleted).toBe(0);
+    expect(mAudit).toHaveBeenCalledTimes(1); // 감사는 삭제 전 남음
+  });
+
+  it("이전 실행에서 갇힌 DELETING 문서를 재개(resume)해 삭제 — 전환·감사 없이", async () => {
+    mCount.mockResolvedValue(0);
+    mFind.mockResolvedValue([]);
+    mStuck.mockResolvedValue([{ documentId: "stuck1", userId: "u1" }]); // 갇힌 DELETING
+    mKeys.mockResolvedValue(keysData());
+    const svc = makeSvc({ delete: jest.fn().mockResolvedValue(undefined) });
+
+    const r = await svc.execute(10, 500);
+    expect(r.deleted).toBe(1);
+    expect(mFlip).not.toHaveBeenCalled(); // 이미 DELETING → 전환 안 함
+    expect(mAudit).not.toHaveBeenCalled(); // 재개는 재감사 안 함
+    expect(mDelRow).toHaveBeenCalledWith(expect.anything(), "stuck1");
+  });
+
+  it("갇힌 DELETING 재개 중 S3 실패 → failed(계속 DELETING, 재시도 여지)", async () => {
+    mCount.mockResolvedValue(0);
+    mFind.mockResolvedValue([]);
+    mStuck.mockResolvedValue([{ documentId: "stuck1", userId: "u1" }]);
+    mKeys.mockResolvedValue(keysData());
+    const svc = makeSvc({ delete: jest.fn().mockRejectedValue(new Error("timeout")) });
+
+    const r = await svc.execute(10, 500);
+    expect(r.failed).toBe(1);
+    expect(r.deleted).toBe(0);
+    expect(mDelRow).not.toHaveBeenCalled();
   });
 });
 

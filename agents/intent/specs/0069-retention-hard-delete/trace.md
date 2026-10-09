@@ -44,5 +44,13 @@
 - **P1-2 standalone-only 강제**: AppModule에서 RetentionModule 제거 → 앱 런타임/엔드포인트/스케줄러에서 스윕 서비스 주입·호출 불가. 스크립트는 신규 `RetentionCliModule`(ConfigModule+DbModule+RetentionModule) 부트스트랩. 추가 방어선으로 `execute()` 시작에 kill-switch(`RETENTION_SWEEP_DISABLED`) 가드. 단위 2건 추가.
 - checks.sh ALL PASS(api retention 35건).
 
+### PR #181 리뷰 P1 — DELETING 잔류 복구 (2026-10-09)
+- **허점**: S3 삭제 성공 후 `deleteDocumentRow` 실패 시 예외 전파 → 문서가 DELETING에 갇힘. 후보 쿼리는 TEMPORARY만 보므로 재선정 안 됨 → S3는 지워졌는데 DB 행 영구 잔존(완전 삭제 위반).
+- **보완**:
+  - `finishDeletion`(키 열거→S3 삭제→행 삭제)을 try/catch로 감싸 어떤 단계 실패도 예외 전파 없이 `failed`(DELETING 잔류).
+  - `findStuckDeletingDocuments`로 갇힌 DELETING 문서를 **다음 실행에서 재개(resume)** — 전환·감사 없이 S3 재삭제(멱등)→행 삭제만 재시도.
+  - execute: ⓪ 재개 → ① 신규 후보 순. 신규 후보 블록도 try/catch로 감싸 한 건 실패가 run 전체를 중단하지 않음.
+- 단위 3건 추가(행삭제 실패 failed·재개 삭제·재개 중 S3 실패). checks.sh ALL PASS(retention-sweep 11건).
+
 ### 남음
 - 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165 lapsedAt)·크론 등록(운영).

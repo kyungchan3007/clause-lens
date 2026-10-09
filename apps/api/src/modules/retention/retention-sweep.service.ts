@@ -3,6 +3,7 @@ import {
   countHardDeleteCandidates,
   deleteDocumentRow,
   findHardDeleteCandidates,
+  findStuckDeletingDocuments,
   loadDocumentKeysData,
   recordDeletionAudit,
   transitionToDeleting,
@@ -102,11 +103,23 @@ export class RetentionSweepService {
       };
     }
 
-    const candidates = await findHardDeleteCandidates(this.prisma, limit);
     let deleted = 0;
     let failed = 0;
     let skipped = 0;
+    const tally = (r: "deleted" | "failed" | "skipped") => {
+      if (r === "deleted") deleted++;
+      else if (r === "failed") failed++;
+      else skipped++;
+    };
 
+    // ⓪ 이전 실행에서 DELETING에 갇힌 문서 재개(resume). 후보 쿼리는 TEMPORARY만 보므로 여기서 먼저 수거.
+    //    (감사·전환은 원래 실행에서 끝났으므로 생략 — S3 재삭제(멱등)→행 삭제만 재시도.)
+    const stuck = await findStuckDeletingDocuments(this.prisma, limit);
+    for (const c of stuck) {
+      tally(await this.finishDeletion(c.documentId));
+    }
+
+    const candidates = await findHardDeleteCandidates(this.prisma, limit);
     for (const c of candidates) {
       // ① DELETING CAS(후보 술어 재검증). 사이에 저장/만료 변경 시 0행 → skip.
       const flipped = await transitionToDeleting(this.prisma, c.documentId);
@@ -114,36 +127,50 @@ export class RetentionSweepService {
         skipped++;
         continue;
       }
-      // ② 행 삭제 전에 키 열거(랜덤 finalKey는 DB에만).
-      const data = await loadDocumentKeysData(this.prisma, c.documentId);
-      if (!data) {
-        skipped++;
-        continue;
-      }
-      const keys = documentDeletionKeys(c.documentId, data);
-      // ③ 감사 기록(삭제 전 — 유일한 포렌식 흔적).
-      await recordDeletionAudit(this.prisma, {
-        documentId: c.documentId,
-        userId: data.userId,
-        reason: "free_expired",
-        keys,
-        pageCount: data.pages.length,
-      });
-      // ④ S3 전 키 삭제. 하나라도 실패(transient)면 행 삭제 중단 → DELETING 잔류(다음 실행 복구).
-      const allDeleted = await this.deleteKeys(keys, c.documentId);
-      if (!allDeleted) {
+      // ② 행 삭제 전에 키 열거 → ③ 감사(삭제 전) → ④ S3 → ⑤ 행 삭제. 각 단계 실패는 예외 전파 없이 failed로.
+      try {
+        const data = await loadDocumentKeysData(this.prisma, c.documentId);
+        if (!data) {
+          skipped++;
+          continue;
+        }
+        const keys = documentDeletionKeys(c.documentId, data);
+        await recordDeletionAudit(this.prisma, {
+          documentId: c.documentId,
+          userId: data.userId,
+          reason: "free_expired",
+          keys,
+          pageCount: data.pages.length,
+        });
+        tally(await this.finishDeletion(c.documentId));
+      } catch (e) {
+        // 감사·키 열거 실패 등 → DELETING 잔류(다음 실행 resume에서 재시도).
         failed++;
-        continue;
+        this.logger.warn(`[execute] 처리 실패(doc ${c.documentId}) — DELETING 잔류: ${(e as Error).message}`);
       }
-      // ⑤ 전 키 성공 확인 후에만 행 삭제(cascade).
-      await deleteDocumentRow(this.prisma, c.documentId);
-      deleted++;
     }
 
     this.logger.log(
-      `[execute] 후보 ${totalCandidates} · 삭제 ${deleted} · 실패 ${failed} · skip ${skipped}`,
+      `[execute] 후보 ${totalCandidates} · 재개 ${stuck.length} · 삭제 ${deleted} · 실패 ${failed} · skip ${skipped}`,
     );
     return { mode: "execute", totalCandidates, deleted, failed, skipped };
+  }
+
+  // DELETING 문서의 삭제 완료: 키 열거 → S3 전 키 삭제(멱등) → 전부 성공 시에만 행 삭제.
+  // 어떤 단계든 실패하면 예외를 전파하지 않고 "failed"(DELETING 잔류 → 다음 실행 resume에서 재시도).
+  private async finishDeletion(documentId: string): Promise<"deleted" | "failed" | "skipped"> {
+    try {
+      const data = await loadDocumentKeysData(this.prisma, documentId);
+      if (!data) return "skipped"; // 이미 사라짐
+      const keys = documentDeletionKeys(documentId, data);
+      const allDeleted = await this.deleteKeys(keys, documentId);
+      if (!allDeleted) return "failed"; // S3 transient → 행 삭제 보류
+      await deleteDocumentRow(this.prisma, documentId); // 행 삭제 실패(일시 DB 오류)해도 아래 catch → failed
+      return "deleted";
+    } catch (e) {
+      this.logger.warn(`[execute] 삭제 완료 실패(doc ${documentId}) — DELETING 잔류: ${(e as Error).message}`);
+      return "failed";
+    }
   }
 
   // 키 전부 삭제 시도. 멱등 계약: 없는 객체(NotFound)는 성공 처리, 그 외(transient 5xx/timeout)만 false(행 삭제 중단).
