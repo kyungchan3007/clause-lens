@@ -14,6 +14,13 @@ import {
   listRecentDocuments,
   documentVisible,
   canTransitionToSaved,
+  countHardDeleteCandidates,
+  findHardDeleteCandidates,
+  transitionToDeleting,
+  loadDocumentKeysData,
+  recordDeletionAudit,
+  deleteDocumentRow,
+  RETENTION_DELETE_LAG_DAYS,
   RETENTION_DAYS,
 } from "../analysis/index.js";
 
@@ -202,6 +209,42 @@ async function run() {
   const expiredDoc = await prisma.document.findUnique({ where: { id: e.documentId } });
   assert.equal(documentVisible(expiredDoc, now), false, "TEMPORARY 만료 → 비가시(목록 제외와 일치)");
   assert.equal(canTransitionToSaved(expiredDoc, now), false, "만료 TEMPORARY 저장 불가");
+
+  // ── 7) 실삭제(#164, 무료만): 후보·안전지연·DELETING CAS·감사·행 삭제 ──
+  const DAY = 24 * 60 * 60 * 1000;
+  const u6 = await seedUser();
+  const d = await seedAnalyzable(u6, 1);
+  await confirmPageDone(d.jobId, d.pages[0].id, [clause(0, "high")]);
+  // retainUntil을 LAG일보다 더 과거로 → 후보.
+  await prisma.document.update({
+    where: { id: d.documentId },
+    data: { retainUntil: new Date(Date.now() - (RETENTION_DELETE_LAG_DAYS + 1) * DAY) },
+  });
+  assert.ok((await countHardDeleteCandidates(prisma)) >= 1, "만료+LAG 경과 무료 문서가 후보");
+  const cands = await findHardDeleteCandidates(prisma, 50);
+  assert.ok(cands.some((c) => c.documentId === d.documentId), "후보 목록 포함");
+  assert.ok(!cands.some((c) => c.documentId === s.documentId), "SAVED는 #164 후보 아님");
+
+  // LAG 유예 중(방금 만료)은 비후보.
+  const d2 = await seedAnalyzable(u6, 1);
+  await confirmPageDone(d2.jobId, d2.pages[0].id, [clause(0, "low")]);
+  await prisma.document.update({ where: { id: d2.documentId }, data: { retainUntil: new Date(Date.now() - DAY) } });
+  assert.ok(!(await findHardDeleteCandidates(prisma, 50)).some((c) => c.documentId === d2.documentId), "LAG 유예 중은 비후보");
+
+  // DELETING CAS 멱등 + 목록 제외.
+  assert.equal(await transitionToDeleting(prisma, d.documentId), true, "TEMPORARY→DELETING 1회 성공");
+  assert.equal(await transitionToDeleting(prisma, d.documentId), false, "이미 DELETING이면 CAS 0행");
+  const listAfter = await listRecentDocuments(prisma, u6, {});
+  assert.ok(!listAfter.items.some((i) => i.documentId === d.documentId), "DELETING은 목록 제외");
+
+  // 키 데이터 + 감사 + 행 삭제(cascade).
+  const kd = await loadDocumentKeysData(prisma, d.documentId);
+  assert.ok(kd && kd.userId === u6 && kd.pages.length === 1, "키 데이터 로드");
+  await recordDeletionAudit(prisma, { documentId: d.documentId, userId: u6, reason: "free_expired", keys: ["k1", "k2"], pageCount: 1 });
+  assert.equal((await prisma.deletionAudit.findMany({ where: { documentId: d.documentId } })).length, 1, "감사 1건");
+  await deleteDocumentRow(prisma, d.documentId);
+  assert.equal(await prisma.document.findUnique({ where: { id: d.documentId } }), null, "행 삭제됨");
+  await prisma.deletionAudit.deleteMany({ where: { userId: u6 } }); // 감사는 FK 없음 → 수동 정리
 
   console.log("✅ recall.integration: 모든 단언 통과");
 }

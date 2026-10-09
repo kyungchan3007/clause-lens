@@ -14,6 +14,18 @@
 
 ---
 
+## 2026-10-09 · Claude · 보관 만료 실삭제 잡 (#164 · TASK-006 ③)
+- **무엇**: 보관 만료 **무료(TEMPORARY)** 문서 물리 삭제(DB+S3). DELETING 상태·DeletionAudit·후보 판정 순수함수·dry-run 기본 standalone 스크립트.
+- **설계**: 적대적 리뷰(2026-10-09, 코드 대조) 반영(0069). **범위 축소(사용자 확정): SAVED 삭제는 #165로** — SAVED 문서 부재(미검증)·lapsedAt 없음·구독 스냅샷→CAS 재구독 TOCTOU 데이터손실. 안전지연 LAG 3일·S3 전키 성공 후에만 행삭제(NotFound만 성공)·목록 `retentionState<>'DELETING'`·중단상한·DeletionAudit(삭제 전)·kill-switch·setInterval 금지.
+- **구현**: `packages/db` enum DELETING·DeletionAudit·마이그레이션 + retention-ops(순수+raw SQL make_interval CAS). `apps/api` retention 모듈(documentDeletionKeys·RetentionSweepService dryRun/execute)·scripts/retention-sweep.ts(standalone, dry-run 기본). 목록 쿼리 DELETING 제외.
+- **게이트**: `checks.sh` **ALL PASS**(api +retention-ops 9·keys 4·sweep 5).
+- **이번에 드러난 공백**: DELETING은 #163 documentVisible default-deny로 상세/저장 자동 안전하나 **목록 쿼리는 미경유** → 명시 제외 추가(리뷰 C4). S3 end-to-end는 실 Postgres+MinIO 필요(Docker off) → 백엔드 기동 시 migrate deploy + 통합/ dry-run.
+- **파일**: `packages/db/{prisma/schema.prisma,prisma/migrations/20261009010000_add_retention_delete,src/retention-ops.ts,src/documents-ops.ts,test/recall.integration.mjs}` · `apps/api/src/{modules/retention/*,scripts/retention-sweep.ts,app.module.ts}` · spec 0069.
+- **다음/주의**: PR(머지·CI 직접, feat/163 위 스택 — #163 먼저 머지). 운영은 **dry-run 먼저** 확인 후 --execute. 후속 TODO: multi-revision(TASK-007) 구키 누수·중단 draft/failed tmp 누수·SAVED 삭제(#165)·크론 등록.
+- **e2e(2026-10-09, 실 Postgres+MinIO)**: #163 저장 엔드포인트(403→200→멱등→목록 SAVED→만료 게이트 통과) + #164 스윕(dry-run→execute, 후보 행·S3 3키 삭제·대조군 유지·DeletionAudit). **실버그 포착·수정**: Prisma가 number를 bigint 바인딩 → `make_interval(days => bigint)` 42883 에러 → `::int` 캐스트(3곳). 단위는 모킹이라 미포착 → e2e 가치 입증. 수정 후 checks.sh ALL PASS.
+
+---
+
 ## 2026-10-09 · Claude · 분석 결과 장기 보관 전환(저장하기) (#163 · TASK-006 ②)
 - **무엇**: 결과를 계정에 장기 보관하는 **저장하기**. `Document.retentionState`(TEMPORARY|SAVED)+`savedAt` 추가, 상세(410)·목록·저장이 공유하는 보관 판정 순수 함수, 멱등 저장 API, 앱 저장 버튼(기능 플래그 OFF).
 - **설계**: 적대적 리뷰(2026-10-09, 코드 대조) 반영(0068). **DELETING은 #163에서 제외**(순수함수 default-deny, #164가 추가)·**0행 응답 결정표**(owner 404 먼저·bare rowcount 금지)·**write-time capture·durable grant**(게이트 구독 재확인 안 함)·**#163은 #164+#165 전까지 비활성**(플래그 OFF).
