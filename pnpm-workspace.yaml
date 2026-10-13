@@ -33,3 +33,4 @@ minimumReleaseAgeExclude:
   - expo-image-picker@57.0.19
   - '@anthropic-ai/sdk@0.129.0'
   - '@google-cloud/vision@6.1.1'
+  - jest-expo@57.0.6
