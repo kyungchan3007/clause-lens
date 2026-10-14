@@ -29,7 +29,7 @@ OCR로 텍스트와 좌표를 추출하고 위험 조항을 분석해, 확인이
 
 ## 📑 목차
 
-**[핵심 설계](#-핵심-설계)** · [프로젝트 현황](#-프로젝트-현황) · [핵심 기능](#-핵심-기능) · [모노레포 구조](#-모노레포-구조) · [이렇게 돌아갑니다](#-이렇게-돌아갑니다) · [인프라](#-인프라) · [개발 환경 · 실행](#-개발-환경--실행) · [로드맵](#-개발-로드맵)
+**[핵심 설계](#-핵심-설계)** · [프로젝트 현황](#-프로젝트-현황) · [핵심 기능](#-핵심-기능) · [모노레포 구조](#-모노레포-구조) · [기술 스택](#-기술-스택) · [이렇게 돌아갑니다](#-이렇게-돌아갑니다) · [인프라](#-인프라) · [개발 환경 · 실행](#-개발-환경--실행) · [로드맵](#-개발-로드맵)
 
 > 더 깊은 설계·규칙 문서는 **[agents/](agents/README.md)** 에 계층별로 정리되어 있습니다(각 섹션 끝 "자세히" 링크).
 
@@ -164,6 +164,22 @@ clause-lens/
 ```
 
 <sub>세 실행 주체(앱 · API · Worker)의 책임 경계는 → [아키텍처 요약](agents/context/architecture.md) · [백엔드](agents/context/backend-architecture.md) · [프론트](agents/context/frontend-architecture.md)</sub>
+
+---
+
+## 🧰 기술 스택
+
+**실제 사용 라이브러리를 계층별로 정리**합니다. 런타임·도구 버전은 [개발 환경 · 실행](#️-개발-환경--실행)을 참고하세요.
+
+| 영역 | 핵심 라이브러리 |
+| --- | --- |
+| 📱 앱 | Expo Router · React Native Skia · Reanimated/Worklets · Gesture Handler · Zustand · react-native-sse · Kakao SDK |
+| 🎨 스타일링 | Tailwind CSS · NativeWind · react-native-css-interop · 디자인 토큰(3층) |
+| 🛡️ 서버·워커 | NestJS · BullMQ · Prisma · Google Vision(OCR) · Claude(위험 조항 분석) · AWS S3 SDK · sharp |
+| 🔗 공용 | zod(contracts) · Turborepo + pnpm |
+| 🧪 개발 | TypeScript · Jest + jest-expo · Testing Library · expo-doctor |
+
+<sub>역할·결정 근거 → [백엔드 아키텍처](agents/context/backend-architecture.md) · [프론트 아키텍처](agents/context/frontend-architecture.md) · [인프라 결정(ADR)](agents/context/architecture.md)</sub>
 
 ---
 
