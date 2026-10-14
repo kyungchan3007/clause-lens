@@ -46,7 +46,7 @@ export function RecentListScreen({
             onRetry={() => void refresh()}
             label="다시 시도"
             className="rounded-xl bg-primary px-4 py-2 active:opacity-80"
-            textClassName="text-sm font-semibold text-white"
+            textClassName="text-sm font-semibold text-primary-foreground"
           />
         </View>
       ) : (

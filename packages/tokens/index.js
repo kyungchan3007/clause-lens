@@ -6,6 +6,7 @@ const { fontFamily, fontSize, fontWeight, lineHeight, radius } = require("./typo
 const { ROLES, cssVarName, cssVars } = require("./theme-vars.js");
 const { color } = require("./color.js");
 const shadow = require("./shadow.js");
+const overlay = require("./overlay.js");
 
 module.exports = {
   cobalt,
@@ -25,4 +26,5 @@ module.exports = {
   cssVarName,
   cssVars, // cssVars("light") → { "--cl-...": hex } (루트 vars() 입력)
   shadow, // { card: { ios, android } } — 그림자 디자인 값(ui 어댑터가 플랫폼 변환)
+  overlay, // { scrim } — 이미지 위 어두운 막(색 prop용 hex)
 };

@@ -1,6 +1,6 @@
 import { Modal, View, Text, Image, Pressable } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Button, Icon } from "@clause-lens/ui";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Button, Icon, Screen } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 import type { DraftPage } from "../model/types";
 
@@ -31,7 +31,7 @@ export function PagePreviewModal({
     >
       {/* Modal은 별도 네이티브 루트라 바깥 SafeAreaProvider inset이 안 닿음 → 모달 안에서 다시 제공. */}
       <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+      <Screen>
         {page ? (
           <View className="flex-1">
             <View className="flex-row items-center justify-between px-4 py-3">
@@ -71,7 +71,7 @@ export function PagePreviewModal({
             </View>
           </View>
         ) : null}
-      </SafeAreaView>
+      </Screen>
       </SafeAreaProvider>
     </Modal>
   );

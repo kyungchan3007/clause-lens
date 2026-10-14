@@ -1,7 +1,6 @@
 import { ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Notice } from "@clause-lens/ui";
+import { Notice, Screen } from "@clause-lens/ui";
 import { BrandHeader, Hero, HowItWorks, ProcessingScreen } from "../src/features/home";
 import { FreeQuotaChip, QuotaExceededScreen } from "../src/features/entitlement";
 import { CaptureCTA, CaptureScreen } from "../src/features/capture";
@@ -15,7 +14,7 @@ export default function Page() {
   const onboarding = useHomeOnboarding();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <Screen>
       <BrandHeader
         onProfile={() => router.push("/profile")}
         onHome={hasPages ? actions.confirmHome : undefined}
@@ -75,6 +74,6 @@ export default function Page() {
           </View>
         </ScrollView>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }

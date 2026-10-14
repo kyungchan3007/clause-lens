@@ -2,6 +2,8 @@ export { Badge } from "./badge";
 export type { BadgeProps } from "./badge";
 export { ListRow } from "./list-row";
 export type { ListRowProps, ListRowVariant, ListRowTone } from "./list-row";
+export { Screen } from "./screen";
+export type { ScreenProps } from "./screen";
 export { ScreenHeader } from "./screen-header";
 export type { ScreenHeaderProps } from "./screen-header";
 export { StatusDot } from "./status-dot";
