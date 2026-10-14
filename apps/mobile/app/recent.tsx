@@ -1,5 +1,5 @@
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Screen } from "@clause-lens/ui";
 
 import { RecentListScreen } from "../src/features/documents";
 
@@ -7,11 +7,11 @@ import { RecentListScreen } from "../src/features/documents";
 export default function RecentRoute() {
   const router = useRouter();
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <Screen>
       <RecentListScreen
         onOpen={(id) => router.push({ pathname: "/result", params: { documentId: id } })}
         onBack={() => router.back()}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

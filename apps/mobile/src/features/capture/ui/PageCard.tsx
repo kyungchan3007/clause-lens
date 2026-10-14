@@ -1,7 +1,7 @@
 import { View, Text, Image, Pressable } from "react-native";
 import Sortable from "react-native-sortables";
 import { Icon } from "@clause-lens/ui";
-import { color } from "@clause-lens/tokens";
+import { overlay } from "@clause-lens/tokens";
 import type { DraftPage } from "../model/types";
 
 export type MoveDir = "prev" | "next";
@@ -50,7 +50,7 @@ export function PageCard({ page, index, total, disabled, onOpen, onDelete, onMov
           />
           <View
             className="absolute left-2 top-2 rounded-md px-1.5 py-0.5"
-            style={{ backgroundColor: "rgba(15,23,42,0.7)" }}
+            style={{ backgroundColor: overlay.scrim }}
           >
             <Text className="text-[11px] font-semibold text-white">{index + 1}</Text>
           </View>
@@ -67,7 +67,7 @@ export function PageCard({ page, index, total, disabled, onOpen, onDelete, onMov
       >
         <View
           className="h-7 w-7 items-center justify-center rounded-full"
-          style={{ backgroundColor: "rgba(15,23,42,0.7)" }}
+          style={{ backgroundColor: overlay.scrim }}
         >
           <Icon name="X" size={16} color="#ffffff" />
         </View>

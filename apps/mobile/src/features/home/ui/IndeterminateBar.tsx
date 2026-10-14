@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, View } from "react-native";
-import { color } from "@clause-lens/tokens";
+import { color, radius } from "@clause-lens/tokens";
 
 // 진행률을 모르는 구간(업로드·분석)의 "작동 중" 표시 — 채움(0→100%)이 아니라
 // 좌우로 흐르는 띠. 위치를 주장하지 않으므로 1페이지에서도 멈춰 보이지 않고 가짜 %가 없다.
@@ -40,7 +40,7 @@ export function IndeterminateBar() {
         style={{
           width: segW,
           height: "100%",
-          borderRadius: 999,
+          borderRadius: radius.full,
           backgroundColor: color("primary"),
           transform: [{ translateX }],
         }}

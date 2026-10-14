@@ -1,7 +1,6 @@
 import { ActivityIndicator, Alert, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Button } from "@clause-lens/ui";
+import { Button, Screen } from "@clause-lens/ui";
 
 import { useDocumentReview, useSaveDocument, type SaveOutcome } from "../src/features/documents";
 import { ResultScreen, type ResultScreenProps } from "../src/features/result";
@@ -44,14 +43,14 @@ export default function ResultRoute() {
 
   if (source.kind === "live") {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+      <Screen>
         <SaveableResult
           documentId={source.documentId}
           pages={source.pages}
           imageByPageId={source.imageByPageId}
           onClose={() => router.back()}
         />
-      </SafeAreaView>
+      </Screen>
     );
   }
 
@@ -60,15 +59,12 @@ export default function ResultRoute() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 items-center justify-center gap-3 bg-background px-4"
-      edges={["top", "bottom"]}
-    >
+    <Screen className="items-center justify-center gap-3 px-4">
       <Text className="text-center text-sm text-foreground-muted">
         결과를 불러올 수 없어요. 분석을 다시 시작해 주세요.
       </Text>
       <Button label="돌아가기" variant="secondary" onPress={() => router.back()} />
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -84,21 +80,15 @@ function ReviewResult({
 
   if (state === "loading") {
     return (
-      <SafeAreaView
-        className="flex-1 items-center justify-center bg-background"
-        edges={["top", "bottom"]}
-      >
+      <Screen className="items-center justify-center">
         <ActivityIndicator accessibilityLabel="불러오는 중" />
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (state === "gone") {
     return (
-      <SafeAreaView
-        className="flex-1 items-center justify-center gap-3 bg-background px-6"
-        edges={["top", "bottom"]}
-      >
+      <Screen className="items-center justify-center gap-3 px-6">
         <Text className="text-center text-base font-medium text-foreground">
           보관 기간이 지났어요
         </Text>
@@ -106,16 +96,13 @@ function ReviewResult({
           무료 분석 결과는 7일 동안 보관돼요. 다시 보려면 새로 분석해 주세요.
         </Text>
         <Button label="돌아가기" variant="secondary" onPress={onClose} />
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (state === "error" || pages.length === 0) {
     return (
-      <SafeAreaView
-        className="flex-1 items-center justify-center gap-3 bg-background px-6"
-        edges={["top", "bottom"]}
-      >
+      <Screen className="items-center justify-center gap-3 px-6">
         <Text className="text-center text-sm text-foreground-muted">
           결과를 불러오지 못했어요.
         </Text>
@@ -123,18 +110,18 @@ function ReviewResult({
           <Button label="다시 시도" variant="primary" onPress={reload} />
           <Button label="돌아가기" variant="secondary" onPress={onClose} />
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <Screen>
       <SaveableResult
         documentId={documentId}
         pages={pages}
         imageByPageId={{}}
         onClose={onClose}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

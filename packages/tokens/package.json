@@ -17,6 +17,10 @@
     "primitives.js",
     "semantic.js",
     "typography.js",
-    "tailwind-preset.js"
+    "tailwind-preset.js",
+    "color.js",
+    "theme-vars.js",
+    "shadow.js",
+    "overlay.js"
   ]
 }

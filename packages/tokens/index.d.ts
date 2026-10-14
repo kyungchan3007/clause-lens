@@ -55,3 +55,6 @@ export interface ShadowSpec {
   android: { elevation: number };
 }
 export const shadow: { card: ShadowSpec };
+
+// 오버레이(스크림) — 이미지 위 어두운 막. 테마 불변.
+export const overlay: { scrim: string };

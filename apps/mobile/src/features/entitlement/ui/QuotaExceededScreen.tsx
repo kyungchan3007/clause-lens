@@ -1,6 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { Button, Icon, Notice } from "@clause-lens/ui";
-import { color } from "@clause-lens/tokens";
+import { Button, IconBadge, Notice } from "@clause-lens/ui";
 
 // 무료 분석 403(소진) 전용 화면(⑥). 표시 전용 — app이 콜백 주입.
 // BrandHeader는 app이 상단에 렌더하므로 body만.
@@ -14,9 +13,7 @@ export function QuotaExceededScreen({
   return (
     <View className="flex-1 px-5">
       <View className="flex-1 items-center justify-center">
-        <View className="mb-6 h-20 w-20 items-center justify-center rounded-3xl bg-warning-bg">
-          <Icon name="Ticket" size={36} color={color("warning")} />
-        </View>
+        <IconBadge name="Ticket" tone="warning" shape="rounded" className="mb-6" />
         <Text
           accessibilityRole="header"
           className="text-center text-[22px] font-extrabold tracking-tight text-foreground"

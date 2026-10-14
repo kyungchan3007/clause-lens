@@ -1,5 +1,5 @@
 import { ActivityIndicator, Text, View } from "react-native";
-import { Button, Icon, Notice } from "@clause-lens/ui";
+import { Button, IconBadge, Notice } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 import { DocScanGraphic } from "./DocScanGraphic";
 import { IndeterminateBar } from "./IndeterminateBar";
@@ -92,13 +92,9 @@ export function ProcessingScreen(state: ProcessingState) {
       {/* 히어로(중앙) */}
       <View className="flex-1 items-center justify-center">
         {mode === "error" ? (
-          <View className="mb-7 h-20 w-20 items-center justify-center rounded-full bg-danger-bg">
-            <Icon name="TriangleAlert" size={36} color={color("danger")} />
-          </View>
+          <IconBadge name="TriangleAlert" tone="danger" className="mb-7" />
         ) : mode === "done" || mode === "partial" ? (
-          <View className="mb-7 h-20 w-20 items-center justify-center rounded-full bg-success-bg">
-            <Icon name="ShieldCheck" size={36} color={color("success")} />
-          </View>
+          <IconBadge name="ShieldCheck" tone="success" className="mb-7" />
         ) : (
           <DocScanGraphic animate={mode === "analysis"} />
         )}
