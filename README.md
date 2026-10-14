@@ -11,6 +11,8 @@ OCR로 텍스트와 좌표를 추출하고 위험 조항을 분석해, 확인이
 ![Expo](https://img.shields.io/badge/Expo_SDK-57-000020?logo=expo&logoColor=white)
 ![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
+![NativeWind](https://img.shields.io/badge/NativeWind-4-0EA5E9?logo=tailwindcss&logoColor=white)
 ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
