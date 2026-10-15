@@ -98,7 +98,7 @@ flowchart LR
 > 토큰 기반 디자인 시스템과 Feature-Sliced 구조로 UI를 일관·확장 가능하게.
 
 - **디자인 토큰** — 3층 토큰(Cobalt `#2563EB`) · 테마 경로(`vars()`) · 위험도 `tone` 도메인 분리
-- **공용 UI** — shared-first 승격(ListRow·Badge·Button·ScreenHeader 등 `packages/ui`)
+- **공용 UI** — shared-first 승격(Screen·ListRow·Badge·Button·ScreenHeader·IconBadge·MessageState·EmptyState 등 `packages/ui`)
 - **FSD** — 기능→기능 직접 import 금지, `app` 레이어에서 조합
 
 <sub>자세히 → [아키텍처(디자인·FSD 결정)](agents/context/architecture.md) · [프론트 아키텍처](agents/context/frontend-architecture.md)</sub>

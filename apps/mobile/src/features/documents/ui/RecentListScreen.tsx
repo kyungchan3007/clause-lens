@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { FlatList, Text, View } from "react-native";
-import { EmptyState, LoadingIndicator, RetryInline, ScreenHeader } from "@clause-lens/ui";
+import { Button, EmptyState, LoadingIndicator, MessageState, ScreenHeader } from "@clause-lens/ui";
 
 import { useDocumentsStore } from "../model/documentsStore";
 import { DocumentRow } from "./DocumentRow";
@@ -40,13 +40,11 @@ export function RecentListScreen({
           <LoadingIndicator label="불러오는 중" />
         </View>
       ) : status === "error" && items.length === 0 ? (
-        <View className="flex-1 items-center justify-center gap-3 px-6">
-          <Text className="text-sm text-danger">목록을 불러오지 못했어요</Text>
-          <RetryInline
-            onRetry={() => void refresh()}
-            label="다시 시도"
-            className="rounded-xl bg-primary px-4 py-2 active:opacity-80"
-            textClassName="text-sm font-semibold text-primary-foreground"
+        <View className="flex-1 items-center justify-center px-6">
+          <MessageState
+            tone="danger"
+            description="목록을 불러오지 못했어요"
+            actions={<Button label="다시 시도" variant="primary" onPress={() => void refresh()} />}
           />
         </View>
       ) : (

@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { Button, DragSheet, EmptyState, Icon, SectionHeader } from "@clause-lens/ui";
+import { Button, DragSheet, EmptyState, Icon, MessageState, SectionHeader } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 import type { Clause } from "@clause-lens/contracts";
 
@@ -94,9 +94,11 @@ export function ResultScreen({ pages, imageByPageId, onClose, onSave, saving }: 
 
   if (!current) {
     return (
-      <View className="flex-1 items-center justify-center gap-3 bg-background px-4">
-        <Text className="text-sm text-foreground-muted">표시할 결과가 없습니다.</Text>
-        {onClose ? <Button label="닫기" variant="secondary" onPress={onClose} /> : null}
+      <View className="flex-1 items-center justify-center bg-background px-4">
+        <MessageState
+          description="표시할 결과가 없습니다."
+          actions={onClose ? <Button label="닫기" variant="secondary" onPress={onClose} /> : undefined}
+        />
       </View>
     );
   }

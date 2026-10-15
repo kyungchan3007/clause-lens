@@ -1,6 +1,6 @@
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { ActivityIndicator, Alert, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Button, Screen } from "@clause-lens/ui";
+import { Button, MessageState, Screen } from "@clause-lens/ui";
 
 import { useDocumentReview, useSaveDocument, type SaveOutcome } from "../src/features/documents";
 import { ResultScreen, type ResultScreenProps } from "../src/features/result";
@@ -59,11 +59,11 @@ export default function ResultRoute() {
   }
 
   return (
-    <Screen className="items-center justify-center gap-3 px-4">
-      <Text className="text-center text-sm text-foreground-muted">
-        결과를 불러올 수 없어요. 분석을 다시 시작해 주세요.
-      </Text>
-      <Button label="돌아가기" variant="secondary" onPress={() => router.back()} />
+    <Screen className="items-center justify-center px-4">
+      <MessageState
+        description="결과를 불러올 수 없어요. 분석을 다시 시작해 주세요."
+        actions={<Button label="돌아가기" variant="secondary" onPress={() => router.back()} />}
+      />
     </Screen>
   );
 }
@@ -88,28 +88,28 @@ function ReviewResult({
 
   if (state === "gone") {
     return (
-      <Screen className="items-center justify-center gap-3 px-6">
-        <Text className="text-center text-base font-medium text-foreground">
-          보관 기간이 지났어요
-        </Text>
-        <Text className="text-center text-sm text-foreground-muted">
-          무료 분석 결과는 7일 동안 보관돼요. 다시 보려면 새로 분석해 주세요.
-        </Text>
-        <Button label="돌아가기" variant="secondary" onPress={onClose} />
+      <Screen className="items-center justify-center px-6">
+        <MessageState
+          title="보관 기간이 지났어요"
+          description="무료 분석 결과는 7일 동안 보관돼요. 다시 보려면 새로 분석해 주세요."
+          actions={<Button label="돌아가기" variant="secondary" onPress={onClose} />}
+        />
       </Screen>
     );
   }
 
   if (state === "error" || pages.length === 0) {
     return (
-      <Screen className="items-center justify-center gap-3 px-6">
-        <Text className="text-center text-sm text-foreground-muted">
-          결과를 불러오지 못했어요.
-        </Text>
-        <View className="flex-row gap-2">
-          <Button label="다시 시도" variant="primary" onPress={reload} />
-          <Button label="돌아가기" variant="secondary" onPress={onClose} />
-        </View>
+      <Screen className="items-center justify-center px-6">
+        <MessageState
+          description="결과를 불러오지 못했어요."
+          actions={
+            <View className="flex-row justify-center gap-2">
+              <Button label="다시 시도" variant="primary" onPress={reload} />
+              <Button label="돌아가기" variant="secondary" onPress={onClose} />
+            </View>
+          }
+        />
       </Screen>
     );
   }
