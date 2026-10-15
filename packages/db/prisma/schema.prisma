@@ -33,6 +33,7 @@ model User {
   entitlement        Entitlement?
   entitlementCharges EntitlementCharge[]
   subscriptions      Subscription[]
+  billingCustomers   BillingCustomer[]
 
   @@unique([provider, providerUserId])
 }
@@ -315,8 +316,9 @@ model Subscription {
   status           SubscriptionStatus   @default(active)
   externalId       String // 외부 구독 식별자(원본 구독 id)
   currentPeriodEnd DateTime             @db.Timestamptz(3)
+  gracePeriodEnd   DateTime?            @db.Timestamptz(3) // grace 유예 종료(공급자). grace는 이 시각 전까지만 유효(#165)
   autoRenew        Boolean              @default(true)
-  verifiedAt       DateTime             @db.Timestamptz(3) // 공급자 검증 시각
+  verifiedAt       DateTime             @db.Timestamptz(3) // 공급자 검증 시각(성공한 재조회에만 갱신)
   createdAt        DateTime             @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime             @updatedAt @db.Timestamptz(3)
 
@@ -339,6 +341,56 @@ enum SubscriptionPeriod {
 
 enum SubscriptionStatus {
   active // 유효(결제 정상)
-  grace // 결제 유예(여전히 접근 — ADR-06 삭제 유예 30일과 별개)
+  grace // 결제 유예(여전히 접근 — ADR-06 삭제 유예 30일과 별개). gracePeriodEnd 전까지만 유효(#165)
   expired // 만료(접근 없음)
+}
+
+// ── 구독 결제 동기화 (TASK-006 ④ / #165 Slice 1) ──
+// 설계: ADR-12 + Codex 2026-10-15. 웹훅=재조회 트리거, 행=검증된 현재 상태의 투영. 실연결은 Slice 2.
+
+enum BillingProvider {
+  REVENUECAT
+}
+
+enum SubscriptionEventStatus {
+  received // 저장됨(처리 전)
+  processing
+  processed // 반영 완료
+  failed // 처리 실패(재시도 대상)
+  skipped // 무관/알 수 없는 이벤트(권한 미부여)
+}
+
+// 공급자 웹훅 수신함 — 멱등 수신·재시도·감사. 재시도 실행·실연결은 Slice 2.
+model SubscriptionEvent {
+  id          String                  @id @default(cuid())
+  provider    BillingProvider
+  projectId   String // 수신 엔드포인트 설정에서 결정(공급자 프로젝트)
+  eventId     String // 공급자 이벤트 고유 id
+  type        String // 이벤트 종류(INITIAL_PURCHASE 등, 원문 보존)
+  environment String // "production" | "sandbox"
+  occurredAt  DateTime                @db.Timestamptz(3) // 공급자 발생 시각(순서 보장 X)
+  receivedAt  DateTime                @default(now()) @db.Timestamptz(3)
+  status      SubscriptionEventStatus @default(received)
+  attempts    Int                     @default(0)
+  nextRetryAt DateTime?               @db.Timestamptz(3)
+  errorCode   String?
+  payload     Json // 재처리에 필요한 최소 payload
+  processedAt DateTime?               @db.Timestamptz(3)
+
+  @@unique([provider, projectId, eventId]) // 멱등 수신 키
+  @@index([status, nextRetryAt])
+}
+
+// 사용자 ↔ 공급자 고객 id 매핑(서버 발급 고정). 소유권·대사 근거.
+model BillingCustomer {
+  id         String          @id @default(cuid())
+  userId     String
+  provider   BillingProvider
+  customerId String // 공급자 고객 id(RevenueCat App User ID)
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, customerId]) // 한 공급자 고객 = 한 매핑
+  @@index([userId])
 }

@@ -121,7 +121,7 @@ const ACTIVE_SUB_STATUSES = ["active", "grace"] as const;
 async function loadActiveSubs(tx: AnyClient, userId: string): Promise<SubscriptionLike[]> {
   const rows = await tx.subscription.findMany({
     where: { userId, status: { in: [...ACTIVE_SUB_STATUSES] } },
-    select: { status: true, currentPeriodEnd: true },
+    select: { status: true, currentPeriodEnd: true, gracePeriodEnd: true },
   });
   return rows as SubscriptionLike[];
 }

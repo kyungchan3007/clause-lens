@@ -3,11 +3,15 @@ import {
   canSaveDocuments,
   getAnalysisAccess,
   isEffectivelyActive,
+  isStaleWrite,
   monthWindowStart,
+  normalizeProviderSnapshot,
   reserveAnalysis,
+  resolveOwnership,
   settleAnalysis,
   subscriptionQuotaRemaining,
   SUBSCRIPTION_MONTHLY_QUOTA,
+  type ProviderSubscriptionSnapshot,
   type SubscriptionLike,
 } from "@clause-lens/db/analysis";
 
@@ -20,10 +24,15 @@ const sub = (over: Partial<SubscriptionLike> = {}): SubscriptionLike => ({
 
 // ── 순수 함수 ──────────────────────────────────────────────
 describe("subscription-ops (순수)", () => {
-  it("isEffectivelyActive: active는 기간 남아야 유효, grace는 유효, expired는 무효", () => {
+  it("isEffectivelyActive: active는 기간 남아야 유효, grace는 gracePeriodEnd 전까지, expired는 무효", () => {
     expect(isEffectivelyActive(sub(), NOW)).toBe(true);
     expect(isEffectivelyActive(sub({ currentPeriodEnd: new Date("2026-10-01T00:00:00Z") }), NOW)).toBe(false); // active인데 만료
-    expect(isEffectivelyActive(sub({ status: "grace", currentPeriodEnd: new Date("2026-10-01T00:00:00Z") }), NOW)).toBe(true);
+    // grace: 결제기간은 지났어도 gracePeriodEnd가 미래면 유효
+    expect(isEffectivelyActive(sub({ status: "grace", currentPeriodEnd: new Date("2026-10-01T00:00:00Z"), gracePeriodEnd: new Date("2026-10-20T00:00:00Z") }), NOW)).toBe(true);
+    // grace: gracePeriodEnd 경과면 무효(만료 알림 누락 시 영구 권한 버그 방지)
+    expect(isEffectivelyActive(sub({ status: "grace", currentPeriodEnd: new Date("2026-10-01T00:00:00Z"), gracePeriodEnd: new Date("2026-10-10T00:00:00Z") }), NOW)).toBe(false);
+    // grace: 기한 없으면 무효
+    expect(isEffectivelyActive(sub({ status: "grace", gracePeriodEnd: null }), NOW)).toBe(false);
     expect(isEffectivelyActive(sub({ status: "expired" }), NOW)).toBe(false);
   });
 
@@ -41,6 +50,52 @@ describe("subscription-ops (순수)", () => {
     expect(subscriptionQuotaRemaining(0)).toBe(SUBSCRIPTION_MONTHLY_QUOTA);
     expect(subscriptionQuotaRemaining(50)).toBe(0);
     expect(subscriptionQuotaRemaining(60)).toBe(0);
+  });
+});
+
+// ── 결제 동기화 순수 로직 (#165 Slice 1) ──────────────────────
+describe("subscription sync (순수)", () => {
+  const snap = (over: Partial<ProviderSubscriptionSnapshot> = {}): ProviderSubscriptionSnapshot => ({
+    platform: "PLAY",
+    productId: "clauselens_pro",
+    period: "MONTHLY",
+    externalId: "ext_1",
+    status: "active",
+    currentPeriodEnd: new Date("2026-11-01T00:00:00.000Z"),
+    gracePeriodEnd: null,
+    autoRenew: true,
+    environment: "production",
+    ...over,
+  });
+
+  it("normalize: active 유지(기간 미래)·grace 유지(기한 미래)", () => {
+    expect(normalizeProviderSnapshot(snap(), NOW).status).toBe("active");
+    expect(
+      normalizeProviderSnapshot(snap({ status: "grace", gracePeriodEnd: new Date("2026-10-20T00:00:00Z") }), NOW).status,
+    ).toBe("grace");
+  });
+
+  it("normalize: 기간 지난 active·기한 지난/없는 grace는 expired로 강등", () => {
+    expect(normalizeProviderSnapshot(snap({ currentPeriodEnd: new Date("2026-10-01T00:00:00Z") }), NOW).status).toBe("expired");
+    expect(normalizeProviderSnapshot(snap({ status: "grace", gracePeriodEnd: new Date("2026-10-10T00:00:00Z") }), NOW).status).toBe("expired");
+    expect(normalizeProviderSnapshot(snap({ status: "grace", gracePeriodEnd: null }), NOW).status).toBe("expired");
+  });
+
+  it("normalize: grace가 아니면 gracePeriodEnd를 비운다", () => {
+    expect(normalizeProviderSnapshot(snap({ gracePeriodEnd: new Date("2026-10-20T00:00:00Z") }), NOW).gracePeriodEnd).toBeNull();
+  });
+
+  it("resolveOwnership: 신규·동일 소유자 ok, 타 소유자 conflict", () => {
+    expect(resolveOwnership(null, "u1")).toBe("ok");
+    expect(resolveOwnership({ userId: "u1" }, "u1")).toBe("ok");
+    expect(resolveOwnership({ userId: "u1" }, "u2")).toBe("conflict");
+  });
+
+  it("isStaleWrite: 기존 verifiedAt가 조회 시작 이후면 stale(버림)", () => {
+    const qStart = new Date("2026-10-15T00:00:00Z");
+    expect(isStaleWrite(null, qStart)).toBe(false);
+    expect(isStaleWrite({ verifiedAt: new Date("2026-10-14T00:00:00Z") }, qStart)).toBe(false);
+    expect(isStaleWrite({ verifiedAt: new Date("2026-10-15T00:00:01Z") }, qStart)).toBe(true);
   });
 });
 
