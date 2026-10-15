@@ -39,7 +39,8 @@
 - [x] `gracePeriodEnd` 추가 + `grace && gracePeriodEnd > now` 로 판정(기존 테스트 갱신)
 - [x] `SubscriptionEvent`·`BillingCustomer` 모델 + 수기 마이그레이션 SQL
 - [x] 순수 로직: 정규화(normalizeProviderSnapshot)·소유권(resolveOwnership)·stale 차단(isStaleWrite) + 단위
-- [x] `BillingProviderPort` + Fake + 동기화 서비스(멱등·충돌·stale) + Fake 단위테스트(핵심 6케이스)
+- [x] `BillingProviderPort` + Fake + 동기화 서비스(멱등·충돌·stale) + Fake 단위테스트(핵심 7케이스)
+- [x] 통합 e2e(실 Postgres + Nest 모듈 부팅, `scripts/db-e2e.sh`) 4케이스 — 영속·멱등·유예만료·공급자장애
 - [x] `bash agents/harness/evals/checks.sh` ALL PASS
 
 ## 7. 애매한 곳·가정 (Open Questions)
