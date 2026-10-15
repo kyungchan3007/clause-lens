@@ -97,6 +97,9 @@ function makeFakePrisma(seed: {
     __subs: subs,
     __events: events,
   };
+  // 트랜잭션은 콜백에 자기 자신(동일 인메모리 저장소)을 tx로 전달.
+  (prisma as unknown as { $transaction: (cb: (tx: typeof prisma) => unknown) => Promise<unknown> }).$transaction =
+    async (cb) => cb(prisma);
   return prisma;
 }
 
@@ -207,5 +210,26 @@ describe("SubscriptionSyncService.processEvent", () => {
     const r = await service.processEvent(evt(), NOW);
     expect(r.outcome).toBe("applied");
     expect(prisma.__subs.get("PLAY|ext_1")?.status).toBe("expired");
+  });
+
+  it("수신함 create가 unique 충돌(P2002) → duplicate (동시 처리 레이스 안전)", async () => {
+    const { service, provider, prisma } = make({ customers: U1 });
+    provider.set("cust_u1", { ok: true, subscriptions: [activeSnap()] });
+    prisma.subscriptionEvent.create = async () => {
+      throw { code: "P2002" };
+    };
+    const r = await service.processEvent(evt({ eventId: "e_race" }), NOW);
+    expect(r.outcome).toBe("duplicate");
+  });
+
+  it("처리 중 예외 → 이벤트 failed로 기록 후 rethrow(processing 잔류 방지)", async () => {
+    const { service, provider, prisma } = make({ customers: U1 });
+    provider.set("cust_u1", { ok: true, subscriptions: [activeSnap()] });
+    (prisma as unknown as { $transaction: () => Promise<unknown> }).$transaction = async () => {
+      throw new Error("boom");
+    };
+    await expect(service.processEvent(evt({ eventId: "e_boom" }), NOW)).rejects.toThrow("boom");
+    const ev = [...prisma.__events.values()].find((r) => (r as { eventId?: string }).eventId === "e_boom");
+    expect((ev as { status?: string } | undefined)?.status).toBe("failed");
   });
 });
