@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-10-15 · Claude · RevenueCat 실연결 — 웹훅·REST (#165 Slice 2, 0080)
+- **무엇**: Slice 1의 포트 뒤 모킹을 실연결. RevenueCat REST 어댑터(v1 subscribers 재조회) + 인증 웹훅 라우트(공개) + 설정 바인딩. 운영 경로 활성(env 주입 시).
+- **설계**: Codex 적대적 리뷰(세션 01a13e7c) 선행 — 블로커 4 반영. (A) 재진입: processed만 duplicate·failed/received 재처리(5xx 재전송이 실패를 올바르게 재처리). (B) externalId=customerId:productId(RC v1 실제 단위, 이전/병합 Slice 5). (C) 환경 격리=서버 단일환경 바인딩(sandbox skip, 스키마 불변). (E) lazy 매핑 제거(인증≠소유권, 생성은 Slice 4). 설계 노션(백엔드 설계 DB) 기록.
+- **구현**: `revenuecat-billing-provider.ts`(store→platform·레지스트리 period·active→grace→expired·404/네트워크 ok:false)·`revenuecat-webhook.guard.ts`(정적 Authorization 상수시간+선택 HMAC raw Buffer·5분)·`subscriptions.controller.ts`(POST /billing/revenuecat/webhook, provider_error→503)·`subscription-sync.service.ts`(재진입+환경 게이트)·`subscriptions.module.ts`(useFactory 바인딩+필수설정 검증)·`main.ts`(rawBody). db 순수함수 2개·`.env.example` RC 섹션.
+- **파일**: `apps/api/src/modules/subscriptions/*`(신규 4+수정 2), `apps/api/src/main.ts`, `packages/db/src/subscription-ops.ts`, `apps/api/test/revenuecat-webhook.e2e-spec.ts`(+기존 e2e ConfigModule 수정), `.env.example`, spec `0080-revenuecat-webhook-sync/*`.
+- **게이트**: ✅ `checks.sh` ALL PASS · api 단위 51 · e2e 11(웹훅 7+기존 4, `db-e2e.sh`).
+- **다음/주의**: 재시도 실행 루프·대사·누락탐지·알림 = **Slice 3**. 앱 구매/복원·identify(매핑 생성) = **Slice 4**. 샌드박스 양 플랫폼 출시검증 = **Slice 5**. 실 RC 계정·키는 배포 env(코드는 미설정 시 Unconfigured+웹훅 전부 거부). product id(DEFAULT_PRODUCT_PERIODS)는 스토어 설정 시 확정.
+
 ## 2026-10-09 · Claude · PR 머지 시 이슈 체크박스 자동 동기화 (#183, 0072)
 - **무엇**: 머지 후 사람 개입 0으로 이슈 완료 조건을 spec Acceptance 상태로 미러(A) + PR 시점 spec 준비성 검사(B'). #153 2단계.
 - **설계**: 적대적 토론 → A+B' 확정(사용자). Action은 거울(상태만)·머지 후 검증 항목은 REASON_MARK 사유 있는 미체크로 역설 해소·이슈는 head 브랜치+closingIssuesReferences로·B'는 사유 없는 미체크만 실패·#116은 TASKS 비의존.

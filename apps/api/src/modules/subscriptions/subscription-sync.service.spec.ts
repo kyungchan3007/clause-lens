@@ -39,11 +39,13 @@ function applyData(row: Record<string, unknown>, data: Record<string, unknown>):
     }
   }
 }
-function makeFakePrisma(seed: {
-  customers?: { provider: string; customerId: string; userId: string }[];
-  subs?: SubRow[];
-  events?: { provider: string; projectId: string; eventId: string }[];
-} = {}) {
+function makeFakePrisma(
+  seed: {
+    customers?: { provider: string; customerId: string; userId: string }[];
+    subs?: SubRow[];
+    events?: { provider: string; projectId: string; eventId: string; status: string }[];
+  } = {},
+) {
   const events = new Map<string, Record<string, unknown>>();
   const customers = new Map<string, { userId: string }>();
   const subs = new Map<string, SubRow>();
@@ -96,6 +98,7 @@ function makeFakePrisma(seed: {
     },
     __subs: subs,
     __events: events,
+    __evKey: evKey,
   };
   // 트랜잭션은 콜백에 자기 자신(동일 인메모리 저장소)을 tx로 전달.
   (prisma as unknown as { $transaction: (cb: (tx: typeof prisma) => unknown) => Promise<unknown> }).$transaction =
@@ -128,20 +131,20 @@ const evt = (over: Partial<IncomingSubscriptionEvent> = {}): IncomingSubscriptio
   ...over,
 });
 
-function make(seed?: Parameters<typeof makeFakePrisma>[0]) {
+function make(seed?: Parameters<typeof makeFakePrisma>[0], environment: "production" | "sandbox" = "production") {
   const prisma = makeFakePrisma(seed);
   const provider = new FakeProvider();
-  const service = new SubscriptionSyncService(prisma as unknown as PrismaService, provider);
+  const service = new SubscriptionSyncService(prisma as unknown as PrismaService, provider, environment);
   return { prisma, provider, service };
 }
 
 const U1 = [{ provider: "REVENUECAT", customerId: "cust_u1", userId: "u1" }];
 
 describe("SubscriptionSyncService.processEvent", () => {
-  it("중복 이벤트 → duplicate (no-op)", async () => {
+  it("이미 processed된 이벤트 → duplicate (no-op)", async () => {
     const { service, provider } = make({
       customers: U1,
-      events: [{ provider: "REVENUECAT", projectId: "proj_1", eventId: "e1" }],
+      events: [{ provider: "REVENUECAT", projectId: "proj_1", eventId: "e1", status: "processed" }],
     });
     provider.set("cust_u1", { ok: true, subscriptions: [activeSnap()] });
     const r = await service.processEvent(evt(), NOW);
@@ -149,7 +152,32 @@ describe("SubscriptionSyncService.processEvent", () => {
     expect(r.applied).toBe(0);
   });
 
-  it("고객 매핑 없음 → unmapped (기록만)", async () => {
+  it("failed 이벤트 재전송 → 재처리 성공(applied) + event processed [재진입]", async () => {
+    const { service, provider, prisma } = make({
+      customers: U1,
+      events: [{ provider: "REVENUECAT", projectId: "proj_1", eventId: "e1", status: "failed" }],
+    });
+    provider.set("cust_u1", { ok: true, subscriptions: [activeSnap()] });
+    const r = await service.processEvent(evt(), NOW);
+    expect(r.outcome).toBe("applied");
+    expect(r.applied).toBe(1);
+    const ev = prisma.__events.get(prisma.__evKey("REVENUECAT", "proj_1", "e1"));
+    expect((ev as { status?: string } | undefined)?.status).toBe("processed");
+    expect(prisma.__subs.get("PLAY|ext_1")?.status).toBe("active");
+  });
+
+  it("환경 불일치(sandbox 이벤트, 서버 production) → skipped (반영 X)", async () => {
+    const { service, provider, prisma } = make({ customers: U1 }, "production");
+    provider.set("cust_u1", { ok: true, subscriptions: [activeSnap()] });
+    const r = await service.processEvent(evt({ eventId: "e_sbx", environment: "sandbox" }), NOW);
+    expect(r.outcome).toBe("skipped");
+    expect(r.applied).toBe(0);
+    const ev = prisma.__events.get(prisma.__evKey("REVENUECAT", "proj_1", "e_sbx"));
+    expect((ev as { status?: string; errorCode?: string } | undefined)?.status).toBe("skipped");
+    expect((ev as { errorCode?: string } | undefined)?.errorCode).toBe("env_mismatch");
+  });
+
+  it("고객 매핑 없음 → unmapped (기록만, 매핑 생성 안 함)", async () => {
     const { service } = make({ customers: [] });
     const r = await service.processEvent(evt(), NOW);
     expect(r.outcome).toBe("unmapped");
@@ -212,17 +240,19 @@ describe("SubscriptionSyncService.processEvent", () => {
     expect(prisma.__subs.get("PLAY|ext_1")?.status).toBe("expired");
   });
 
-  it("수신함 create가 unique 충돌(P2002) → duplicate (동시 처리 레이스 안전)", async () => {
+  it("동시 create 레이스(P2002) + 피어가 이미 processed → duplicate (안전)", async () => {
     const { service, provider, prisma } = make({ customers: U1 });
     provider.set("cust_u1", { ok: true, subscriptions: [activeSnap()] });
     prisma.subscriptionEvent.create = async () => {
+      // 동시 피어가 그새 생성·완료한 상황을 시뮬.
+      prisma.__events.set(prisma.__evKey("REVENUECAT", "proj_1", "e_race"), { id: "ev_peer", status: "processed" });
       throw { code: "P2002" };
     };
     const r = await service.processEvent(evt({ eventId: "e_race" }), NOW);
     expect(r.outcome).toBe("duplicate");
   });
 
-  it("처리 중 예외 → 이벤트 failed로 기록 후 rethrow(processing 잔류 방지)", async () => {
+  it("처리 중 예외 → 이벤트 failed로 기록 후 rethrow(잔류 방지)", async () => {
     const { service, provider, prisma } = make({ customers: U1 });
     provider.set("cust_u1", { ok: true, subscriptions: [activeSnap()] });
     (prisma as unknown as { $transaction: () => Promise<unknown> }).$transaction = async () => {
