@@ -25,6 +25,8 @@ export { DragSheet } from "./drag-sheet";
 export type { DragSheetProps } from "./drag-sheet";
 export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
+export { MessageState } from "./message-state";
+export type { MessageStateProps, MessageStateTone } from "./message-state";
 export { Notice } from "./notice";
 export type { NoticeProps, NoticeTone } from "./notice";
 export { LoadingIndicator, RetryInline } from "./async-state";

@@ -1,5 +1,5 @@
-import { Pressable, Text, View } from "react-native";
-import { Icon, LoadingIndicator, RetryInline } from "@clause-lens/ui";
+import { View } from "react-native";
+import { Icon, ListRow, LoadingIndicator, RetryInline } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
 import { useDocumentsStore } from "../model/documentsStore";
@@ -35,18 +35,14 @@ export function RecentEntryButton({ onSeeAll }: { onSeeAll: () => void }) {
 
   return (
     <View className="px-5 pt-2">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`최근 분석 ${count}건 모두 보기`}
+      <ListRow
+        variant="card"
+        title={`최근 분석 ${count}건`}
+        leading={<Icon name="FileClock" size={18} color={color("primary")} />}
+        trailing={<Icon name="ChevronRight" size={18} color={color("textMuted")} />}
         onPress={onSeeAll}
-        className="flex-row items-center justify-between rounded-2xl border border-border bg-surface px-4 py-3.5 active:opacity-70"
-      >
-        <View className="flex-row items-center gap-2">
-          <Icon name="FileClock" size={18} color={color("primary")} />
-          <Text className="text-[15px] font-semibold text-foreground">최근 분석 {count}건</Text>
-        </View>
-        <Icon name="ChevronRight" size={18} color={color("textMuted")} />
-      </Pressable>
+        accessibilityLabel={`최근 분석 ${count}건 모두 보기`}
+      />
     </View>
   );
 }
