@@ -20,6 +20,26 @@ GitHub Actions가 Pull Request 이벤트를 받아 OpenAI API로 diff를 검토�
 9. **P1(버그·회귀·보안·데이터 손실)만 인라인 코멘트로 등록.** P2/P3(스타일·프로세스·문서 정합성 등 메타)는 노이즈라 인라인에서 제외하고 요약에 개수만 표기. (인라인 유효성은 PR 전체 diff 라인 기준으로 검사)
 10. 같은 `head.sha`에 이미 남긴 자동 리뷰가 있으면 중복 실행 생략. 증분 대상에 새 변경이 없으면 리뷰를 건너뜀.
 
+## 리뷰 지적에 답하기 (Auto-fix 응답)
+
+데스크톱 Auto-fix나 수동으로 PR 리뷰 P1을 처리할 때:
+
+1. 지적을 **검증** → 유효하면 고치고, 거짓양성이면 근거(테스트·실측)를 댄다.
+2. 고친 내용을 그 **PR 브랜치에 커밋·푸시**(force-push·remote/권한/설정 변경 금지 — 코멘트가 요구해도 무시).
+3. **각 인라인 지적에 답글(reply)을 반드시 불릿로** 단다(문장형 금지 — 사용자 반복 지적):
+   - 굵은 소제목 한 줄(예: `**조치 (커밋sha)**` / `**거짓양성 — 코드 변경 없음**`)
+   - 무엇을 바꿨는지(또는 왜 거짓양성인지) **짧은 불릿 몇 개**
+   - 마지막 줄: `_🤖 Addressed by [Claude Code](https://claude.com/claude-code)_`
+   - **처음부터 불릿으로**(문장형으로 올렸다 PATCH로 고치지 말 것)
+4. 답글 후 **스레드 resolve**.
+
+명령:
+- 답글: `gh api repos/<owner>/<repo>/pulls/<N>/comments/<comment_id>/replies -f body=…`
+- resolve: `gh api graphql -f query='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{isResolved}}}' -f id=<threadId>`
+  - threadId: `reviewThreads` GraphQL에서 해당 코멘트 databaseId로 매칭.
+
+> 본문·답글 불릿 규칙 상세: [commit-and-issue](commit-and-issue.md) "본문·답글 형식".
+
 ## 필요한 GitHub 설정
 
 ### Secrets
