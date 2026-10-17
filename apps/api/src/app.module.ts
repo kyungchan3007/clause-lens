@@ -4,6 +4,7 @@ import { ConfigModule } from "@nestjs/config";
 import { DbModule } from "./db/db.module";
 import { AnalysisModule } from "./modules/analysis/analysis.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { BillingModule } from "./modules/billing/billing.module";
 import { DocumentsModule } from "./modules/documents/documents.module";
 import { EntitlementModule } from "./modules/entitlement/entitlement.module";
 import { HealthModule } from "./modules/health/health.module";
@@ -22,6 +23,7 @@ import { UploadsModule } from "./modules/uploads/uploads.module";
     AnalysisModule,
     EntitlementModule,
     SubscriptionsModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

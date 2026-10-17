@@ -14,6 +14,16 @@
 
 ---
 
+## 2026-10-17 · Claude · identify 매핑 + 재동기화 (#165 Slice 4A, 0083)
+- **무엇**: 서버 결제 계정 연결 — `POST /me/billing/identify`(인증·멱등)로 BillingCustomer 매핑 생성 + 최초 연결 직후 재동기화(매핑 전 도착 구독 흡수). Slice 2/3가 미뤄둔 매핑 생성 주체.
+- **설계**: Codex 적대적 리뷰(세션 baa9hothz) 선행 — 블로커 2·중대 다수. identify≠구매 소유권 증명(블로커 A)이라 "내부 매핑만 안전"으로 재서술, 소유권 증명은 출시 전 과제. restore 이전 정책=기존 소유자 유지(블로커 D·사용자 확정). 사용자 결정으로 **4A(서버)/4B(앱) 분리** — 이번은 4A.
+- **구현**: contracts billing.ts + `BillingIdentifyService`(create-only·P2002 무해·타 소유자 Conflict·reconcileCustomer) + `BillingController`(JwtAuthGuard) + 신규 `BillingModule`(Auth+Subscriptions, 잡 CLI에 Auth 안 끌어옴). e2e 플래키(병렬 공유 DB) → jest-e2e maxWorkers:1.
+- **파일**: `apps/api/src/modules/billing/*`(신규 3+2 spec), `apps/api/src/app.module.ts`, `packages/contracts/src/{billing.ts,index.ts}`, `apps/api/test/billing-identify.e2e-spec.ts`, `apps/api/jest-e2e.json`, spec `0083`.
+- **게이트**: ✅ `checks.sh` ALL PASS · api 단위 +8(billing) · e2e 19(identify 3+기존 16, db-e2e.sh).
+- **다음/주의**: **4B(앱)** = RevenueCat SDK 설치·구매/복원 UI·계정 수명주기·구매 후 /me/access 폴링. **출시 전 과제** = 구매 소유권 증명(영수증 검증/secure logIn). Slice 5 = 샌드박스 출시 검증. 브랜치 `feat/165-purchase-identify`(develop 기준, 비스택).
+
+---
+
 ## 2026-10-15 · Claude · 대사·재시도·운영 알림 (#165 Slice 3, 0081)
 - **무엇**: 수신함 재시도 실행 + 정기 대사 + 최소 운영 리포팅. 실패 이벤트 재처리(백오프→dead-letter), 고객 재조회 보정. standalone CLI 2개(크론/수동).
 - **설계**: Codex 적대적 리뷰(세션 bal47jjra) 선행 — 블로커 4. (A) processed 검사만으론 동시실행 못 막음(성공이 failed로 역행) → **원자 claim+lease 토큰 조건부 완료**. (B) 대사 "사라진 구독 expired"는 완전스냅샷·스키마 식별자 필요 → **보류**(사용자 Q1=A). (C) dead-letter MAX 종속 → **저장 enum `dead`**. 사용자 Q2=claim 수정은 Slice 3. 설계 노션(백엔드 설계 DB) 기록.
