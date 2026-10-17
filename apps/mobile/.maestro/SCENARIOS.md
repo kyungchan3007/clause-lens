@@ -190,3 +190,10 @@ maestro test apps/mobile/.maestro/profile.yaml   # 개별
 로그인/회전/로그아웃/가드의 로직은 `apps/api` 단위 테스트(`*.spec.ts`)로,
 앱 상태 전이(restore/setSession/signOut)·저장·API는 `apps/mobile` 단위 테스트(`*.test.ts`)로 커버.
 이 문서의 S1~S8은 **화면 흐름 통합 관점**의 시나리오.
+
+## S23. 구독 구매(Fake) — 구독 카드 → 구독 화면 → 구매 → 서버 확인 (subscription, #165 Slice 4B)
+- **Given** 로그인·기록 있음(최근 분석 N건) · 로컬 API+Postgres · **Fake 빌드**(EXPO_PUBLIC_PURCHASES_FAKE=1)
+- **When** 최근 목록 하단 "구독 알아보기" → 구독 화면 "구독하기"
+- **Then** 구매↔권한 분리 상태가 보인다: "구매를 확인하고 있어요"(확인 중) → "구독이 활성화"(반영) 또는 "확인이 지연되고 있어요"(지연)
+- **And** 구매 성공만으로 바로 권한을 단정하지 않는다(서버 반영 확인 후 활성)
+- ⚠️ **범위**: Fake 공급자 대상 — 앱 흐름만 증명. 실 RevenueCat SDK·스토어 결제는 배포 전/Slice 5. 복원은 육안.

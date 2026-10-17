@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Alert, Text } from "react-native";
+import { Text } from "react-native";
 import renderer, { act } from "react-test-renderer";
 
 import { SubscriptionPromoCard } from "./SubscriptionPromoCard";
@@ -16,14 +16,14 @@ const hasText = (r: ReturnType<typeof render>, s: string) =>
 
 describe("SubscriptionPromoCard (구독 안내)", () => {
   it("제목·부제·구독 버튼 렌더", () => {
-    const r = render(<SubscriptionPromoCard />);
+    const r = render(<SubscriptionPromoCard onPress={() => {}} />);
     expect(hasText(r, "분석 결과를 계속 보관하세요")).toBe(true);
-    expect(hasText(r, "구독 알아보기 (곧 제공)")).toBe(true);
+    expect(hasText(r, "구독 알아보기")).toBe(true);
   });
 
-  it("버튼 탭 → '곧 제공' Alert(구독 미구현)", () => {
-    const spy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
-    const r = render(<SubscriptionPromoCard />);
+  it("버튼 탭 → onPress(라우트가 구독 화면으로 이동)", () => {
+    const onPress = jest.fn();
+    const r = render(<SubscriptionPromoCard onPress={onPress} />);
     const btn = r
       .findAll((n) => n.props.accessibilityRole === "button" && typeof n.props.onPress === "function")
       .find((n) => {
@@ -34,7 +34,6 @@ describe("SubscriptionPromoCard (구독 안내)", () => {
         }
       });
     act(() => btn!.props.onPress());
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+    expect(onPress).toHaveBeenCalled();
   });
 });

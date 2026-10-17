@@ -1,9 +1,9 @@
-import { Alert, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Button, Icon } from "@clause-lens/ui";
 import { color } from "@clause-lens/tokens";
 
-// 최근 목록(⑨) 하단 구독 안내 카드. 실제 구독=TASK-006 → "곧 제공" 안내만.
-export function SubscriptionPromoCard() {
+// 최근 목록(⑨) 하단 구독 안내 카드. 이동은 라우트가 주입(onPress) — 피처는 네비게이션 비의존.
+export function SubscriptionPromoCard({ onPress }: { onPress: () => void }) {
   return (
     <View className="gap-2.5 rounded-2xl bg-primary-tint p-4">
       <View className="flex-row items-center gap-2">
@@ -13,12 +13,7 @@ export function SubscriptionPromoCard() {
       <Text className="text-[13px] leading-5 text-foreground-muted">
         무료 결과는 7일 뒤 사라져요. 구독하면 기한 없이 보관하고 언제든 다시 볼 수 있어요.
       </Text>
-      <Button
-        label="구독 알아보기 (곧 제공)"
-        variant="primary"
-        fullWidth
-        onPress={() => Alert.alert("구독 예정", "구독 기능은 곧 제공될 예정이에요.")}
-      />
+      <Button label="구독 알아보기" variant="primary" fullWidth onPress={onPress} />
     </View>
   );
 }
