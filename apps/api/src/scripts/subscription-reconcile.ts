@@ -56,7 +56,7 @@ async function main(): Promise<void> {
         process.exitCode = 2;
       } else {
         logger.log(
-          `EXECUTE — 처리 ${r.processed} · 반영 ${r.applied} · noop ${r.noop} · unmapped ${r.unmapped} · 공급자실패 ${r.providerError} · nextCursor ${r.nextCursor ?? "(끝)"}`,
+          `EXECUTE — 처리 ${r.processed} · 반영 ${r.applied} · noop ${r.noop} · unmapped ${r.unmapped} · 공급자실패 ${r.providerError} · 예외 ${r.errored} · nextCursor ${r.nextCursor ?? "(끝)"}`,
         );
       }
     }

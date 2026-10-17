@@ -20,3 +20,6 @@
 - **테스트**: 단위 — 서비스(claim·dead·재진입·reconcile 18)·재시도(6)·대사(5)·어댑터/가드(19) = api 재사용 포함. 서브스크립션 단위 47 통과. e2e — 잡(재시도→processed·MAX→dead·dry-run 무변경·대사 반영·공급자실패 유지 5) + 기존 11 = 16 통과.
 - **게이트**: `checks.sh` ALL PASS + `scripts/db-e2e.sh` 통과.
 - 범위 밖(보류): 드리프트 "사라진 구독 expired"(스키마+완전스냅샷 필요) · identify 매핑 생성(Slice 4) · 샌드박스 출시검증(Slice 5) · 능동 알림 인프라.
+
+- **PR#201 자동리뷰 P1 조치(2026-10-17, Slice 3가 #201에 머지됨)**:
+  - 대사 execute 루프의 `reconcileCustomer` 호출을 try/catch로 격리 — 한 고객 예외(DB 오류 등)가 배치 전체를 중단시키던 문제 수정. 예외는 `errored` 카운트+warn로 집계하고 다음 고객 계속. 단위 테스트(예외 뒤 고객도 처리) 추가.

@@ -7,7 +7,7 @@ const NOW = new Date("2026-10-15T00:00:00.000Z");
 function makeService(opts: {
   total: number;
   customers: { id: string; customerId: string }[];
-  outcomes?: SyncOutcome[];
+  outcomes?: (SyncOutcome | "throw")[];
 }) {
   const reconciled: string[] = [];
   let idx = 0;
@@ -22,6 +22,7 @@ function makeService(opts: {
       reconciled.push(customerId);
       const o = opts.outcomes?.[idx] ?? "applied";
       idx += 1;
+      if (o === "throw") throw new Error("db_down");
       return { outcome: o, applied: o === "applied" ? 1 : 0, conflicts: 0, skippedStale: 0 };
     },
   };
@@ -86,5 +87,22 @@ describe("SubscriptionReconcileService", () => {
     expect(r.unmapped).toBe(1);
     expect(r.noop).toBe(1);
     expect(reconciled).toEqual(["c1", "c2", "c3", "c4"]);
+  });
+
+  it("한 고객 예외 → errored 집계 + 배치 계속(전체 중단 없음)", async () => {
+    const { service, reconciled } = makeService({
+      total: 3,
+      customers: [
+        { id: "b1", customerId: "c1" },
+        { id: "b2", customerId: "c2" },
+        { id: "b3", customerId: "c3" },
+      ],
+      outcomes: ["applied", "throw", "applied"],
+    });
+    const r = await service.execute(10);
+    expect(r.processed).toBe(3);
+    expect(r.errored).toBe(1);
+    expect(r.applied).toBe(2);
+    expect(reconciled).toEqual(["c1", "c2", "c3"]); // 예외 뒤 고객도 처리됨
   });
 });

@@ -20,6 +20,7 @@ export interface ReconcileExecuteReport {
   noop: number;
   unmapped: number;
   providerError: number;
+  errored: number; // 예기치 못한 예외로 건너뛴 고객(배치는 계속)
   nextCursor: string | null;
   aborted?: { reason: string };
 }
@@ -68,6 +69,7 @@ export class SubscriptionReconcileService {
       noop: 0,
       unmapped: 0,
       providerError: 0,
+      errored: 0,
       nextCursor: null,
     };
     if (subscriptionJobsDisabled()) {
@@ -80,18 +82,29 @@ export class SubscriptionReconcileService {
     let noop = 0;
     let unmapped = 0;
     let providerError = 0;
+    let errored = 0;
     for (const row of rows) {
-      const r = await this.sync.reconcileCustomer(row.customerId, new Date());
-      if (r.outcome === "applied") applied += 1;
-      else if (r.outcome === "provider_error") providerError += 1;
-      else if (r.outcome === "unmapped") unmapped += 1;
-      else noop += 1;
+      // 한 고객 예외가 전체 배치를 중단시키지 않게 격리(건너뛰고 계속). 공급자 실패는 reconcileCustomer가
+      // ok:false→provider_error로 삼키므로, 여기 예외는 DB 오류 등 예기치 못한 경우.
+      try {
+        const r = await this.sync.reconcileCustomer(row.customerId, new Date());
+        if (r.outcome === "applied") applied += 1;
+        else if (r.outcome === "provider_error") providerError += 1;
+        else if (r.outcome === "unmapped") unmapped += 1;
+        else noop += 1;
+      } catch (e) {
+        errored += 1;
+        this.logger.warn(
+          `[execute] 고객 ${row.customerId} 대사 예외 — 건너뜀: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
     }
     const nextCursor = rows.length === limit ? (rows[rows.length - 1]?.id ?? null) : null;
     this.logger.log(
-      `[execute] 처리 ${rows.length} · 반영 ${applied} · noop ${noop} · unmapped ${unmapped} · 공급자실패 ${providerError} · nextCursor ${nextCursor ?? "(끝)"}`,
+      `[execute] 처리 ${rows.length} · 반영 ${applied} · noop ${noop} · unmapped ${unmapped} · 공급자실패 ${providerError} · 예외 ${errored} · nextCursor ${nextCursor ?? "(끝)"}`,
     );
     if (providerError > 0) this.logger.warn(`[execute] 공급자 재조회 실패 ${providerError}건 — 해당 고객 미반영(유지).`);
-    return { ...base, processed: rows.length, applied, noop, unmapped, providerError, nextCursor };
+    if (errored > 0) this.logger.warn(`[execute] 예외로 건너뛴 고객 ${errored}건 — 운영 확인 필요.`);
+    return { ...base, processed: rows.length, applied, noop, unmapped, providerError, errored, nextCursor };
   }
 }
