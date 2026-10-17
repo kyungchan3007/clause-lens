@@ -53,7 +53,7 @@ describe("RecentListScreen", () => {
   });
 
   it("헤더: 제목 '최근 분석' + 부제가 헤더에 노출(ListHeader 아님)", () => {
-    const root = render(<RecentListScreen onOpen={() => {}} onBack={() => {}} />);
+    const root = render(<RecentListScreen onOpen={() => {}} onBack={() => {}} onSubscribe={() => {}} />);
     const strings = allStrings(root);
     expect(strings).toContain("최근 분석");
     expect(strings).toContain("분석 결과는 7일 동안 보관돼요.");
@@ -61,7 +61,7 @@ describe("RecentListScreen", () => {
 
   it("뒤로 버튼(a11y '뒤로') → onBack 발화", () => {
     const onBack = jest.fn();
-    const root = render(<RecentListScreen onOpen={() => {}} onBack={onBack} />);
+    const root = render(<RecentListScreen onOpen={() => {}} onBack={onBack} onSubscribe={() => {}} />);
     const btn = backButton(root);
     expect(btn).toBeDefined();
     act(() => btn?.props.onPress());
@@ -69,7 +69,7 @@ describe("RecentListScreen", () => {
   });
 
   it("items 비면 공용 EmptyState 노출", () => {
-    const root = render(<RecentListScreen onOpen={() => {}} onBack={() => {}} />);
+    const root = render(<RecentListScreen onOpen={() => {}} onBack={() => {}} onSubscribe={() => {}} />);
     expect(allStrings(root)).toContain("아직 분석한 계약서가 없어요");
   });
 });

@@ -1,0 +1,30 @@
+# S23. 구독 구매(Fake) — 최근 목록 구독 카드 → 구독 화면 → 구독하기 → 서버 확인 (#165 Slice 4B)
+# 사전조건:
+#  - 로그인된 상태 · 로컬 API+Postgres 기동(identify·/me/access).
+#  - **Fake 공급자 빌드**: EXPO_PUBLIC_PURCHASES_FAKE=1 로 실행(실 RevenueCat SDK 미설치 — 이 빌드만 구매 가능).
+#  - 기록 있음(최근 분석 N건 버튼 노출)이어야 구독 카드가 보임.
+# ⚠️ 범위: Fake 공급자 대상 — 앱 흐름(구매↔권한 분리·확인 상태)만 증명. 실 스토어 결제는 Slice 5.
+appId: com.chan.clauselens
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "계약서, 찍기만 하세요"
+    timeout: 15000
+# 최근 목록 진입(기록 있을 때) → 하단 구독 카드
+- tapOn: "최근 분석 \\d+건.*"
+- extendedWaitUntil:
+    visible: "분석 결과를 계속 보관하세요"
+    timeout: 10000
+- tapOn: "구독 알아보기"
+# 구독 화면 — 플랜 + 구독하기
+- extendedWaitUntil:
+    visible: "프로 구독"
+    timeout: 10000
+- assertVisible: "프로 월간"
+- tapOn: "구독하기"
+# 구매↔권한 분리: 스토어 성공 후 "구매 확인 중" → (서버 반영 시) 활성 / (지연 시) 확인 지연
+- extendedWaitUntil:
+    visible: "(구매를 확인하고 있어요.*|구독이 활성화.*|확인이 지연되고 있어요)"
+    timeout: 20000
+# 복원 경로(별도): "구매 복원" 탭 → 동일 확인 흐름(대상 없음/활성/지연). 데이터 의존 → 육안.

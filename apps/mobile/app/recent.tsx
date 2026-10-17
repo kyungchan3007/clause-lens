@@ -11,6 +11,7 @@ export default function RecentRoute() {
       <RecentListScreen
         onOpen={(id) => router.push({ pathname: "/result", params: { documentId: id } })}
         onBack={() => router.back()}
+        onSubscribe={() => router.push("/subscription")}
       />
     </Screen>
   );
