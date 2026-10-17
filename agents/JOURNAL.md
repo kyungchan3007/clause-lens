@@ -14,6 +14,22 @@
 
 ---
 
+## 2026-10-15 · Claude · 대사·재시도·운영 알림 (#165 Slice 3, 0081)
+- **무엇**: 수신함 재시도 실행 + 정기 대사 + 최소 운영 리포팅. 실패 이벤트 재처리(백오프→dead-letter), 고객 재조회 보정. standalone CLI 2개(크론/수동).
+- **설계**: Codex 적대적 리뷰(세션 bal47jjra) 선행 — 블로커 4. (A) processed 검사만으론 동시실행 못 막음(성공이 failed로 역행) → **원자 claim+lease 토큰 조건부 완료**. (B) 대사 "사라진 구독 expired"는 완전스냅샷·스키마 식별자 필요 → **보류**(사용자 Q1=A). (C) dead-letter MAX 종속 → **저장 enum `dead`**. 사용자 Q2=claim 수정은 Slice 3. 설계 노션(백엔드 설계 DB) 기록.
+- **구현**: 스키마 enum `dead`+`leaseExpiresAt`+마이그레이션. `subscription-sync.service` 원자 claim/lease·조건부 완료·백오프·applySnapshots·reconcileCustomer. `subscription-retry.service`+`subscription-reconcile.service`+CLI 2개+`subscription-jobs-cli.module`(AppModule 비포함, retention-sweep 패턴: dry-run 기본·--execute·kill-switch·cap). processEvent가 attempts/상태/스케줄 단일 작성.
+- **파일**: `packages/db/prisma/{schema.prisma,migrations/20261015010000_*}`, `apps/api/src/modules/subscriptions/{subscription-sync.service,subscription-retry.service,subscription-reconcile.service,subscription-jobs-cli.module}.ts`(+3 spec), `apps/api/src/scripts/subscription-{retry,reconcile}.ts`, `apps/api/test/subscription-jobs.e2e-spec.ts`, `.env.example`, spec `0081`.
+- **게이트**: ✅ `checks.sh` ALL PASS · api 단위 47 · e2e 16(잡 5+기존 11, `db-e2e.sh`, 마이그레이션 실적용).
+- **다음/주의**: 브랜치 `feat/165-subscription-reconcile`는 Slice 2(`feat/165-revenuecat-webhook`) **위 스택** — PR base=Slice 2 브랜치, Slice 2 머지 후 develop 재타겟. 보류: 드리프트 만료(스키마+완전스냅샷)·identify 매핑(Slice 4)·샌드박스 검증(Slice 5)·능동 알림.
+
+## 2026-10-15 · Claude · RevenueCat 실연결 — 웹훅·REST (#165 Slice 2, 0080)
+- **무엇**: Slice 1의 포트 뒤 모킹을 실연결. RevenueCat REST 어댑터(v1 subscribers 재조회) + 인증 웹훅 라우트(공개) + 설정 바인딩. 운영 경로 활성(env 주입 시).
+- **설계**: Codex 적대적 리뷰(세션 01a13e7c) 선행 — 블로커 4 반영. (A) 재진입: processed만 duplicate·failed/received 재처리(5xx 재전송이 실패를 올바르게 재처리). (B) externalId=customerId:productId(RC v1 실제 단위, 이전/병합 Slice 5). (C) 환경 격리=서버 단일환경 바인딩(sandbox skip, 스키마 불변). (E) lazy 매핑 제거(인증≠소유권, 생성은 Slice 4). 설계 노션(백엔드 설계 DB) 기록.
+- **구현**: `revenuecat-billing-provider.ts`(store→platform·레지스트리 period·active→grace→expired·404/네트워크 ok:false)·`revenuecat-webhook.guard.ts`(정적 Authorization 상수시간+선택 HMAC raw Buffer·5분)·`subscriptions.controller.ts`(POST /billing/revenuecat/webhook, provider_error→503)·`subscription-sync.service.ts`(재진입+환경 게이트)·`subscriptions.module.ts`(useFactory 바인딩+필수설정 검증)·`main.ts`(rawBody). db 순수함수 2개·`.env.example` RC 섹션.
+- **파일**: `apps/api/src/modules/subscriptions/*`(신규 4+수정 2), `apps/api/src/main.ts`, `packages/db/src/subscription-ops.ts`, `apps/api/test/revenuecat-webhook.e2e-spec.ts`(+기존 e2e ConfigModule 수정), `.env.example`, spec `0080-revenuecat-webhook-sync/*`.
+- **게이트**: ✅ `checks.sh` ALL PASS · api 단위 51 · e2e 11(웹훅 7+기존 4, `db-e2e.sh`).
+- **다음/주의**: 재시도 실행 루프·대사·누락탐지·알림 = **Slice 3**. 앱 구매/복원·identify(매핑 생성) = **Slice 4**. 샌드박스 양 플랫폼 출시검증 = **Slice 5**. 실 RC 계정·키는 배포 env(코드는 미설정 시 Unconfigured+웹훅 전부 거부). product id(DEFAULT_PRODUCT_PERIODS)는 스토어 설정 시 확정.
+
 ## 2026-10-09 · Claude · PR 머지 시 이슈 체크박스 자동 동기화 (#183, 0072)
 - **무엇**: 머지 후 사람 개입 0으로 이슈 완료 조건을 spec Acceptance 상태로 미러(A) + PR 시점 spec 준비성 검사(B'). #153 2단계.
 - **설계**: 적대적 토론 → A+B' 확정(사용자). Action은 거울(상태만)·머지 후 검증 항목은 REASON_MARK 사유 있는 미체크로 역설 해소·이슈는 head 브랜치+closingIssuesReferences로·B'는 사유 없는 미체크만 실패·#116은 TASKS 비의존.

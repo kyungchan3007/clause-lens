@@ -6,7 +6,8 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: 웹훅 HMAC 검증을 원본 바이트(req.rawBody)로 하기 위해 보존(#165 Slice 2).
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 }

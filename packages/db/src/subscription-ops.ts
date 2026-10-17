@@ -127,3 +127,44 @@ export function isStaleWrite(existing: { verifiedAt: Date } | null, queryStarted
   if (existing == null) return false;
   return existing.verifiedAt.getTime() > queryStartedAt.getTime();
 }
+
+// ── RevenueCat 응답 매핑 보조 순수함수 (#165 Slice 2) ──────────────────────
+// 어댑터가 공급자 응답을 ProviderSubscriptionSnapshot로 변환할 때 쓰는 결정 로직(순수·테스트 용이).
+
+/**
+ * RevenueCat `store` 문자열 → 내부 플랫폼. **지원 밖(amazon·stripe·promotional 등)은 null**
+ * (해당 snapshot skip — 알 수 없는 store를 TEST 등으로 강제 변환해 잘못된 데이터 생성 금지).
+ */
+export function storeToPlatform(store: string | null | undefined): SubscriptionPlatform | null {
+  switch (store) {
+    case "app_store":
+    case "mac_app_store":
+      return "APP_STORE";
+    case "play_store":
+      return "PLAY";
+    default:
+      return null;
+  }
+}
+
+/**
+ * 만료·유예 날짜로 현재 상태 판정 — **active 우선 → 만료 후 유효 grace → expired**.
+ * - expiresAt 없거나 잘못된 날짜면 null(모델 불가 → snapshot skip, currentPeriodEnd 필수).
+ * - active: expiresAt가 미래. grace: expiresAt는 지났고 graceExpiresAt가 미래. 그 외 expired.
+ */
+export function deriveSubscriptionStatus(
+  expiresAt: Date | null,
+  graceExpiresAt: Date | null,
+  now: Date,
+): SubscriptionStatus | null {
+  if (expiresAt == null || Number.isNaN(expiresAt.getTime())) return null;
+  if (expiresAt.getTime() > now.getTime()) return "active";
+  if (
+    graceExpiresAt != null &&
+    !Number.isNaN(graceExpiresAt.getTime()) &&
+    graceExpiresAt.getTime() > now.getTime()
+  ) {
+    return "grace";
+  }
+  return "expired";
+}

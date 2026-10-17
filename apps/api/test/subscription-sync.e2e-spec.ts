@@ -1,3 +1,4 @@
+import { ConfigModule } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 
 import { DbModule } from "../src/db/db.module";
@@ -68,7 +69,9 @@ describe("구독 동기화 e2e (실 DB + Nest 모듈)", () => {
   }
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [DbModule, SubscriptionsModule] })
+    const moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot({ isGlobal: true }), DbModule, SubscriptionsModule],
+    })
       .overrideProvider(BILLING_PROVIDER)
       .useValue(fake)
       .compile();
