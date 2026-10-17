@@ -85,10 +85,16 @@ describe("RevenueCatBillingProvider.getSubscriberState", () => {
     expect(r).toEqual({ ok: true, subscriptions: [] });
   });
 
-  it("404 → ok:false (구독 없음으로 단정 안 함)", async () => {
+  it("404 → ok:false (customer_not_found, 구독 없음으로 단정 안 함)", async () => {
     mockFetch(() => ({ ok: false, status: 404, json: async () => ({}) }));
     const r = await new RevenueCatBillingProvider(baseConfig).getSubscriberState("c");
-    expect(r).toEqual({ ok: false, errorCode: "provider_http_404" });
+    expect(r).toEqual({ ok: false, errorCode: "customer_not_found" });
+  });
+
+  it("기타 비2xx(500) → ok:false provider_http_500", async () => {
+    mockFetch(() => ({ ok: false, status: 500, json: async () => ({}) }));
+    const r = await new RevenueCatBillingProvider(baseConfig).getSubscriberState("c");
+    expect(r).toEqual({ ok: false, errorCode: "provider_http_500" });
   });
 
   it("네트워크 오류 → ok:false provider_unreachable", async () => {

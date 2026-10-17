@@ -27,3 +27,7 @@
   - 기존 `subscription-sync.e2e-spec.ts`가 모듈 단독 임포트라 ConfigService DI 실패 → `ConfigModule.forRoot({isGlobal})` 추가로 수정.
 - **게이트**: `checks.sh` ALL PASS + `scripts/db-e2e.sh` 통과(임시 PG 5433).
 - 설계 노션(백엔드 설계 DB) 기록은 착수 시 완료. 완료 기록(01·주차로그·JOURNAL·PR)은 RECORD 단계.
+
+- **PR#201 자동리뷰 P1 조치(2026-10-17)**:
+  - (404) getSubscriberState 404를 `customer_not_found`로 구분(기타 비2xx는 provider_http_<status>) — 모두 ok:false라 만료 미유발, 재시도는 Slice 3 백오프+dead-letter로 bounded. 어댑터 단위 404/500 분리 테스트.
+  - (rawBody) main.ts `rawBody:true`는 변경 없음 — 웹훅 e2e(실 HTTP app.listen + 서명 body)가 `req.rawBody` 기반 HMAC 통과를 이미 검증(거짓양성). 답글로 근거 제시.

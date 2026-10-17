@@ -69,8 +69,13 @@ export class RevenueCatBillingProvider implements BillingProviderPort {
       clearTimeout(timer);
     }
 
-    // 404 포함 비2xx는 ok:false — "구독 없음"으로 단정해 기존 active를 만료시키지 않는다.
-    if (!res.ok) return { ok: false, errorCode: `provider_http_${res.status}` };
+    // 비2xx는 ok:false — "구독 없음"으로 단정해 기존 active를 만료시키지 않는다.
+    // 404는 별도 errorCode(customer_not_found)로 구분해 관측·후속 분기 가능(SDD). 모두 ok:false라
+    // 반영/만료는 일으키지 않고, 재시도는 Slice 3 백오프+dead-letter로 bounded(무한 루프 아님).
+    if (!res.ok) {
+      const errorCode = res.status === 404 ? "customer_not_found" : `provider_http_${res.status}`;
+      return { ok: false, errorCode };
+    }
 
     let body: RcSubscriberResponse;
     try {
