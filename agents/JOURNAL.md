@@ -14,6 +14,16 @@
 
 ---
 
+## 2026-10-17 · Claude · 앱 구매/복원 UI + 수명주기·폴링 (#165 Slice 4B, 0084)
+- **무엇**: 앱 구독 흐름(Fake 기반). 구독 포트+Fake+실 어댑터 스텁, 계정 coordinator(세대 격리·single-flight), 구매↔권한 분리 확인 상태기계, SubscriptionScreen(placeholder 교체).
+- **설계**: Codex 적대적 리뷰(세션 b01zi1wtq) 선행 — 블로커 2·중대 5. (A) /me/access·identify.synced로 "이번 거래 완료" 판정 불가 → **분리 상태**(스토어 성공/서버 확인중/권한)·완료 단정 금지. (C) 세션 폐기만으론 SDK 계정 레이스 미방지 → **coordinator 직렬화+generation 폐기**. 실 SDK 설치 보류(Fake 흐름 한정)·서버 거래 확정 계약 부재는 후속. 설계 노션 기록.
+- **구현**: `features/subscription`(purchasePort·FakePurchases·RevenueCatPurchases 스텁·selectPurchasePort·subscriptionStore·useSubscriptionAccount·billingApi·SubscriptionScreen) + 라우트 app/subscription.tsx + SubscriptionPromoCard onPress 콜백화(recent 라우트 주입) + _layout 배선. 기존 accountScopedStore 재사용.
+- **파일**: `apps/mobile/src/features/subscription/**`(신규), `apps/mobile/app/subscription.tsx`, `app/recent.tsx`, `app/_layout.tsx`, documents/ui/SubscriptionPromoCard(+test)·RecentListScreen(+test), `.maestro/subscription.yaml`+SCENARIOS.md, spec `0084`.
+- **게이트**: ✅ `checks.sh` ALL PASS · 모바일 단위 +20(store 13·화면 5·promo 2) · maestro S23(Fake 빌드 디바이스 후속).
+- **다음/주의**: **출시 전** = 실 RevenueCat SDK 설치·prebuild·네이티브 빌드 검증 + 구매 소유권 증명(영수증/secure logIn) + 서버 "이번 거래 반영 확정" 계약. **Slice 5** = 샌드박스 양 플랫폼 출시 검증. 배포 미설정이면 결제 사용 불가(Fake 자동선택 금지).
+
+---
+
 ## 2026-10-17 · Claude · identify 매핑 + 재동기화 (#165 Slice 4A, 0083)
 - **무엇**: 서버 결제 계정 연결 — `POST /me/billing/identify`(인증·멱등)로 BillingCustomer 매핑 생성 + 최초 연결 직후 재동기화(매핑 전 도착 구독 흡수). Slice 2/3가 미뤄둔 매핑 생성 주체.
 - **설계**: Codex 적대적 리뷰(세션 baa9hothz) 선행 — 블로커 2·중대 다수. identify≠구매 소유권 증명(블로커 A)이라 "내부 매핑만 안전"으로 재서술, 소유권 증명은 출시 전 과제. restore 이전 정책=기존 소유자 유지(블로커 D·사용자 확정). 사용자 결정으로 **4A(서버)/4B(앱) 분리** — 이번은 4A.

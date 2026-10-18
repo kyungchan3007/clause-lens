@@ -11,9 +11,11 @@ import { SubscriptionPromoCard } from "./SubscriptionPromoCard";
 export function RecentListScreen({
   onOpen,
   onBack,
+  onSubscribe,
 }: {
   onOpen: (documentId: string) => void;
   onBack: () => void;
+  onSubscribe: () => void;
 }) {
   const status = useDocumentsStore((s) => s.status);
   const items = useDocumentsStore((s) => s.items);
@@ -84,7 +86,7 @@ export function RecentListScreen({
         />
         {items.length > 0 ? (
           <View className="px-4 pb-3 pt-1">
-            <SubscriptionPromoCard />
+            <SubscriptionPromoCard onPress={onSubscribe} />
           </View>
         ) : null}
         </View>

@@ -10,6 +10,7 @@ import { initializeKakaoSDK } from "@react-native-kakao/core";
 import { useAuthStore } from "../src/features/auth";
 import { useEntitlementSync } from "../src/features/entitlement";
 import { useDocumentsSync } from "../src/features/documents";
+import { useSubscriptionAccount } from "../src/features/subscription";
 import { useResultSessionReset } from "../src/shared/model/useResultSessionReset";
 import { ThemeProvider } from "../src/shared/theme";
 
@@ -42,6 +43,8 @@ function AuthGate() {
   useDocumentsSync();
   // 로그아웃·계정 변경 시 결과(분석·업로드) 메모리 리셋 — 세션 경계 격리(#76).
   useResultSessionReset();
+  // 로그인·계정 변경·로그아웃에 맞춰 구독 공급자 계정 동기화 + identify(#165 Slice 4B).
+  useSubscriptionAccount();
 
   useEffect(() => {
     restore();
