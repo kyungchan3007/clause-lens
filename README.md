@@ -88,7 +88,7 @@ API와 BullMQ Worker를 분리하고 DB를 기준 상태로 두어, **분석이 
 - **API** — 인증 · 권한 · 문서 상태 · 작업 접수
 - **Worker** — OCR · 위험 조항 분석 · 결과 저장
 
-<img src="docs/images/architecture.png" width="100%" alt="ClauseLens 아키텍처: Mobile App → API Server → Job Queue → OCR Worker → Google Vision · Claude, PostgreSQL · Object Storage" />
+<img src="docs/images/architecture.png" width="100%" alt="ClauseLens 비동기 계약서 분석 아키텍처: Mobile App · API Server · Job Queue · Analysis Worker · Google Vision · Claude · Storage · PostgreSQL" />
 
 <sub>전체 요청 흐름 → [백엔드 아키텍처](agents/context/backend-architecture.md) · [업로드·스토리지](agents/context/upload-storage.md)</sub>
 
