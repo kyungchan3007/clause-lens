@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-11-10 · Claude · README 포트폴리오용 재구성 (#207, 0085)
+- **무엇**: README를 사용자 초안 구조로 교체. 상단 `📌 해결한 문제` 3줄 + `🎯 핵심 기술` 3항목을 같은 순서(동시성 → 좌표 정합 → 비동기)로 1:1 대응. 아키텍처 mermaid → `docs/images/architecture.png`(원본 `architecture.source.html`).
+- **왜**: 채용 리뷰어가 첫 화면에서 해결한 문제를 바로 파악하도록. mermaid 렌더 품질 불균일(사용자 금지).
+- **파일**: `README.md`, `docs/images/architecture.{png,source.html}`, spec `0085-readme-portfolio`.
+- **게이트**: ✅ `checks.sh` ALL PASS · 링크 경로 9개 존재 확인.
+- **다음/주의**: 초안의 화면 스크린샷 3장(`docs/images/00-hero.png`·`01-analyze.png`·`02-result.png`)은 저장소에 없어 주석 처리 → 추가 시 해제.
+
+---
+
 ## 2026-10-17 · Claude · 앱 구매/복원 UI + 수명주기·폴링 (#165 Slice 4B, 0084)
 - **무엇**: 앱 구독 흐름(Fake 기반). 구독 포트+Fake+실 어댑터 스텁, 계정 coordinator(세대 격리·single-flight), 구매↔권한 분리 확인 상태기계, SubscriptionScreen(placeholder 교체).
 - **설계**: Codex 적대적 리뷰(세션 b01zi1wtq) 선행 — 블로커 2·중대 5. (A) /me/access·identify.synced로 "이번 거래 완료" 판정 불가 → **분리 상태**(스토어 성공/서버 확인중/권한)·완료 단정 금지. (C) 세션 폐기만으론 SDK 계정 레이스 미방지 → **coordinator 직렬화+generation 폐기**. 실 SDK 설치 보류(Fake 흐름 한정)·서버 거래 확정 계약 부재는 후속. 설계 노션 기록.
