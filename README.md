@@ -16,14 +16,12 @@ OCR로 계약서의 텍스트와 좌표를 추출하고 위험 조항을 분석�
 ![Redis](https://img.shields.io/badge/Redis_+_BullMQ-DC382D?logo=redis&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 
-<!-- 화면 스크린샷: docs/images/00-hero.png · 01-analyze.png · 02-result.png 추가 후 주석 해제
 <br>
 
 <img src="docs/images/00-hero.png" width="100%" alt="ClauseLens 로그인 · 홈 · 위험 조항 하이라이트 화면" />
 
 <img src="docs/images/01-analyze.png" width="49%" alt="분석 진행 화면" />
 <img src="docs/images/02-result.png" width="49%" alt="결과 · 보관 화면" />
--->
 
 </div>
 
