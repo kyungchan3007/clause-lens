@@ -16,14 +16,12 @@ OCR로 계약서의 텍스트와 좌표를 추출하고 위험 조항을 분석�
 ![Redis](https://img.shields.io/badge/Redis_+_BullMQ-DC382D?logo=redis&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 
-<!-- 화면 스크린샷: docs/images/00-hero.png · 01-analyze.png · 02-result.png 추가 후 주석 해제
 <br>
 
 <img src="docs/images/00-hero.png" width="100%" alt="ClauseLens 로그인 · 홈 · 위험 조항 하이라이트 화면" />
 
 <img src="docs/images/01-analyze.png" width="49%" alt="분석 진행 화면" />
 <img src="docs/images/02-result.png" width="49%" alt="결과 · 보관 화면" />
--->
 
 </div>
 
@@ -90,7 +88,7 @@ API와 BullMQ Worker를 분리하고 DB를 기준 상태로 두어, **분석이 
 - **API** — 인증 · 권한 · 문서 상태 · 작업 접수
 - **Worker** — OCR · 위험 조항 분석 · 결과 저장
 
-<img src="docs/images/architecture.png" width="100%" alt="ClauseLens 아키텍처: Mobile App → API Server → Job Queue → OCR Worker → Google Vision · Claude, PostgreSQL · Object Storage" />
+<img src="docs/images/architecture.png" width="100%" alt="ClauseLens 비동기 계약서 분석 아키텍처: Mobile App · API Server · Job Queue · Analysis Worker · Google Vision · Claude · Storage · PostgreSQL" />
 
 <sub>전체 요청 흐름 → [백엔드 아키텍처](agents/context/backend-architecture.md) · [업로드·스토리지](agents/context/upload-storage.md)</sub>
 
